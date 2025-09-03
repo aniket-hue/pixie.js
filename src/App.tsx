@@ -1,35 +1,44 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useRef } from 'react';
+import './App.css';
+import Renderer from './webgl/renderer/Renderer.class';
+import Rectangle from './webgl/shapes/Rectangle.class';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (canvasRef.current) {
+      const renderer = new Renderer(canvasRef.current);
+
+      for (let i = 0; i < 10; i++) {
+        renderer.addObject(
+          new Rectangle({
+            x: i * 10,
+            y: i * 10,
+            width: 40,
+            height: 40,
+            color: [Math.random() * 0.8 + 0.2, Math.random() * 0.8 + 0.2, Math.random() * 0.8 + 0.2, 0.8],
+          }),
+        );
+      }
+
+      renderer.render();
+    }
+  }, []);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <canvas
+        ref={canvasRef}
+        style={{
+          flex: 1,
+          display: 'block',
+          width: '100%',
+          height: '100%',
+        }}
+      />
+    </div>
+  );
 }
 
-export default App
+export default App;
