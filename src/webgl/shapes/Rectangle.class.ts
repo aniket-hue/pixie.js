@@ -1,28 +1,4 @@
-import { createProgram } from '../utils/createProgram';
-import { createShader } from '../utils/createShader';
 import type { Shape } from './types';
-
-const vertexShaderSource = `
-  attribute vec2 a_position;
-  uniform vec2 u_resolution;
-  
-  void main() {
-    // Convert from pixels to normalized device coordinates (-1 to +1)
-    vec2 clipSpace = ((a_position / u_resolution) * 2.0) - 1.0;
-    
-    // Flip Y coordinate (WebGL Y goes up, screen Y goes down)
-    gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
-  }
-`;
-
-const fragmentShaderSource = `
-  precision mediump float;
-  uniform vec4 u_color;
-  
-  void main() {
-    gl_FragColor = u_color;
-  }
-`;
 
 class Rectangle implements Shape {
   vertices: Float32Array;
@@ -69,11 +45,14 @@ class Rectangle implements Shape {
     return this.vertices;
   }
 
-  draw(gl: WebGLRenderingContext) {
-    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-    const program = createProgram(gl, vertexShader, fragmentShader);
-
+  draw(
+    gl: WebGLRenderingContext,
+    {
+      program,
+    }: {
+      program: WebGLProgram;
+    },
+  ) {
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, this.vertices, gl.STATIC_DRAW);

@@ -5,10 +5,12 @@ import Rectangle from './webgl/shapes/Rectangle.class';
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rendererRef = useRef<Renderer | null>(null);
 
   useEffect(() => {
     if (canvasRef.current) {
       const renderer = new Renderer(canvasRef.current);
+      rendererRef.current = renderer;
 
       for (let i = 0; i < 10; i++) {
         renderer.addObject(
@@ -30,6 +32,9 @@ function App() {
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <canvas
         ref={canvasRef}
+        onWheel={(e) => {
+          rendererRef.current?.camera.pan(e.deltaX, e.deltaY);
+        }}
         style={{
           flex: 1,
           display: 'block',

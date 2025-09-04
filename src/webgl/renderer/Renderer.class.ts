@@ -1,13 +1,45 @@
+import { Camera } from '../camera';
 import type { Shape } from '../shapes/types';
+import { createProgram } from '../utils/createProgram';
+import { createShader } from '../utils/createShader';
+
+const vertexShaderSource = `
+  attribute vec2 a_position;
+  uniform vec2 u_resolution;
+  
+  void main() {
+    // Convert from pixels to normalized device coordinates (-1 to +1)
+    vec2 clipSpace = ((a_position / u_resolution) * 2.0) - 1.0;
+    
+    // Flip Y coordinate (WebGL Y goes up, screen Y goes down)
+    gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+  }
+`;
+
+const fragmentShaderSource = `
+  precision mediump float;
+  uniform vec4 u_color;
+  
+  void main() {
+    gl_FragColor = u_color;
+  }
+`;
 
 class Renderer {
   canvas: HTMLCanvasElement;
   ctx: WebGLRenderingContext;
   objects: Shape[] = [];
+  camera: Camera;
+  baseProgram: {
+    basic2D: WebGLProgram | null;
+  } = {
+    basic2D: null,
+  };
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     const webglCtx = this.canvas.getContext('webgl');
+    this.camera = new Camera(0, 0, 1);
 
     if (!webglCtx) {
       throw new Error('WebGL not supported');
@@ -20,6 +52,10 @@ class Renderer {
 
   setupWebGL() {
     const gl = this.ctx;
+
+    const baseVertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+    const baseFragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+    this.baseProgram.basic2D = createProgram(gl, baseVertexShader, baseFragmentShader);
 
     // Set canvas size to match display size
     this.resizeCanvas();
@@ -64,7 +100,13 @@ class Renderer {
 
     // Draw all objects
     this.objects.forEach((object) => {
-      object.draw(this.ctx);
+      if (!this.baseProgram.basic2D) {
+        throw new Error('Base vertex shader or fragment shader not set');
+      }
+
+      object.draw(this.ctx, {
+        program: this.baseProgram.basic2D,
+      });
     });
   }
 }
