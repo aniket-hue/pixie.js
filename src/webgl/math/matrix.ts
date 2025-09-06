@@ -52,6 +52,30 @@ export const m3 = {
   getScale: (a: number[]): number => {
     return Math.sqrt(a[0] * a[0] + a[1] * a[1]);
   },
+
+  inverse: (a: number[]): number[] => {
+    const det = a[0] * a[4] - a[1] * a[3];
+
+    const invDet = 1 / det;
+    return [
+      a[4] * invDet,
+      -a[1] * invDet,
+      0,
+      -a[3] * invDet,
+      a[0] * invDet,
+      0,
+      (a[3] * a[7] - a[4] * a[6]) * invDet,
+      (a[1] * a[6] - a[0] * a[7]) * invDet,
+      1,
+    ];
+  },
+
+  transformPoint: (matrix: number[], x: number, y: number): { x: number; y: number } => {
+    return {
+      x: matrix[0] * x + matrix[3] * y + matrix[6],
+      y: matrix[1] * x + matrix[4] * y + matrix[7],
+    };
+  },
 };
 
 export const identityMatrix = [1, 0, 0, 0, 1, 0, 0, 0, 1];

@@ -4,12 +4,10 @@ import { PRIMARY_MODIFIER_KEY } from './constants';
 export class InputHandler {
   private canvas: HTMLCanvasElement;
   private camera: Camera;
-  private onRender: (() => void) | null = null;
 
-  constructor(canvas: HTMLCanvasElement, camera: Camera, onRender?: () => void) {
+  constructor(canvas: HTMLCanvasElement, camera: Camera) {
     this.canvas = canvas;
     this.camera = camera;
-    this.onRender = onRender || null;
     this.setupEventListeners();
   }
 
@@ -28,13 +26,16 @@ export class InputHandler {
     event.preventDefault();
 
     if (event[PRIMARY_MODIFIER_KEY]) {
-      this.camera.zoomAt(event.deltaY);
+      const rect = this.canvas.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+
+      console.log(mouseX, mouseY, event.clientX, event.clientY);
+
+      this.camera.zoomAt(event.deltaY, mouseX, mouseY);
     } else {
       this.camera.pan(event.deltaX, event.deltaY);
     }
-
-    // Trigger re-render
-    this.onRender?.();
   }
 
   // Cleanup event listeners
