@@ -7,14 +7,14 @@ import type { Shape } from './shapes/types';
 export class Canvas {
   objects: Shape[] = [];
 
-  canvas: HTMLCanvasElement;
+  canvasElement: HTMLCanvasElement;
   events: EventEmitter;
   renderer: Renderer;
   camera: Camera;
   inputHandler: InputHandler;
 
   constructor(canvas: HTMLCanvasElement) {
-    this.canvas = canvas;
+    this.canvasElement = canvas;
 
     this.events = new EventEmitter();
 
@@ -29,7 +29,7 @@ export class Canvas {
 
     this.renderer = new Renderer(this, this.camera);
 
-    this.inputHandler = new InputHandler(canvas, this.camera);
+    this.inputHandler = new InputHandler(this, this.camera);
 
     this.resize();
   }
@@ -39,7 +39,7 @@ export class Canvas {
   }
 
   getCtx() {
-    return this.canvas.getContext('webgl');
+    return this.canvasElement.getContext('webgl');
   }
 
   setZoom(zoom: number) {
@@ -59,15 +59,15 @@ export class Canvas {
   }
 
   get width() {
-    return this.canvas.width;
+    return this.canvasElement.width;
   }
 
   get height() {
-    return this.canvas.height;
+    return this.canvasElement.height;
   }
 
   resize() {
-    const canvas = this.canvas;
+    const canvas = this.canvasElement;
     const displayWidth = canvas.clientWidth;
     const displayHeight = canvas.clientHeight;
 
