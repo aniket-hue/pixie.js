@@ -1,13 +1,17 @@
-import { flipCoordinatesToWorldSpace } from '../math';
+import { flipCoordinatesToWorldSpace, m3 } from '../math';
 import type { Shape } from './types';
 
 class Rectangle implements Shape {
-  vertices: Float32Array;
   angle: number;
   color: [number, number, number, number];
   center: [number, number];
+  width: number;
+  height: number;
   scaleX: number;
   scaleY: number;
+
+  transformationMatrix: number[];
+  private vertices: Float32Array;
 
   constructor({
     x,
@@ -30,35 +34,20 @@ class Rectangle implements Shape {
   }) {
     const center = flipCoordinatesToWorldSpace(x, y);
 
-    const topLeftX = center.x - width / 2;
-    const topLeftY = center.y - height / 2;
-
     this.angle = angle;
     this.center = [center.x, center.y];
     this.scaleX = scaleX;
     this.scaleY = scaleY;
+    this.width = width;
+    this.height = height;
 
-    this.vertices = new Float32Array([
-      //First triangle
-      topLeftX,
-      topLeftY,
+    const scale = m3.scaling(scaleX * width, scaleY * height);
+    const rotation = m3.rotation(angle);
+    const combined = m3.multiply(rotation, scale);
+    const translation = m3.translation(center.x, center.y);
+    this.transformationMatrix = m3.multiply(translation, combined);
 
-      topLeftX + width,
-      topLeftY,
-
-      topLeftX,
-      topLeftY + height,
-
-      // Second triangle
-      topLeftX,
-      topLeftY + height,
-
-      topLeftX + width,
-      topLeftY,
-
-      topLeftX + width,
-      topLeftY + height,
-    ]);
+    this.vertices = new Float32Array([-0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5]);
 
     this.color = color;
   }
@@ -80,51 +69,24 @@ class Rectangle implements Shape {
     },
   ) {
     const positionBuffer = gl.createBuffer();
-    const angleBuffer = gl.createBuffer();
-
-    const angleArray = new Float32Array(6);
-    angleArray.fill(this.angle);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, angleBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, angleArray, gl.STATIC_DRAW);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, this.vertices, gl.STATIC_DRAW);
 
     const positionLocation = gl.getAttribLocation(program, 'a_position');
     const colorLocation = gl.getUniformLocation(program, 'u_color');
-    const angleLocation = gl.getUniformLocation(program, 'a_angle');
-    const centerLocation = gl.getUniformLocation(program, 'u_object_center');
-    const scaleXLocation = gl.getUniformLocation(program, 'u_object_scale_x');
-    const scaleYLocation = gl.getUniformLocation(program, 'u_object_scale_y');
+    const transformationMatrixLocation = gl.getUniformLocation(program, 'u_object_transformation_matrix');
 
-    // Program is already active and camera/resolution uniforms are already set by renderer
-    // Just set the color uniform specific to this rectangle
     gl.uniform4f(colorLocation, this.color[0], this.color[1], this.color[2], this.color[3]);
 
     gl.enableVertexAttribArray(positionLocation);
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.vertexAttribPointer(
-      positionLocation,
-      2, // 2 components per vertex (x, y)
-      gl.FLOAT, // data type
-      false, // don't normalize
-      0, // stride (0 = move forward size of each vertex)
-      0, // offset (start at beginning)
-    );
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.uniformMatrix3fv(transformationMatrixLocation, false, this.transformationMatrix);
 
-    gl.uniform1f(angleLocation, this.angle);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-    gl.uniform2f(centerLocation, this.center[0], this.center[1]);
-
-    gl.uniform1f(scaleXLocation, this.scaleX);
-    gl.uniform1f(scaleYLocation, this.scaleY);
-
-    gl.drawArrays(gl.TRIANGLES, 0, 6); // 6 vertices → 2 triangles
-
-    // Clean up
     gl.deleteBuffer(positionBuffer);
-    gl.deleteBuffer(angleBuffer);
   }
 }
 

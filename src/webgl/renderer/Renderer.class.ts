@@ -1,4 +1,5 @@
 import { Camera } from '../camera';
+import { identityMatrix } from '../math';
 import type { Shape } from '../shapes/types';
 import { createProgram } from '../utils/createProgram';
 import { createShader } from '../utils/createShader';
@@ -6,39 +7,16 @@ import { createShader } from '../utils/createShader';
 const vertexShaderSource = `
   attribute vec2 a_position;
 
-  uniform float a_angle;
   uniform vec2 u_resolution;
-  uniform float u_camera_zoom;
-  uniform vec2 u_camera_translation;
-  uniform vec2 u_object_center;
-  uniform float u_object_scale_x;
-  uniform float u_object_scale_y;
+  uniform mat3 u_viewport_transform_matrix;
+  uniform mat3 u_object_transformation_matrix;
 
   void main() {
-    // Translate to local coordinates relative to the object's center
-    vec2 a_position_by_center = a_position - u_object_center;
-
-    // Scale by object scale
-    vec2 scaled_pos = a_position_by_center * vec2(u_object_scale_x, u_object_scale_y);
-
-    // Apply rotation to local position (correct matrix * vector order)
-    mat2 rotation_matrix = mat2(cos(a_angle), sin(a_angle), -sin(a_angle), cos(a_angle));
-    vec2 rotated_pos = rotation_matrix * scaled_pos + u_object_center;
-
-    // Transform to world coordinates (apply camera translation)
-    vec2 world_pos = rotated_pos - u_camera_translation;
-  
-    // Scale by camera zoom
-    vec2 view_pos = world_pos * u_camera_zoom;
-    
-    // Convert to screen coordinates
-    vec2 screen_pos = view_pos + u_resolution * 0.5;
-    
-    // Convert to normalized device coordinates (-1 to +1)
-    vec2 clip_space = ((screen_pos / u_resolution) * 2.0) - 1.0;
-    
-    // Flip the y-coordinate
-    gl_Position = vec4(clip_space * vec2(1, -1), 0, 1);
+    vec2 position = (u_viewport_transform_matrix * u_object_transformation_matrix * vec3(a_position, 1)).xy;
+    vec2 zeroToOne = position / u_resolution + 0.5;
+    vec2 zeroToTwo = zeroToOne * 2.0;
+    vec2 clipSpace = zeroToTwo - 1.0;
+    gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
   }
 `;
 
@@ -72,7 +50,14 @@ class Renderer {
 
     this.setupWebGL();
 
-    this.camera = new Camera(1, this.canvas);
+    this.camera = new Camera(
+      {
+        zoom: 1,
+        x: 0,
+        y: 0,
+      },
+      this.canvas,
+    );
   }
 
   setupWebGL() {
@@ -121,10 +106,9 @@ class Renderer {
 
   updateResolutionUniform(program: WebGLProgram) {
     const gl = this.ctx;
-
     gl.useProgram(program);
-    const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
 
+    const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
     if (resolutionLocation) {
       gl.uniform2f(resolutionLocation, gl.canvas.width, gl.canvas.height);
     }
@@ -132,19 +116,17 @@ class Renderer {
 
   updateCameraUniforms(program: WebGLProgram) {
     const gl = this.ctx;
-
     gl.useProgram(program);
 
-    const cameraZoomLocation = gl.getUniformLocation(program, 'u_camera_zoom');
+    const cameraViewportTransformLocation = gl.getUniformLocation(program, 'u_viewport_transform_matrix');
+    const cameraObjectTransformationLocation = gl.getUniformLocation(program, 'u_object_transformation_matrix');
 
-    if (cameraZoomLocation) {
-      gl.uniform1f(cameraZoomLocation, this.camera.zoom);
+    if (cameraViewportTransformLocation) {
+      gl.uniformMatrix3fv(cameraViewportTransformLocation, false, this.camera.viewportTransformMatrix);
     }
 
-    const cameraTranslationLocation = gl.getUniformLocation(program, 'u_camera_translation');
-
-    if (cameraTranslationLocation) {
-      gl.uniform2f(cameraTranslationLocation, this.camera.x, this.camera.y);
+    if (cameraObjectTransformationLocation) {
+      gl.uniformMatrix3fv(cameraObjectTransformationLocation, false, identityMatrix);
     }
   }
 

@@ -27,10 +27,8 @@ export class InputHandler {
   private handleWheel(event: WheelEvent) {
     event.preventDefault();
 
-    const zoomFactor = event.deltaY > 0 ? -0.01 : 0.01;
-
     if (event[PRIMARY_MODIFIER_KEY]) {
-      this.camera.zoomAt(zoomFactor);
+      this.camera.zoomAt(event.deltaY);
     } else {
       this.camera.pan(event.deltaX, event.deltaY);
     }
