@@ -17,26 +17,29 @@ class Rectangle implements Shape {
     height: number;
     color: [number, number, number, number];
   }) {
+    const centerX = x - width / 2;
+    const centerY = y - height / 2;
+
     this.vertices = new Float32Array([
       //First triangle
-      x,
-      y,
+      centerX,
+      centerY,
 
-      x + width,
-      y,
+      centerX + width,
+      centerY,
 
-      x,
-      y + height,
+      centerX,
+      centerY + height,
 
       // Second triangle
-      x,
-      y + height,
+      centerX,
+      centerY + height,
 
-      x + width,
-      y,
+      centerX + width,
+      centerY,
 
-      x + width,
-      y + height,
+      centerX + width,
+      centerY + height,
     ]);
     this.color = color;
   }
@@ -58,15 +61,10 @@ class Rectangle implements Shape {
     gl.bufferData(gl.ARRAY_BUFFER, this.vertices, gl.STATIC_DRAW);
 
     const positionLocation = gl.getAttribLocation(program, 'a_position');
-    const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
     const colorLocation = gl.getUniformLocation(program, 'u_color');
 
-    gl.useProgram(program);
-
-    // Set the resolution uniform (canvas size)
-    gl.uniform2f(resolutionLocation, gl.canvas.width, gl.canvas.height);
-
-    // Set the color uniform
+    // Program is already active and camera/resolution uniforms are already set by renderer
+    // Just set the color uniform specific to this rectangle
     gl.uniform4f(colorLocation, this.color[0], this.color[1], this.color[2], this.color[3]);
 
     gl.enableVertexAttribArray(positionLocation);
@@ -80,8 +78,11 @@ class Rectangle implements Shape {
       0, // offset (start at beginning)
     );
 
-    // Draw triangles (don't clear here - that should be done by the renderer)
+    // Draw triangles
     gl.drawArrays(gl.TRIANGLES, 0, 6); // 6 vertices → 2 triangles
+
+    // Clean up
+    gl.deleteBuffer(positionBuffer);
   }
 }
 
