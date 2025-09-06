@@ -51,7 +51,7 @@ function App() {
       const demoObjects = [
         // Central cluster
         new Rectangle({ x: 0, y: 0, width: 10, height: 10, color: [1, 0.2, 0.2, 0.8] }),
-        new Rectangle({ x: 5, y: 100, width: 80, height: 60, color: [0.2, 1, 0.2, 0.8] }),
+        new Rectangle({ x: 5, y: 100, width: 80, height: 60, color: [0.2, 1, 0.2, 0.8], angle: Math.PI / 4 }),
         new Rectangle({ x: -25, y: 75, width: 60, height: 80, color: [0.2, 0.2, 1, 0.8] }),
 
         // Distant objects

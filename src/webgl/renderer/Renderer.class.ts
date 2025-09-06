@@ -5,27 +5,34 @@ import { createShader } from '../utils/createShader';
 
 const vertexShaderSource = `
   attribute vec2 a_position;
+  attribute float a_angle;
+  
   uniform vec2 u_resolution;
   uniform float u_camera_zoom;
   uniform vec2 u_camera_translation;
 
   void main() {
-    // World coordinates
-    vec2 worldPos = a_position - u_camera_translation;
+    // Apply rotation to local position (correct matrix * vector order)
+    mat2 rotation_matrix = mat2(cos(a_angle), sin(a_angle), -sin(a_angle), cos(a_angle));
+    vec2 rotated_pos = rotation_matrix * a_position;
+    
+    // Transform to world coordinates (apply camera translation)
+    vec2 world_pos = rotated_pos - u_camera_translation;
   
     // Scale by camera zoom
-    vec2 viewPos = worldPos * u_camera_zoom;
+    vec2 view_pos = world_pos * u_camera_zoom;
     
     // Convert to screen coordinates
-    vec2 screenPos = viewPos + u_resolution * 0.5;
+    vec2 screen_pos = view_pos + u_resolution * 0.5;
     
     // Convert to normalized device coordinates (-1 to +1)
-    vec2 clipSpace = ((screenPos / u_resolution) * 2.0) - 1.0;
+    vec2 clip_space = ((screen_pos / u_resolution) * 2.0) - 1.0;
     
     // Flip the y-coordinate
-    gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+    gl_Position = vec4(clip_space * vec2(1, -1), 0, 1);
   }
 `;
+
 const fragmentShaderSource = `
   precision mediump float;
   uniform vec4 u_color;
