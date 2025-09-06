@@ -1,3 +1,4 @@
+import { flipCoordinatesToWorldSpace } from '../math';
 import type { Shape } from './types';
 
 class Rectangle implements Shape {
@@ -17,8 +18,10 @@ class Rectangle implements Shape {
     height: number;
     color: [number, number, number, number];
   }) {
-    const centerX = x - width / 2;
-    const centerY = y - height / 2;
+    const flipped = flipCoordinatesToWorldSpace(x, y);
+
+    const centerX = flipped.x - width / 2;
+    const centerY = flipped.y - height / 2;
 
     this.vertices = new Float32Array([
       //First triangle

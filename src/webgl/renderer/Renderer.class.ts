@@ -22,7 +22,8 @@ const vertexShaderSource = `
     // Convert to normalized device coordinates (-1 to +1)
     vec2 clipSpace = ((screenPos / u_resolution) * 2.0) - 1.0;
     
-    gl_Position = vec4(clipSpace, 0, 1);
+    // Flip the y-coordinate
+    gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
   }
 `;
 const fragmentShaderSource = `
