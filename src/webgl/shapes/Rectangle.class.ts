@@ -5,6 +5,7 @@ class Rectangle implements Shape {
   vertices: Float32Array;
   angle: number;
   color: [number, number, number, number];
+  center: [number, number];
 
   constructor({
     x,
@@ -21,33 +22,36 @@ class Rectangle implements Shape {
     color: [number, number, number, number];
     angle?: number;
   }) {
-    const flipped = flipCoordinatesToWorldSpace(x, y);
+    const center = flipCoordinatesToWorldSpace(x, y);
 
-    const centerX = flipped.x - width / 2;
-    const centerY = flipped.y - height / 2;
+    const topLeftX = center.x - width / 2;
+    const topLeftY = center.y - height / 2;
+
     this.angle = angle;
+    this.center = [center.x, center.y];
 
     this.vertices = new Float32Array([
       //First triangle
-      centerX,
-      centerY,
+      topLeftX,
+      topLeftY,
 
-      centerX + width,
-      centerY,
+      topLeftX + width,
+      topLeftY,
 
-      centerX,
-      centerY + height,
+      topLeftX,
+      topLeftY + height,
 
       // Second triangle
-      centerX,
-      centerY + height,
+      topLeftX,
+      topLeftY + height,
 
-      centerX + width,
-      centerY,
+      topLeftX + width,
+      topLeftY,
 
-      centerX + width,
-      centerY + height,
+      topLeftX + width,
+      topLeftY + height,
     ]);
+
     this.color = color;
   }
 
@@ -82,6 +86,7 @@ class Rectangle implements Shape {
     const positionLocation = gl.getAttribLocation(program, 'a_position');
     const colorLocation = gl.getUniformLocation(program, 'u_color');
     const angleLocation = gl.getUniformLocation(program, 'a_angle');
+    const centerLocation = gl.getUniformLocation(program, 'u_object_center');
 
     // Program is already active and camera/resolution uniforms are already set by renderer
     // Just set the color uniform specific to this rectangle
@@ -100,7 +105,8 @@ class Rectangle implements Shape {
 
     gl.uniform1f(angleLocation, this.angle);
 
-    // Draw triangles
+    gl.uniform2f(centerLocation, this.center[0], this.center[1]);
+
     gl.drawArrays(gl.TRIANGLES, 0, 6); // 6 vertices → 2 triangles
 
     // Clean up
