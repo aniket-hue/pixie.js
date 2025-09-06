@@ -6,16 +6,25 @@ import { createShader } from '../utils/createShader';
 const vertexShaderSource = `
   attribute vec2 a_position;
   uniform vec2 u_resolution;
-  
+  uniform float u_camera_zoom;
+  uniform vec2 u_camera_translation;
+
   void main() {
-    // Convert from pixels to normalized device coordinates (-1 to +1)
-    vec2 clipSpace = ((a_position / u_resolution) * 2.0) - 1.0;
+    // World coordinates
+    vec2 worldPos = a_position - u_camera_translation;
+  
+    // Scale by camera zoom
+    vec2 viewPos = worldPos * u_camera_zoom;
     
-    // Flip Y coordinate (WebGL Y goes up, screen Y goes down)
-    gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+    // Convert to screen coordinates
+    vec2 screenPos = viewPos + u_resolution * 0.5;
+    
+    // Convert to normalized device coordinates (-1 to +1)
+    vec2 clipSpace = ((screenPos / u_resolution) * 2.0) - 1.0;
+    
+    gl_Position = vec4(clipSpace, 0, 1);
   }
 `;
-
 const fragmentShaderSource = `
   precision mediump float;
   uniform vec4 u_color;
@@ -30,16 +39,13 @@ class Renderer {
   ctx: WebGLRenderingContext;
   objects: Shape[] = [];
   camera: Camera;
-  baseProgram: {
-    basic2D: WebGLProgram | null;
-  } = {
-    basic2D: null,
-  };
+  baseProgram: Partial<{
+    basic2D: WebGLProgram;
+  }> = {};
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     const webglCtx = this.canvas.getContext('webgl');
-    this.camera = new Camera(0, 0, 1);
 
     if (!webglCtx) {
       throw new Error('WebGL not supported');
@@ -48,6 +54,8 @@ class Renderer {
     this.ctx = webglCtx;
 
     this.setupWebGL();
+
+    this.camera = new Camera(1, this.canvas);
   }
 
   setupWebGL() {
@@ -57,17 +65,15 @@ class Renderer {
     const baseFragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
     this.baseProgram.basic2D = createProgram(gl, baseVertexShader, baseFragmentShader);
 
-    // Set canvas size to match display size
     this.resizeCanvas();
 
-    // Enable blending for transparency
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-    // Set viewport
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-    // Clear canvas with a light background
+    this.updateResolutionUniform(this.baseProgram.basic2D as WebGLProgram);
+
     this.clear();
   }
 
@@ -76,11 +82,13 @@ class Renderer {
     const displayWidth = canvas.clientWidth;
     const displayHeight = canvas.clientHeight;
 
-    // Check if the canvas is not the same size
     if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
-      // Make the canvas the same size
       canvas.width = displayWidth;
       canvas.height = displayHeight;
+
+      this.updateResolutionUniform(this.baseProgram.basic2D as WebGLProgram);
+
+      this.ctx.viewport(0, 0, canvas.width, canvas.height);
     }
   }
 
@@ -94,18 +102,43 @@ class Renderer {
     this.objects.push(object);
   }
 
+  updateResolutionUniform(program: WebGLProgram) {
+    const gl = this.ctx;
+
+    gl.useProgram(program);
+    const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
+
+    if (resolutionLocation) {
+      gl.uniform2f(resolutionLocation, gl.canvas.width, gl.canvas.height);
+    }
+  }
+
+  updateCameraUniforms(program: WebGLProgram) {
+    const gl = this.ctx;
+
+    gl.useProgram(program);
+
+    const cameraZoomLocation = gl.getUniformLocation(program, 'u_camera_zoom');
+
+    if (cameraZoomLocation) {
+      gl.uniform1f(cameraZoomLocation, this.camera.zoom);
+    }
+
+    const cameraTranslationLocation = gl.getUniformLocation(program, 'u_camera_translation');
+
+    if (cameraTranslationLocation) {
+      gl.uniform2f(cameraTranslationLocation, this.camera.x, this.camera.y);
+    }
+  }
+
   render() {
-    // Clear once
     this.clear();
 
-    // Draw all objects
-    this.objects.forEach((object) => {
-      if (!this.baseProgram.basic2D) {
-        throw new Error('Base vertex shader or fragment shader not set');
-      }
+    this.updateCameraUniforms(this.baseProgram.basic2D as WebGLProgram);
 
+    this.objects.forEach((object) => {
       object.draw(this.ctx, {
-        program: this.baseProgram.basic2D,
+        program: this.baseProgram.basic2D as WebGLProgram,
       });
     });
   }
