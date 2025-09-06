@@ -40,7 +40,7 @@ function App() {
       // // Add infinite grid background
       renderer.addObject(
         new Grid({
-          gridSize: 50,
+          gridSize: 100,
           color: [0.9, 0.9, 0.9, 0.5],
           majorGridSize: 500,
           majorColor: [0.8, 0.8, 0.8, 1],
@@ -48,22 +48,30 @@ function App() {
       );
 
       // Add some demo objects scattered around the infinite canvas
-      const demoObjects = [
-        // Central cluster
-        new Rectangle({ x: 0, y: 0, width: 100, height: 100, color: [1, 0.2, 0.2, 0.8], angle: 0, scaleX: 2, scaleY: 2 }),
-        // new Rectangle({ x: 5, y: 100, width: 80, height: 60, color: [0.2, 1, 0.2, 0.8], angle: Math.PI / 3 }),
-        // new Rectangle({ x: -25, y: 75, width: 60, height: 80, color: [0.2, 0.2, 1, 0.8] }),
+      const demoObjects = [new Rectangle({ x: 0, y: 0, width: 100, height: 100, color: [1, 0.2, 0.2, 0.8], scaleX: 1 })];
 
-        // Distant objects
-        new Rectangle({ x: -800, y: -600, width: 150, height: 100, color: [1, 1, 0.2, 0.7] }),
-        new Rectangle({ x: 600, y: -400, width: 120, height: 120, color: [1, 0.2, 1, 0.7] }),
-        new Rectangle({ x: -200, y: 500, width: 200, height: 80, color: [0.2, 1, 1, 0.7] }),
-        new Rectangle({ x: 700, y: 600, width: 100, height: 180, color: [1, 0.5, 0.2, 0.7] }),
+      const rows = 10;
+      const cols = 10;
+      const spacing = 100;
 
-        // Very distant objects
-        new Rectangle({ x: -1500, y: -1000, width: 300, height: 200, color: [0.5, 0.5, 1, 0.6] }),
-        new Rectangle({ x: 1200, y: 800, width: 250, height: 150, color: [1, 0.5, 0.5, 0.6] }),
-      ];
+      for (let i = -rows / 2; i < rows / 2; i++) {
+        for (let j = -cols / 2; j < cols / 2; j++) {
+          const color = [Math.random(), Math.random(), Math.random(), 1];
+          const angle = Math.random() * 2 * Math.PI;
+          const scaleX = Math.random() * 2 + 1;
+          const scaleY = Math.random() * 2 + 1;
+
+          const row = i;
+          const col = j;
+
+          const x = col * spacing + Math.random();
+          const y = row * spacing + Math.random();
+          const width = Math.random() * 10 + 10;
+          const height = Math.random() * 10 + 10;
+
+          demoObjects.push(new Rectangle({ x, y, width, height, color, scaleX, scaleY, angle }));
+        }
+      }
 
       demoObjects.forEach((obj) => {
         renderer.addObject(obj);
