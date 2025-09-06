@@ -11,15 +11,20 @@ const vertexShaderSource = `
   uniform float u_camera_zoom;
   uniform vec2 u_camera_translation;
   uniform vec2 u_object_center;
+  uniform float u_object_scale_x;
+  uniform float u_object_scale_y;
 
   void main() {
     // Translate to local coordinates relative to the object's center
     vec2 a_position_by_center = a_position - u_object_center;
 
+    // Scale by object scale
+    vec2 scaled_pos = a_position_by_center * vec2(u_object_scale_x, u_object_scale_y);
+
     // Apply rotation to local position (correct matrix * vector order)
     mat2 rotation_matrix = mat2(cos(a_angle), sin(a_angle), -sin(a_angle), cos(a_angle));
-    vec2 rotated_pos = rotation_matrix * a_position_by_center + u_object_center;
-    
+    vec2 rotated_pos = rotation_matrix * scaled_pos + u_object_center;
+
     // Transform to world coordinates (apply camera translation)
     vec2 world_pos = rotated_pos - u_camera_translation;
   
