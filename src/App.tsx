@@ -40,7 +40,7 @@ function App() {
       // // Add infinite grid background
       renderer.addObject(
         new Grid({
-          gridSize: 100,
+          gridSize: 50,
           color: [0.9, 0.9, 0.9, 0.5],
           majorGridSize: 500,
           majorColor: [0.8, 0.8, 0.8, 1],
@@ -50,9 +50,9 @@ function App() {
       // Add some demo objects scattered around the infinite canvas
       const demoObjects = [
         // Central cluster
-        new Rectangle({ x: 0, y: 0, width: 100, height: 100, color: [1, 0.2, 0.2, 0.8], angle: Math.PI / 4 }),
-        new Rectangle({ x: 5, y: 100, width: 80, height: 60, color: [0.2, 1, 0.2, 0.8], angle: Math.PI / 3 }),
-        new Rectangle({ x: -25, y: 75, width: 60, height: 80, color: [0.2, 0.2, 1, 0.8] }),
+        new Rectangle({ x: 0, y: 0, width: 100, height: 100, color: [1, 0.2, 0.2, 0.8], angle: 0, scaleX: 2, scaleY: 2 }),
+        // new Rectangle({ x: 5, y: 100, width: 80, height: 60, color: [0.2, 1, 0.2, 0.8], angle: Math.PI / 3 }),
+        // new Rectangle({ x: -25, y: 75, width: 60, height: 80, color: [0.2, 0.2, 1, 0.8] }),
 
         // Distant objects
         new Rectangle({ x: -800, y: -600, width: 150, height: 100, color: [1, 1, 0.2, 0.7] }),

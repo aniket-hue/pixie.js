@@ -6,6 +6,8 @@ class Rectangle implements Shape {
   angle: number;
   color: [number, number, number, number];
   center: [number, number];
+  scaleX: number;
+  scaleY: number;
 
   constructor({
     x,
@@ -14,6 +16,8 @@ class Rectangle implements Shape {
     height,
     color,
     angle = 0,
+    scaleX = 1,
+    scaleY = 1,
   }: {
     x: number;
     y: number;
@@ -21,6 +25,8 @@ class Rectangle implements Shape {
     height: number;
     color: [number, number, number, number];
     angle?: number;
+    scaleX?: number;
+    scaleY?: number;
   }) {
     const center = flipCoordinatesToWorldSpace(x, y);
 
@@ -29,6 +35,8 @@ class Rectangle implements Shape {
 
     this.angle = angle;
     this.center = [center.x, center.y];
+    this.scaleX = scaleX;
+    this.scaleY = scaleY;
 
     this.vertices = new Float32Array([
       //First triangle
@@ -87,6 +95,8 @@ class Rectangle implements Shape {
     const colorLocation = gl.getUniformLocation(program, 'u_color');
     const angleLocation = gl.getUniformLocation(program, 'a_angle');
     const centerLocation = gl.getUniformLocation(program, 'u_object_center');
+    const scaleXLocation = gl.getUniformLocation(program, 'u_object_scale_x');
+    const scaleYLocation = gl.getUniformLocation(program, 'u_object_scale_y');
 
     // Program is already active and camera/resolution uniforms are already set by renderer
     // Just set the color uniform specific to this rectangle
@@ -106,6 +116,9 @@ class Rectangle implements Shape {
     gl.uniform1f(angleLocation, this.angle);
 
     gl.uniform2f(centerLocation, this.center[0], this.center[1]);
+
+    gl.uniform1f(scaleXLocation, this.scaleX);
+    gl.uniform1f(scaleYLocation, this.scaleY);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6); // 6 vertices → 2 triangles
 
