@@ -2,8 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import { InputHandler } from './webgl/input/InputHandler.class';
 import Renderer from './webgl/renderer/Renderer.class';
+import Circle from './webgl/shapes/Circle.class';
 import { Grid } from './webgl/shapes/Grid.class';
 import Rectangle from './webgl/shapes/Rectangle.class';
+import type { Shape } from './webgl/shapes/types';
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -48,7 +50,7 @@ function App() {
       );
 
       // Add some demo objects scattered around the infinite canvas
-      const demoObjects = [new Rectangle({ x: 0, y: 0, width: 100, height: 100, color: [1, 0.2, 0.2, 0.8], scaleX: 1 })];
+      const demoObjects: Shape[] = [new Rectangle({ x: 0, y: 0, width: 100, height: 100, color: [1, 0.2, 0.2, 0.8], scaleX: 1 })];
 
       const rows = 10;
       const cols = 10;
@@ -60,6 +62,7 @@ function App() {
           const angle = Math.random() * 2 * Math.PI;
           const scaleX = Math.random() * 2 + 1;
           const scaleY = Math.random() * 2 + 1;
+          const radius = Math.random() * 10 + 10;
 
           const row = i;
           const col = j;
@@ -69,7 +72,8 @@ function App() {
           const width = Math.random() * 10 + 10;
           const height = Math.random() * 10 + 10;
 
-          demoObjects.push(new Rectangle({ x, y, width, height, color, scaleX, scaleY, angle }));
+          // demoObjects.push(new Rectangle({ x, y, width, height, color, scaleX, scaleY, angle }));
+          demoObjects.push(new Circle({ x, y, color, radius: 40 }));
         }
       }
 
