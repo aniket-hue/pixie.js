@@ -1,8 +1,9 @@
-import { Camera } from '../camera';
-import { identityMatrix } from '../math';
-import type { Shape } from '../shapes/types';
-import { createProgram } from '../utils/createProgram';
-import { createShader } from '../utils/createShader';
+import { Camera } from './Camera.class';
+import type { Canvas } from './Canvas.class';
+import { Events } from './events';
+import { identityMatrix } from './math';
+import { createProgram } from './utils/createProgram';
+import { createShader } from './utils/createShader';
 
 const vertexShaderSource = `
   attribute vec2 a_position;
@@ -29,79 +30,61 @@ const fragmentShaderSource = `
   }
 `;
 
-class Renderer {
-  canvas: HTMLCanvasElement;
+export class Renderer {
+  canvas: Canvas;
   ctx: WebGLRenderingContext;
-  objects: Shape[] = [];
   camera: Camera;
   baseProgram: Partial<{
     basic2D: WebGLProgram;
   }> = {};
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: Canvas, camera: Camera) {
     this.canvas = canvas;
-    const webglCtx = this.canvas.getContext('webgl');
+    const webglCtx = this.canvas.getCtx();
 
     if (!webglCtx) {
       throw new Error('WebGL not supported');
     }
 
     this.ctx = webglCtx;
+    this.camera = camera;
 
-    this.setupWebGL();
+    this.setupBaseProgram();
 
-    this.camera = new Camera(
-      {
-        zoom: 1,
-        x: 0,
-        y: 0,
-      },
-      this.canvas,
-    );
+    this.initListeners();
   }
 
-  setupWebGL() {
+  initListeners() {
+    this.onCameraChanged = this.onCameraChanged.bind(this);
+    this.canvas.on(Events.ZOOM_CHANGED, this.onCameraChanged);
+    this.canvas.on(Events.PAN_CHANGED, this.onCameraChanged);
+  }
+
+  destroyListeners() {
+    this.canvas.off(Events.ZOOM_CHANGED, this.onCameraChanged);
+    this.canvas.off(Events.PAN_CHANGED, this.onCameraChanged);
+  }
+
+  onCameraChanged() {
+    this.updateCameraUniforms(this.baseProgram.basic2D as WebGLProgram);
+  }
+
+  setupBaseProgram() {
     const gl = this.ctx;
 
     const baseVertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
     const baseFragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
     this.baseProgram.basic2D = createProgram(gl, baseVertexShader, baseFragmentShader);
 
-    this.resizeCanvas();
-
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 
     this.updateResolutionUniform(this.baseProgram.basic2D as WebGLProgram);
+    this.updateCameraUniforms(this.baseProgram.basic2D as WebGLProgram);
 
-    this.clear();
-  }
-
-  resizeCanvas() {
-    const canvas = this.canvas;
-    const displayWidth = canvas.clientWidth;
-    const displayHeight = canvas.clientHeight;
-
-    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
-      canvas.width = displayWidth;
-      canvas.height = displayHeight;
-
-      this.updateResolutionUniform(this.baseProgram.basic2D as WebGLProgram);
-
-      this.ctx.viewport(0, 0, canvas.width, canvas.height);
-    }
-  }
-
-  clear(r = 0, g = 0, b = 0, a = 1.0) {
-    const gl = this.ctx;
-    gl.clearColor(r, g, b, a);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-  }
-
-  addObject(object: Shape) {
-    this.objects.push(object);
+    this.canvas.clear();
   }
 
   updateResolutionUniform(program: WebGLProgram) {
@@ -109,8 +92,9 @@ class Renderer {
     gl.useProgram(program);
 
     const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
+
     if (resolutionLocation) {
-      gl.uniform2f(resolutionLocation, gl.canvas.width, gl.canvas.height);
+      gl.uniform2f(resolutionLocation, this.canvas.width, this.canvas.height);
     }
   }
 
@@ -131,16 +115,17 @@ class Renderer {
   }
 
   render() {
-    this.clear();
+    this.canvas.clear();
 
-    this.updateCameraUniforms(this.baseProgram.basic2D as WebGLProgram);
-
-    this.objects.forEach((object) => {
+    this.canvas.objects.forEach((object) => {
       object.draw(this.ctx, {
         program: this.baseProgram.basic2D as WebGLProgram,
       });
     });
   }
-}
 
-export default Renderer;
+  destroy() {
+    this.destroyListeners();
+    this.baseProgram = {};
+  }
+}

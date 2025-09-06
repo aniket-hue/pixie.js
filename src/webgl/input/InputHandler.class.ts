@@ -1,4 +1,4 @@
-import type { Camera } from '../camera/Camera.class';
+import type { Camera } from '../Camera.class';
 import { PRIMARY_MODIFIER_KEY } from './constants';
 
 export class InputHandler {
@@ -14,6 +14,9 @@ export class InputHandler {
   private setupEventListeners() {
     // Mouse wheel for zoom
     this.canvas.addEventListener('wheel', this.handleWheel.bind(this));
+    this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
+    this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
+    this.canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
 
     // Prevent context menu
     this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -30,17 +33,30 @@ export class InputHandler {
       const mouseX = event.clientX - rect.left;
       const mouseY = event.clientY - rect.top;
 
-      console.log(mouseX, mouseY, event.clientX, event.clientY);
-
       this.camera.zoomAt(event.deltaY, mouseX, mouseY);
     } else {
       this.camera.pan(event.deltaX, event.deltaY);
     }
   }
 
+  private handleMouseMove(event: MouseEvent) {
+    event.preventDefault();
+  }
+
+  private handleMouseDown(event: MouseEvent) {
+    event.preventDefault();
+  }
+
+  private handleMouseUp(event: MouseEvent) {
+    event.preventDefault();
+  }
+
   // Cleanup event listeners
   destroy() {
     this.canvas.removeEventListener('wheel', this.handleWheel);
     this.canvas.removeEventListener('contextmenu', (e) => e.preventDefault());
+    this.canvas.removeEventListener('mousemove', this.handleMouseMove);
+    this.canvas.removeEventListener('mousedown', this.handleMouseDown);
+    this.canvas.removeEventListener('mouseup', this.handleMouseUp);
   }
 }
