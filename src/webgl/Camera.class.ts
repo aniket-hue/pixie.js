@@ -1,4 +1,6 @@
-import { m3 } from '../math';
+import type { Canvas } from './Canvas.class';
+import { Events } from './events';
+import { m3 } from './math';
 
 export interface Point {
   x: number;
@@ -9,7 +11,7 @@ export class Camera {
   minZoom: number = 0.1;
   maxZoom: number = 5;
 
-  canvas: HTMLCanvasElement;
+  canvas: Canvas;
   viewportTransformMatrix: number[];
 
   constructor(
@@ -22,7 +24,7 @@ export class Camera {
       x: number;
       y: number;
     },
-    canvas: HTMLCanvasElement,
+    canvas: Canvas,
   ) {
     this.canvas = canvas;
     this.viewportTransformMatrix = [1, 0, 0, 0, 1, 0, 0, 0, 1];
@@ -54,6 +56,8 @@ export class Camera {
       const scaleMatrix = m3.scaling(scale, scale);
       this.viewportTransformMatrix = m3.multiply(this.viewportTransformMatrix, scaleMatrix);
     }
+
+    this.canvas.fire(Events.ZOOM_CHANGED, this.zoom);
   }
 
   zoomAt(factor: number, screenX?: number, screenY?: number) {
@@ -73,6 +77,7 @@ export class Camera {
     }
 
     if (dZoom === 1) return;
+
     if (screenX !== undefined && screenY !== undefined) {
       const canvasWidth = this.canvas.width;
       const canvasHeight = this.canvas.height;
@@ -91,6 +96,8 @@ export class Camera {
       const scaleMatrix = m3.scaling(dZoom, dZoom);
       this.viewportTransformMatrix = m3.multiply(this.viewportTransformMatrix, scaleMatrix);
     }
+
+    this.canvas.fire(Events.ZOOM_CHANGED, this.zoom);
   }
 
   pan(deltaX: number, deltaY: number) {
@@ -100,6 +107,7 @@ export class Camera {
 
     const translationMatrix = m3.translation(panX, panY);
     this.viewportTransformMatrix = m3.multiply(this.viewportTransformMatrix, translationMatrix);
+    this.canvas.fire(Events.PAN_CHANGED, this.x, this.y);
   }
 
   convertScreenToWorld(screenX: number, screenY: number) {

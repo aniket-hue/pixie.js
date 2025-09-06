@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
+import { Canvas } from './webgl/Canvas.class';
 import { InputHandler } from './webgl/input/InputHandler.class';
-import Renderer from './webgl/renderer/Renderer.class';
+import { Renderer } from './webgl/Renderer.class';
 import Circle from './webgl/shapes/Circle.class';
 import { Grid } from './webgl/shapes/Grid.class';
 import Rectangle from './webgl/shapes/Rectangle.class';
@@ -9,38 +10,30 @@ import type { Shape } from './webgl/shapes/types';
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rendererRef = useRef<Renderer | null>(null);
-  const inputHandlerRef = useRef<InputHandler | null>(null);
+  const webglCanvasRef = useRef<Canvas>(null);
   const animationFrameRef = useRef<number | null>(null);
   const [cameraInfo, setCameraInfo] = useState({ zoom: 1 });
 
   const animate = useCallback(() => {
-    if (rendererRef.current) {
-      rendererRef.current.render();
-
-      // Update camera info display
-      const camera = rendererRef.current.camera;
-
-      setCameraInfo({
-        zoom: Math.round(camera.zoom * 100) / 100,
-      });
+    if (webglCanvasRef.current) {
+      webglCanvasRef.current?.render();
     }
+
     animationFrameRef.current = requestAnimationFrame(animate);
   }, []);
 
   const handleReset = useCallback(() => {
-    if (rendererRef.current) {
-      rendererRef.current.camera.zoom = 1;
+    if (webglCanvasRef.current) {
+      webglCanvasRef.current?.setZoom(1);
     }
   }, []);
 
   useEffect(() => {
     if (canvasRef.current) {
-      const renderer = new Renderer(canvasRef.current);
-      rendererRef.current = renderer;
+      const canvas = new Canvas(canvasRef.current);
+      webglCanvasRef.current = canvas;
 
-      // // Add infinite grid background
-      renderer.addObject(
+      canvas.add(
         new Grid({
           gridSize: 100,
           color: [0.9, 0.9, 0.9, 0.5],
@@ -73,19 +66,13 @@ function App() {
           const height = Math.random() * 10 + 10;
 
           // demoObjects.push(new Rectangle({ x, y, width, height, color, scaleX, scaleY, angle }));
-          demoObjects.push(new Circle({ x, y, color, radius: 40 }));
+          demoObjects.push(new Circle({ x, y, color, radius: radius }));
         }
       }
 
       demoObjects.forEach((obj) => {
-        renderer.addObject(obj);
+        canvas.add(obj);
       });
-
-      // Setup input handling
-      const inputHandler = new InputHandler(canvasRef.current, renderer.camera, () => {
-        // Re-render on interaction (this will be called automatically by the animation loop)
-      });
-      inputHandlerRef.current = inputHandler;
 
       // Start animation loop
       animate();
@@ -94,9 +81,6 @@ function App() {
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
-      }
-      if (inputHandlerRef.current) {
-        inputHandlerRef.current.destroy();
       }
     };
   }, [animate]);
