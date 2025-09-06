@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import { Canvas } from './webgl/Canvas.class';
-import { InputHandler } from './webgl/input/InputHandler.class';
-import { Renderer } from './webgl/Renderer.class';
+import { Events } from './webgl/events';
 import Circle from './webgl/shapes/Circle.class';
 import { Grid } from './webgl/shapes/Grid.class';
 import Rectangle from './webgl/shapes/Rectangle.class';
@@ -32,6 +31,10 @@ function App() {
     if (canvasRef.current) {
       const canvas = new Canvas(canvasRef.current);
       webglCanvasRef.current = canvas;
+
+      canvas.on(Events.ZOOM_CHANGED, (zoom) => {
+        setCameraInfo({ zoom });
+      });
 
       canvas.add(
         new Grid({

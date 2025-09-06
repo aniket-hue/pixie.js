@@ -1,35 +1,39 @@
 import type { Camera } from '../Camera.class';
+import type { Canvas } from '../Canvas.class';
+import { Events } from '../events';
 import { PRIMARY_MODIFIER_KEY } from './constants';
 
 export class InputHandler {
-  private canvas: HTMLCanvasElement;
+  private canvas: Canvas;
   private camera: Camera;
+  private canvasElement: HTMLCanvasElement;
 
-  constructor(canvas: HTMLCanvasElement, camera: Camera) {
+  constructor(canvas: Canvas, camera: Camera) {
     this.canvas = canvas;
+    this.canvasElement = canvas.canvasElement;
     this.camera = camera;
     this.setupEventListeners();
   }
 
   private setupEventListeners() {
     // Mouse wheel for zoom
-    this.canvas.addEventListener('wheel', this.handleWheel.bind(this));
-    this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
-    this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
-    this.canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
+    this.canvasElement.addEventListener('wheel', this.handleWheel.bind(this));
+    this.canvasElement.addEventListener('mousemove', this.handleMouseMove.bind(this));
+    this.canvasElement.addEventListener('mousedown', this.handleMouseDown.bind(this));
+    this.canvasElement.addEventListener('mouseup', this.handleMouseUp.bind(this));
 
     // Prevent context menu
-    this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    this.canvasElement.addEventListener('contextmenu', (e) => e.preventDefault());
 
     // Set cursor style
-    this.canvas.style.cursor = 'default';
+    this.canvasElement.style.cursor = 'default';
   }
 
   private handleWheel(event: WheelEvent) {
     event.preventDefault();
 
     if (event[PRIMARY_MODIFIER_KEY]) {
-      const rect = this.canvas.getBoundingClientRect();
+      const rect = this.canvasElement.getBoundingClientRect();
       const mouseX = event.clientX - rect.left;
       const mouseY = event.clientY - rect.top;
 
@@ -41,22 +45,28 @@ export class InputHandler {
 
   private handleMouseMove(event: MouseEvent) {
     event.preventDefault();
+
+    this.canvas.fire(Events.MOUSE_MOVE, event);
   }
 
   private handleMouseDown(event: MouseEvent) {
     event.preventDefault();
+
+    this.canvas.fire(Events.MOUSE_DOWN, event);
   }
 
   private handleMouseUp(event: MouseEvent) {
     event.preventDefault();
+
+    this.canvas.fire(Events.MOUSE_UP, event);
   }
 
   // Cleanup event listeners
   destroy() {
-    this.canvas.removeEventListener('wheel', this.handleWheel);
-    this.canvas.removeEventListener('contextmenu', (e) => e.preventDefault());
-    this.canvas.removeEventListener('mousemove', this.handleMouseMove);
-    this.canvas.removeEventListener('mousedown', this.handleMouseDown);
-    this.canvas.removeEventListener('mouseup', this.handleMouseUp);
+    this.canvasElement.removeEventListener('wheel', this.handleWheel);
+    this.canvasElement.removeEventListener('contextmenu', (e) => e.preventDefault());
+    this.canvasElement.removeEventListener('mousemove', this.handleMouseMove);
+    this.canvasElement.removeEventListener('mousedown', this.handleMouseDown);
+    this.canvasElement.removeEventListener('mouseup', this.handleMouseUp);
   }
 }
