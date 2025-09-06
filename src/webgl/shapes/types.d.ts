@@ -1,5 +1,5 @@
 export interface Shape {
-  angle: number;
+  angle?: number;
   draw(
     gl: WebGLRenderingContext,
     {
