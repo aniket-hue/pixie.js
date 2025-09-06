@@ -5,8 +5,8 @@ import { createShader } from '../utils/createShader';
 
 const vertexShaderSource = `
   attribute vec2 a_position;
-  attribute float a_angle;
-  
+
+  uniform float a_angle;
   uniform vec2 u_resolution;
   uniform float u_camera_zoom;
   uniform vec2 u_camera_translation;

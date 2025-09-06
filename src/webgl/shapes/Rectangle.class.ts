@@ -81,7 +81,7 @@ class Rectangle implements Shape {
 
     const positionLocation = gl.getAttribLocation(program, 'a_position');
     const colorLocation = gl.getUniformLocation(program, 'u_color');
-    const angleLocation = gl.getAttribLocation(program, 'a_angle');
+    const angleLocation = gl.getUniformLocation(program, 'a_angle');
 
     // Program is already active and camera/resolution uniforms are already set by renderer
     // Just set the color uniform specific to this rectangle
@@ -98,9 +98,7 @@ class Rectangle implements Shape {
       0, // offset (start at beginning)
     );
 
-    gl.enableVertexAttribArray(angleLocation);
-    gl.bindBuffer(gl.ARRAY_BUFFER, angleBuffer);
-    gl.vertexAttribPointer(angleLocation, 1, gl.FLOAT, false, 0, 0);
+    gl.uniform1f(angleLocation, this.angle);
 
     // Draw triangles
     gl.drawArrays(gl.TRIANGLES, 0, 6); // 6 vertices → 2 triangles
