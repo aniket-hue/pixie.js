@@ -1,10 +1,11 @@
 import type { Shape } from './types';
 
-export class Grid implements Shape {
+export class Grid {
   private gridSize: number;
   private color: [number, number, number, number];
   private majorGridSize: number;
   private majorColor: [number, number, number, number];
+  private angle: number;
 
   constructor({
     gridSize = 100,
@@ -21,6 +22,7 @@ export class Grid implements Shape {
     this.color = color;
     this.majorGridSize = majorGridSize;
     this.majorColor = majorColor;
+    this.angle = 0;
   }
 
   draw(gl: WebGLRenderingContext, { program }: { program: WebGLProgram }) {
@@ -57,6 +59,9 @@ export class Grid implements Shape {
     const positionBuffer = gl.createBuffer();
     const positionLocation = gl.getAttribLocation(program, 'a_position');
     const colorLocation = gl.getUniformLocation(program, 'u_color');
+    const angleLocation = gl.getAttribLocation(program, 'a_angle');
+
+    gl.disableVertexAttribArray(angleLocation);
 
     // Draw minor grid lines
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
