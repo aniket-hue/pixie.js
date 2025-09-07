@@ -2,7 +2,7 @@ import { Camera } from './Camera.class';
 import { EventEmitter, type EventKeys } from './events';
 import { InputHandler } from './input/InputHandler.class';
 import { Renderer } from './Renderer.class';
-import type { Shape } from './shapes/types';
+import type { Shape } from './shapes/Shape.class';
 
 export class Canvas {
   objects: Shape[] = [];
@@ -59,11 +59,11 @@ export class Canvas {
   }
 
   get width() {
-    return this.canvasElement.width;
+    return this.canvasElement.clientWidth;
   }
 
   get height() {
-    return this.canvasElement.height;
+    return this.canvasElement.clientHeight;
   }
 
   resize() {
@@ -100,5 +100,13 @@ export class Canvas {
 
   render() {
     this.renderer.render();
+  }
+
+  worldToScreen(x: number, y: number) {
+    return this.camera.worldToScreen(x, y);
+  }
+
+  screenToWorld(x: number, y: number) {
+    return this.camera.screenToWorld(x, y);
   }
 }

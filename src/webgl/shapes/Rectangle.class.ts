@@ -1,37 +1,28 @@
+import type { Canvas } from '../Canvas.class';
 import { flipCoordinatesToWorldSpace, m3 } from '../math';
-import type { Shape } from './types';
+import { Shape } from './Shape.class';
+import type { IRectangleConstructorData, IShapeDrawParams } from './types';
 
-class Rectangle implements Shape {
+class Rectangle extends Shape {
   angle: number;
   color: [number, number, number, number];
   center: [number, number];
   width: number;
   height: number;
+  canvas: Canvas;
   scaleX: number;
   scaleY: number;
+  type: 'rectangle';
 
   transformationMatrix: number[];
   private vertices: Float32Array;
 
-  constructor({
-    x,
-    y,
-    width,
-    height,
-    color,
-    angle = 0,
-    scaleX = 1,
-    scaleY = 1,
-  }: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    color: [number, number, number, number];
-    angle?: number;
-    scaleX?: number;
-    scaleY?: number;
-  }) {
+  constructor({ x, y, width, height, color, angle = 0, scaleX = 1, scaleY = 1, canvas }: IRectangleConstructorData) {
+    super();
+
+    this.canvas = canvas;
+    this.type = 'rectangle';
+
     const center = flipCoordinatesToWorldSpace(x, y);
 
     this.angle = angle;
@@ -48,7 +39,7 @@ class Rectangle implements Shape {
     this.transformationMatrix = m3.multiply(translation, combined);
 
     this.vertices = new Float32Array([-0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5]);
-
+    console.log(this.getBoundsOnScreen());
     this.color = color;
   }
 
@@ -56,18 +47,51 @@ class Rectangle implements Shape {
     return this.vertices;
   }
 
+  getBoundsOnScreen() {
+    const tx = this.viewportTransformMatrix[6];
+    const ty = this.viewportTransformMatrix[7];
+
+    const width = this.width * this.scaleX;
+    const height = this.height * this.scaleY;
+
+    const tlW = this.canvas.worldToScreen(tx - width / 2, ty - height / 2);
+    const trW = this.canvas.worldToScreen(tx + width / 2, ty - height / 2);
+    const blW = this.canvas.worldToScreen(tx - width / 2, ty + height / 2);
+    const brW = this.canvas.worldToScreen(tx + width / 2, ty + height / 2);
+
+    return {
+      tl: tlW,
+      tr: trW,
+      bl: blW,
+      br: brW,
+    };
+  }
+
+  isVisible(): boolean {
+    if (!this.canvas) {
+      return true;
+    }
+
+    const bounds = this.getBoundsOnScreen();
+
+    const isInXBounds = (x: number) => x > 0 && x < this.canvas.width;
+    const isInYBounds = (y: number) => y > 0 && y < this.canvas.height;
+    const isInBounds = (x: number, y: number) => isInXBounds(x) && isInYBounds(y);
+
+    return (
+      isInBounds(bounds.tl.x, bounds.tl.y) ||
+      isInBounds(bounds.tr.x, bounds.tr.y) ||
+      isInBounds(bounds.bl.x, bounds.bl.y) ||
+      isInBounds(bounds.br.x, bounds.br.y)
+    );
+  }
+
   rotate(angle: number) {
     this.angle += angle;
   }
 
-  draw(
-    gl: WebGLRenderingContext,
-    {
-      program,
-    }: {
-      program: WebGLProgram;
-    },
-  ) {
+  draw(gl: WebGLRenderingContext, data: IShapeDrawParams) {
+    const { program } = data;
     const positionBuffer = gl.createBuffer();
 
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);

@@ -1,28 +1,23 @@
+import type { Canvas } from '../Canvas.class';
 import { m3 } from '../math';
-import type { Shape } from './types';
+import { Shape } from './Shape.class';
+import type { ICircleConstructorData } from './types';
 
-class Circle implements Shape {
+class Circle extends Shape {
   angle: number;
   color: [number, number, number, number];
   center: [number, number];
   radius: number;
+  canvas: Canvas;
 
   transformationMatrix: number[];
   private vertices: Float32Array;
 
-  constructor({
-    x,
-    y,
-    color,
-    radius,
-    angle = 0,
-  }: {
-    x: number;
-    y: number;
-    color: [number, number, number, number];
-    radius: number;
-    angle?: number;
-  }) {
+  constructor({ x, y, color, radius, angle = 0, canvas }: ICircleConstructorData) {
+    super();
+
+    this.canvas = canvas;
+    this.type = 'circle';
     this.angle = angle;
     this.color = color;
     this.center = [x, y];
@@ -44,6 +39,21 @@ class Circle implements Shape {
       this.vertices[(i + 1) * 2] = Math.cos(angle) * radius;
       this.vertices[(i + 1) * 2 + 1] = Math.sin(angle) * radius;
     }
+
+    console.log(this.getBoundsOnScreen());
+  }
+
+  getBoundsOnScreen() {
+    const tx = this.viewportTransformMatrix[6];
+    const ty = this.viewportTransformMatrix[7];
+    const radius = this.radius;
+
+    return {
+      tl: this.canvas.worldToScreen(tx - radius, ty - radius),
+      tr: this.canvas.worldToScreen(tx + radius, ty - radius),
+      bl: this.canvas.worldToScreen(tx - radius, ty + radius),
+      br: this.canvas.worldToScreen(tx + radius, ty + radius),
+    };
   }
 
   draw(
