@@ -1,7 +1,7 @@
 import { identityMatrix } from '../math';
 import { Shape } from './Shape.class';
 
-export class Grid extends Shape {
+export class Grid {
   private gridSize: number;
   private color: [number, number, number, number];
   private majorGridSize: number;
@@ -18,10 +18,7 @@ export class Grid extends Shape {
     majorGridSize?: number;
     majorColor?: [number, number, number, number];
   } = {}) {
-    super();
-
     this.gridSize = gridSize;
-    this.type = 'grid';
     this.color = color;
     this.majorGridSize = majorGridSize;
     this.majorColor = majorColor;

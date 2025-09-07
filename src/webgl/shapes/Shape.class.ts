@@ -19,6 +19,10 @@ export class Shape implements IShape {
     throw new Error('Method not implemented.');
   }
 
+  setCenter(x: number, y: number): void {
+    throw new Error('Method not implemented.');
+  }
+
   getBoundsOnScreen(): {
     tl: IPoint;
     tr: IPoint;

@@ -1,5 +1,6 @@
 import type { Canvas } from '../Canvas.class';
-import { flipCoordinatesToWorldSpace, m3 } from '../math';
+import { Events } from '../events';
+import { identityMatrix, m3 } from '../math';
 import { Shape } from './Shape.class';
 import type { IRectangleConstructorData, IShapeDrawParams } from './types';
 
@@ -42,7 +43,11 @@ class Rectangle extends Shape {
 
     this.transformationMatrix = m3.multiply(translation, combined);
 
-    this.vertices = new Float32Array([-0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5]);
+    this.vertices = new Float32Array([
+      -0.5, -0.5, 0.5, -0.5, -0.5, 0.5,
+      // Second triangle
+      -0.5, 0.5, 0.5, -0.5, 0.5, 0.5,
+    ]);
     this.color = color;
   }
 
@@ -50,24 +55,52 @@ class Rectangle extends Shape {
     return this.vertices;
   }
 
+  setCenter(x: number, y: number) {
+    const scale = m3.scaling(this.scaleX * this.width, this.scaleY * this.height);
+    const rotation = m3.rotation(this.angle);
+    const combined = m3.multiply(rotation, scale);
+    const translation = m3.translation(x, y);
+
+    this.transformationMatrix = m3.multiply(translation, combined);
+    this.center = [x, y];
+
+    this.canvas.fire(Events.RENDER);
+  }
+
   getBoundsOnScreen() {
-    const tx = this.transformationMatrix[6];
-    const ty = this.transformationMatrix[7];
-
-    const width = this.width * this.scaleX;
-    const height = this.height * this.scaleY;
-
-    const tlW = this.canvas.worldToScreen(tx - width / 2, ty - height / 2);
-    const trW = this.canvas.worldToScreen(tx + width / 2, ty - height / 2);
-    const blW = this.canvas.worldToScreen(tx - width / 2, ty + height / 2);
-    const brW = this.canvas.worldToScreen(tx + width / 2, ty + height / 2);
+    const mat = m3.multiply(this.canvas.camera.viewportTransformMatrix, this.transformationMatrix);
 
     return {
-      tl: tlW,
-      tr: trW,
-      bl: blW,
-      br: brW,
+      tl: m3.transformPoint(mat, -0.5, 0.5),
+      tr: m3.transformPoint(mat, 0.5, 0.5),
+      bl: m3.transformPoint(mat, -0.5, -0.5),
+      br: m3.transformPoint(mat, 0.5, -0.5),
     };
+  }
+
+  containsPoint(x: number, y: number, options = { screen: false }) {
+    if (options.screen) {
+      const worldCoords = this.canvas.screenToWorld(x, y);
+      x = worldCoords.x;
+      y = worldCoords.y;
+    }
+
+    const { tl, tr, bl } = this.getBoundsOnScreen();
+
+    const v0 = { x: tr.x - tl.x, y: tr.y - tl.y };
+    const v1 = { x: bl.x - tl.x, y: bl.y - tl.y };
+    const v2 = { x: x - tl.x, y: y - tl.y };
+
+    const dot00 = v0.x * v0.x + v0.y * v0.y;
+    const dot02 = v0.x * v2.x + v0.y * v2.y;
+
+    const dot11 = v1.x * v1.x + v1.y * v1.y;
+    const dot12 = v1.x * v2.x + v1.y * v2.y;
+
+    const u = dot02 / dot00;
+    const v = dot12 / dot11;
+
+    return u >= 0 && u <= 1 && v >= 0 && v <= 1;
   }
 
   isVisible(): boolean {
