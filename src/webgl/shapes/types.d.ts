@@ -29,17 +29,3 @@ export interface ICircleConstructorData extends IShapeConstructorData {
   radius: number;
   angle?: number;
 }
-
-export interface IShape {
-  type: 'rectangle' | 'circle';
-  viewportTransformMatrix: number[];
-  draw(gl: WebGLRenderingContext, data: IShapeDrawParams): void;
-  isVisible(): boolean;
-  setCenter(x: number, y: number): void;
-  getBoundsOnScreen(): {
-    tl: IPoint;
-    tr: IPoint;
-    bl: IPoint;
-    br: IPoint;
-  };
-}
