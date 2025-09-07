@@ -57,10 +57,9 @@ export class RenderSystem {
       -0.5, 0.5, 0.5, -0.5, 0.5, 0.5,
     ]);
 
-    // Create circle vertices (triangle fan)
     const segments = 32;
     this.circleVertices = new Float32Array((segments + 2) * 2);
-    this.circleVertices[0] = 0; // Center
+    this.circleVertices[0] = 0;
     this.circleVertices[1] = 0;
 
     for (let i = 0; i <= segments; i++) {
@@ -107,7 +106,6 @@ export class RenderSystem {
     const colorLocation = gl.getUniformLocation(program, 'u_color');
     const transformationMatrixLocation = gl.getUniformLocation(program, 'u_object_transformation_matrix');
 
-    // Separate shapes by type for efficient rendering
     const rectangles: Array<{ transform: Transform; style: Style }> = [];
     const circles: Array<{ transform: Transform; style: Style }> = [];
 
@@ -126,9 +124,6 @@ export class RenderSystem {
       }
     }
 
-    console.log(rectangles, circles);
-
-    // Render rectangles
     if (rectangles.length > 0) {
       gl.enableVertexAttribArray(positionLocation);
       gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
@@ -140,7 +135,6 @@ export class RenderSystem {
       }
     }
 
-    // Switch to circle vertices and render circles
     if (circles.length > 0) {
       gl.bufferData(gl.ARRAY_BUFFER, this.circleVertices, gl.STATIC_DRAW);
       gl.enableVertexAttribArray(positionLocation);

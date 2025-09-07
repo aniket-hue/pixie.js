@@ -27,7 +27,7 @@ export interface IRectangleConstructorData extends IShapeConstructorData {
 export interface ICircleConstructorData extends IShapeConstructorData {
   x: number;
   y: number;
-  color: [number, number, number, number];
+  fill: [number, number, number, number];
   radius: number;
   angle?: number;
 }
