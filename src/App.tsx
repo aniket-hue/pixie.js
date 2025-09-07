@@ -32,8 +32,8 @@ function App() {
       // Add some demo objects scattered around the infinite canvas
       const demoObjects: Shape[] = [new Rectangle({ x: -100, y: -100, width: 100, height: 100, color: [1, 0.2, 0.2, 0.8], canvas })];
 
-      const rows = 2;
-      const cols = 2;
+      const rows = 10;
+      const cols = 10;
       const spacing = 100;
 
       for (let i = -rows / 2; i < rows / 2; i++) {

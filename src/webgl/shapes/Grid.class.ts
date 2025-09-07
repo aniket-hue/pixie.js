@@ -59,6 +59,7 @@ export class Grid {
     const positionLocation = gl.getAttribLocation(program, 'a_position');
     const colorLocation = gl.getUniformLocation(program, 'u_color');
     const transformationMatrixLocation = gl.getUniformLocation(program, 'u_object_transformation_matrix');
+    gl.uniformMatrix3fv(transformationMatrixLocation, false, identityMatrix);
 
     // Draw minor grid lines
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
@@ -75,7 +76,6 @@ export class Grid {
     gl.uniform4f(colorLocation, this.majorColor[0], this.majorColor[1], this.majorColor[2], this.majorColor[3]);
 
     gl.drawArrays(gl.LINES, 0, majorVertices.length / 2);
-    gl.uniformMatrix3fv(transformationMatrixLocation, false, identityMatrix);
 
     // Clean up
     gl.deleteBuffer(positionBuffer);
