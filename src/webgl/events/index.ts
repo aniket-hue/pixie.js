@@ -7,6 +7,9 @@ export enum Events {
   MOUSE_DOWN = 'mouse_down',
   MOUSE_UP = 'mouse_up',
 
+  KEY_DOWN = 'key_down',
+  KEY_UP = 'key_up',
+
   RENDER = 'render',
 }
 
