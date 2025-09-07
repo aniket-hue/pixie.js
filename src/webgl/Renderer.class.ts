@@ -102,8 +102,6 @@ export class Renderer {
     this.updateResolutionUniform(this.baseProgram.basic2D as WebGLProgram);
     this.updateCameraUniforms(this.baseProgram.basic2D as WebGLProgram);
 
-    this.canvas.clear();
-
     this.setupGrid();
 
     tick().then(() => {
@@ -145,7 +143,7 @@ export class Renderer {
       program: this.baseProgram.basic2D as WebGLProgram,
     });
 
-    const visibleObjects = this.canvas.objects.filter((object) => true || object.isVisible());
+    const visibleObjects = this.canvas.objects.filter((object) => object.isVisible());
 
     visibleObjects.forEach((object) => {
       object.draw(this.ctx, {
