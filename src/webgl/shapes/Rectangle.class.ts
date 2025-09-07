@@ -1,6 +1,6 @@
 import type { Canvas } from '../Canvas.class';
 import { Events } from '../events';
-import { identityMatrix, m3 } from '../math';
+import { m3 } from '../math';
 import { Shape } from './Shape.class';
 import type { IRectangleConstructorData, IShapeDrawParams } from './types';
 
@@ -81,26 +81,15 @@ class Rectangle extends Shape {
   containsPoint(x: number, y: number, options = { screen: false }) {
     if (options.screen) {
       const worldCoords = this.canvas.screenToWorld(x, y);
+
       x = worldCoords.x;
       y = worldCoords.y;
     }
 
-    const { tl, tr, bl } = this.getBoundsOnScreen();
-
-    const v0 = { x: tr.x - tl.x, y: tr.y - tl.y };
-    const v1 = { x: bl.x - tl.x, y: bl.y - tl.y };
-    const v2 = { x: x - tl.x, y: y - tl.y };
-
-    const dot00 = v0.x * v0.x + v0.y * v0.y;
-    const dot02 = v0.x * v2.x + v0.y * v2.y;
-
-    const dot11 = v1.x * v1.x + v1.y * v1.y;
-    const dot12 = v1.x * v2.x + v1.y * v2.y;
-
-    const u = dot02 / dot00;
-    const v = dot12 / dot11;
-
-    return u >= 0 && u <= 1 && v >= 0 && v <= 1;
+    const worldPoint = this.canvas.screenToWorld(x, y);
+    const inverseMatrix = m3.inverse(this.transformationMatrix);
+    const localPoint = m3.transformPoint(inverseMatrix, worldPoint.x, worldPoint.y);
+    return localPoint.x >= -0.5 && localPoint.x <= 0.5 && localPoint.y >= -0.5 && localPoint.y <= 0.5;
   }
 
   isVisible(): boolean {
