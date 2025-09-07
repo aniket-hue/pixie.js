@@ -2,6 +2,7 @@ import { Camera } from './Camera.class';
 import { EventEmitter, type EventKeys } from './events';
 import { InputHandler } from './input/InputHandler.class';
 import { Renderer } from './Renderer.class';
+import { Selection } from './selection';
 import type { Shape } from './shapes/Shape.class';
 
 export class Canvas {
@@ -12,12 +13,12 @@ export class Canvas {
   renderer: Renderer;
   camera: Camera;
   inputHandler: InputHandler;
+  selection: Selection;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvasElement = canvas;
 
     this.events = new EventEmitter();
-
     this.camera = new Camera(
       {
         zoom: 1,
@@ -26,10 +27,9 @@ export class Canvas {
       },
       this,
     );
-
     this.renderer = new Renderer(this, this.camera);
-
     this.inputHandler = new InputHandler(this, this.camera);
+    this.selection = new Selection(this);
 
     this.resize();
   }
@@ -66,6 +66,10 @@ export class Canvas {
     return this.canvasElement.clientHeight;
   }
 
+  get zoom() {
+    return this.camera.zoom;
+  }
+
   resize() {
     const canvas = this.canvasElement;
     const displayWidth = canvas.clientWidth;
@@ -96,10 +100,6 @@ export class Canvas {
 
     gl.clearColor(r, g, b, a);
     gl.clear(gl.COLOR_BUFFER_BIT);
-  }
-
-  render() {
-    this.renderer.render();
   }
 
   worldToScreen(x: number, y: number) {

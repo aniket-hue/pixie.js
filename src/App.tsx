@@ -29,22 +29,11 @@ function App() {
 
       window.cx = canvas;
 
-      canvas.add(
-        new Grid({
-          gridSize: 100,
-          color: [0.9, 0.9, 0.9, 0.5],
-          majorGridSize: 500,
-          majorColor: [0.8, 0.8, 0.8, 1],
-        }),
-      );
-
       // Add some demo objects scattered around the infinite canvas
-      const demoObjects: Shape[] = [new Rectangle({ x: 400, y: 400, width: 100, height: 100, color: [1, 0.2, 0.2, 0.8], scaleX: 1, canvas })];
+      const demoObjects: Shape[] = [new Rectangle({ x: -100, y: -100, width: 100, height: 100, color: [1, 0.2, 0.2, 0.8], canvas })];
 
-      console.log(demoObjects[0]);
-
-      const rows = 10;
-      const cols = 10;
+      const rows = 2;
+      const cols = 2;
       const spacing = 100;
 
       for (let i = -rows / 2; i < rows / 2; i++) {

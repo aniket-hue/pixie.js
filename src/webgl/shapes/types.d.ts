@@ -35,6 +35,7 @@ export interface IShape {
   viewportTransformMatrix: number[];
   draw(gl: WebGLRenderingContext, data: IShapeDrawParams): void;
   isVisible(): boolean;
+  setCenter(x: number, y: number): void;
   getBoundsOnScreen(): {
     tl: IPoint;
     tr: IPoint;

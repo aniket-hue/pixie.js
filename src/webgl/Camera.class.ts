@@ -81,7 +81,7 @@ export class Camera {
 
     if (screenX !== undefined && screenY !== undefined) {
       const pointX = screenX;
-      const pointY = screenY;
+      const pointY = this.canvas.height - screenY;
 
       const translateToPoint = m3.translation(pointX, pointY);
       const scale = m3.scaling(dZoom, dZoom);
@@ -112,12 +112,8 @@ export class Camera {
   }
 
   screenToWorld(screenX: number, screenY: number) {
-    // Convert screen coordinates to center-origin coordinates
-    const x = screenX - this.canvas.width / 2;
-    const y = screenY - this.canvas.height / 2; // Flip Y: Screen Y+ down → WebGL Y+ up
-
     const inverseMatrix = m3.inverse(this.viewportTransformMatrix);
-    return m3.transformPoint(inverseMatrix, x, y);
+    return m3.transformPoint(inverseMatrix, screenX, screenY);
   }
 
   worldToScreen(x: number, y: number) {

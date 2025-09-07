@@ -1,8 +1,9 @@
-import { Camera } from './Camera.class';
+import type { Camera } from './Camera.class';
 
 import type { Canvas } from './Canvas.class';
 import { Events } from './events';
 import { identityMatrix } from './math';
+import { Grid } from './shapes/Grid.class';
 import { createProgram } from './utils/createProgram';
 import { createShader } from './utils/createShader';
 import { tick } from './utils/tick';
@@ -34,6 +35,7 @@ const fragmentShaderSource = `
 
 export class Renderer {
   canvas: Canvas;
+  grid: Grid;
   ctx: WebGLRenderingContext;
   camera: Camera;
   baseProgram: Partial<{
@@ -57,19 +59,32 @@ export class Renderer {
 
   initListeners() {
     this.onCameraChanged = this.onCameraChanged.bind(this);
+    this.render = this.render.bind(this);
+
     this.canvas.on(Events.ZOOM_CHANGED, this.onCameraChanged);
     this.canvas.on(Events.PAN_CHANGED, this.onCameraChanged);
+    this.canvas.on(Events.RENDER, this.render);
   }
 
   destroyListeners() {
     this.canvas.off(Events.ZOOM_CHANGED, this.onCameraChanged);
     this.canvas.off(Events.PAN_CHANGED, this.onCameraChanged);
+    this.canvas.off(Events.RENDER, this.render);
   }
 
   onCameraChanged() {
     this.updateCameraUniforms(this.baseProgram.basic2D as WebGLProgram);
 
     this.render();
+  }
+
+  setupGrid() {
+    this.grid = new Grid({
+      gridSize: 100,
+      color: [0.9, 0.9, 0.9, 0.5],
+      majorGridSize: 500,
+      majorColor: [0.8, 0.8, 0.8, 1],
+    });
   }
 
   setupBaseProgram() {
@@ -88,6 +103,8 @@ export class Renderer {
     this.updateCameraUniforms(this.baseProgram.basic2D as WebGLProgram);
 
     this.canvas.clear();
+
+    this.setupGrid();
 
     tick().then(() => {
       this.render();
@@ -124,8 +141,11 @@ export class Renderer {
   render() {
     this.canvas.clear();
 
-    const visibleObjects = this.canvas.objects.filter((object) => object.isVisible());
-    console.log(visibleObjects.length);
+    this.grid.draw(this.ctx, {
+      program: this.baseProgram.basic2D as WebGLProgram,
+    });
+
+    const visibleObjects = this.canvas.objects.filter((object) => true || object.isVisible());
 
     visibleObjects.forEach((object) => {
       object.draw(this.ctx, {
