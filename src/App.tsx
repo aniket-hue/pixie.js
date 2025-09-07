@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import { Canvas } from './webgl/Canvas.class';
 import { Events } from './webgl/events';
+import Circle from './webgl/shapes/Circle.class';
 import Rectangle from './webgl/shapes/Rectangle.class';
 import type { Shape } from './webgl/shapes/Shape.class';
 
@@ -25,10 +26,10 @@ function App() {
         setCameraInfo({ zoom });
       });
 
-      window.cx = canvas;
+      (window as any).cx = canvas;
 
       // Add some demo objects scattered around the infinite canvas
-      const demoObjects: Shape[] = [new Rectangle({ x: -100, y: -100, width: 100, height: 100, fill: [1, 0.2, 0.2, 0.8], canvas })];
+      new Rectangle({ x: 0, y: 0, width: 100, height: 100, fill: [1, 0.2, 0.2, 0.8], canvas });
 
       const rows = 10;
       const cols = 10;
@@ -49,14 +50,10 @@ function App() {
           const width = Math.random() * 10 + 10;
           const height = Math.random() * 10 + 10;
 
-          demoObjects.push(new Rectangle({ x, y, width, height, fill, scaleX, scaleY, angle, canvas }));
+          new Rectangle({ x, y, width, height, fill, scaleX, scaleY, angle, canvas });
           // demoObjects.push(new Circle({ x, y, color, radius: radius, canvas }));
         }
       }
-
-      demoObjects.forEach((obj) => {
-        canvas.add(obj);
-      });
     }
   }, []);
 

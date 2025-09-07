@@ -1,23 +1,25 @@
 import { Camera } from './Camera.class';
+import { World } from './ecs/World.class';
 import { EventEmitter, type EventKeys } from './events';
 import { InputHandler } from './input/InputHandler.class';
 import { Renderer } from './Renderer.class';
-import { Selection } from './selection';
-import type { Shape } from './shapes/Shape.class';
 
 export class Canvas {
-  objects: Shape[] = [];
+  objects = [];
+
+  // ECS World
+  world: World;
 
   canvasElement: HTMLCanvasElement;
   events: EventEmitter;
   renderer: Renderer;
   camera: Camera;
   inputHandler: InputHandler;
-  selection: Selection;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvasElement = canvas;
 
+    this.world = new World();
     this.events = new EventEmitter();
     this.camera = new Camera(
       {
@@ -29,13 +31,8 @@ export class Canvas {
     );
     this.renderer = new Renderer(this, this.camera);
     this.inputHandler = new InputHandler(this, this.camera);
-    this.selection = new Selection(this);
 
     this.resize();
-  }
-
-  add(object: Shape) {
-    this.objects.push(object);
   }
 
   getCtx() {
