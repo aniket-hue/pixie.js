@@ -23,7 +23,10 @@ class Rectangle extends Shape {
     this.canvas = canvas;
     this.type = 'rectangle';
 
-    const center = flipCoordinatesToWorldSpace(x, y);
+    const center = {
+      x,
+      y,
+    };
 
     this.angle = angle;
     this.center = [center.x, center.y];
@@ -36,10 +39,10 @@ class Rectangle extends Shape {
     const rotation = m3.rotation(angle);
     const combined = m3.multiply(rotation, scale);
     const translation = m3.translation(center.x, center.y);
+
     this.transformationMatrix = m3.multiply(translation, combined);
 
     this.vertices = new Float32Array([-0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5]);
-    console.log(this.getBoundsOnScreen());
     this.color = color;
   }
 
@@ -48,8 +51,8 @@ class Rectangle extends Shape {
   }
 
   getBoundsOnScreen() {
-    const tx = this.viewportTransformMatrix[6];
-    const ty = this.viewportTransformMatrix[7];
+    const tx = this.transformationMatrix[6];
+    const ty = this.transformationMatrix[7];
 
     const width = this.width * this.scaleX;
     const height = this.height * this.scaleY;

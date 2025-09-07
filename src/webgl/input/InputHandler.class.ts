@@ -32,8 +32,9 @@ export class InputHandler {
   private handleWheel(event: WheelEvent) {
     event.preventDefault();
 
+    const rect = this.canvasElement.getBoundingClientRect();
+
     if (event[PRIMARY_MODIFIER_KEY]) {
-      const rect = this.canvasElement.getBoundingClientRect();
       const mouseX = event.clientX - rect.left;
       const mouseY = event.clientY - rect.top;
 

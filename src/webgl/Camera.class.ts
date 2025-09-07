@@ -102,7 +102,7 @@ export class Camera {
   pan(deltaX: number, deltaY: number) {
     const currentZoom = this.zoom;
     const panX = -deltaX / currentZoom;
-    const panY = -deltaY / currentZoom;
+    const panY = deltaY / currentZoom;
 
     const translationMatrix = m3.translation(panX, panY);
 
@@ -112,11 +112,20 @@ export class Camera {
   }
 
   screenToWorld(screenX: number, screenY: number) {
+    // Convert screen coordinates to center-origin coordinates
+    const x = screenX - this.canvas.width / 2;
+    const y = screenY - this.canvas.height / 2; // Flip Y: Screen Y+ down → WebGL Y+ up
+
     const inverseMatrix = m3.inverse(this.viewportTransformMatrix);
-    return m3.transformPoint(inverseMatrix, screenX, screenY);
+    return m3.transformPoint(inverseMatrix, x, y);
   }
 
   worldToScreen(x: number, y: number) {
-    return m3.transformPoint(this.viewportTransformMatrix, x, y);
+    const point = m3.transformPoint(this.viewportTransformMatrix, x, y);
+
+    return {
+      x: point.x,
+      y: point.y,
+    };
   }
 }

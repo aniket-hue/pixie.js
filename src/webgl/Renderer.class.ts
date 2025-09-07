@@ -19,7 +19,7 @@ const vertexShaderSource = `
     vec2 zeroToOne = position / u_resolution;
     vec2 zeroToTwo = zeroToOne * 2.0;
     vec2 clipSpace = zeroToTwo - 1.0;
-    gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+    gl_Position = vec4(clipSpace, 0, 1);
   }
 `;
 
@@ -124,12 +124,10 @@ export class Renderer {
   render() {
     this.canvas.clear();
 
-    this.canvas.objects.forEach((object) => {
-      console.log('rendering', object.type, object.isVisible());
-      if (!object.isVisible()) {
-        return;
-      }
+    const visibleObjects = this.canvas.objects.filter((object) => object.isVisible());
+    console.log(visibleObjects.length);
 
+    visibleObjects.forEach((object) => {
       object.draw(this.ctx, {
         program: this.baseProgram.basic2D as WebGLProgram,
       });
