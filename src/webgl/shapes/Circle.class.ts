@@ -39,8 +39,6 @@ class Circle extends Shape {
       this.vertices[(i + 1) * 2] = Math.cos(angle) * radius;
       this.vertices[(i + 1) * 2 + 1] = Math.sin(angle) * radius;
     }
-
-    console.log(this.getBoundsOnScreen());
   }
 
   getBoundsOnScreen() {

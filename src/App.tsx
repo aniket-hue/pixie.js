@@ -39,10 +39,12 @@ function App() {
       );
 
       // Add some demo objects scattered around the infinite canvas
-      const demoObjects: Shape[] = [new Rectangle({ x: 0, y: 0, width: 100, height: 100, color: [1, 0.2, 0.2, 0.8], scaleX: 1, canvas })];
+      const demoObjects: Shape[] = [new Rectangle({ x: 400, y: 400, width: 100, height: 100, color: [1, 0.2, 0.2, 0.8], scaleX: 1, canvas })];
 
-      const rows = 1;
-      const cols = 1;
+      console.log(demoObjects[0]);
+
+      const rows = 10;
+      const cols = 10;
       const spacing = 100;
 
       for (let i = -rows / 2; i < rows / 2; i++) {
@@ -61,8 +63,8 @@ function App() {
           const width = Math.random() * 10 + 10;
           const height = Math.random() * 10 + 10;
 
-          // demoObjects.push(new Rectangle({ x, y, width, height, color, scaleX, scaleY, angle }));
-          demoObjects.push(new Circle({ x: 0, y: 0, color, radius: radius, canvas }));
+          demoObjects.push(new Rectangle({ x, y, width, height, color, scaleX, scaleY, angle, canvas }));
+          // demoObjects.push(new Circle({ x, y, color, radius: radius, canvas }));
         }
       }
 
