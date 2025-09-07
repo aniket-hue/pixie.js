@@ -1,15 +1,15 @@
-import { v4 } from 'uuid';
 import type { Canvas } from '../Canvas.class';
-import type { IPoint, IShape, IShapeDrawParams } from './types';
+import { uuidv4 } from '../utils/uuid';
+import type { IPoint, IShapeDrawParams } from './types';
 
-export class Shape implements IShape {
+export class Shape {
   id: string;
   viewportTransformMatrix: number[];
   canvas: Canvas | null;
   type: 'rectangle' | 'circle';
 
   constructor() {
-    this.id = v4();
+    this.id = uuidv4();
     this.viewportTransformMatrix = [1, 0, 0, 0, 1, 0, 0, 0, 1];
     this.type = 'rectangle';
     this.canvas = null;
@@ -20,6 +20,10 @@ export class Shape implements IShape {
   }
 
   setCenter(x: number, y: number): void {
+    throw new Error('Method not implemented.');
+  }
+
+  containsPoint(x: number, y: number): boolean {
     throw new Error('Method not implemented.');
   }
 

@@ -52,6 +52,12 @@ export class Renderer {
 
     this.ctx = webglCtx;
     this.camera = camera;
+    this.grid = new Grid({
+      gridSize: 100,
+      color: [0.9, 0.9, 0.9, 0.5],
+      majorGridSize: 500,
+      majorColor: [0.8, 0.8, 0.8, 1],
+    });
 
     this.setupBaseProgram();
     this.initListeners();
@@ -78,15 +84,6 @@ export class Renderer {
     this.render();
   }
 
-  setupGrid() {
-    this.grid = new Grid({
-      gridSize: 100,
-      color: [0.9, 0.9, 0.9, 0.5],
-      majorGridSize: 500,
-      majorColor: [0.8, 0.8, 0.8, 1],
-    });
-  }
-
   setupBaseProgram() {
     const gl = this.ctx;
 
@@ -101,8 +98,6 @@ export class Renderer {
 
     this.updateResolutionUniform(this.baseProgram.basic2D as WebGLProgram);
     this.updateCameraUniforms(this.baseProgram.basic2D as WebGLProgram);
-
-    this.setupGrid();
 
     tick().then(() => {
       this.render();
