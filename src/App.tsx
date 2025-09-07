@@ -41,6 +41,7 @@ function App() {
           const angle = Math.random() * 2 * Math.PI;
           const scaleX = Math.random() * 2 + 1;
           const scaleY = Math.random() * 2 + 1;
+          const radius = Math.random() * 10 + 10;
 
           const row = i;
           const col = j;
@@ -50,8 +51,8 @@ function App() {
           const width = Math.random() * 10 + 10;
           const height = Math.random() * 10 + 10;
 
-          new Rectangle({ x, y, width, height, fill, scaleX, scaleY, angle, canvas });
-          // demoObjects.push(new Circle({ x, y, color, radius: radius, canvas }));
+          // new Rectangle({ x, y, width, height, fill, scaleX, scaleY, angle, canvas });
+          new Circle({ x, y, fill, radius, canvas });
         }
       }
     }

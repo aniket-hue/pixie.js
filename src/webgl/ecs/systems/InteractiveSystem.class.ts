@@ -87,7 +87,10 @@ export class InteractiveSystem {
     const size = this.world.getComponent<Size>('size', entityId);
     if (!size) return;
 
-    const scale = m3.scaling(transform.scale.x * (size.width || 1), transform.scale.y * (size.height || 1));
+    const sx = size.width ? size.width : size.radius ? size.radius : 1;
+    const sy = size.height ? size.height : size.radius ? size.radius : 1;
+
+    const scale = m3.scaling(transform.scale.x * sx, transform.scale.y * sy);
     const rotation = m3.rotation(transform.rotation);
     const translation = m3.translation(transform.position.x, transform.position.y);
 
@@ -99,7 +102,6 @@ export class InteractiveSystem {
     const sizeStore = this.world.store<Size>('size');
     const interactionStore = this.world.store<InteractionComponent>('interaction');
 
-    // Check entities in reverse order (top to bottom)
     const entities = Array.from(transformStore.keys()).reverse();
 
     for (const entityId of entities) {
@@ -120,7 +122,6 @@ export class InteractiveSystem {
   }
 
   private pointInEntity(worldX: number, worldY: number, transform: Transform, size: Size): boolean {
-    // For rectangles, check if point is within bounds
     if (size.width && size.height) {
       const halfWidth = (size.width * transform.scale.x) / 2;
       const halfHeight = (size.height * transform.scale.y) / 2;
@@ -133,7 +134,6 @@ export class InteractiveSystem {
       );
     }
 
-    // For circles
     if (size.radius) {
       const dx = worldX - transform.position.x;
       const dy = worldY - transform.position.y;
