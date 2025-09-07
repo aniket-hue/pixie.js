@@ -1,9 +1,11 @@
 import { Camera } from './Camera.class';
+
 import type { Canvas } from './Canvas.class';
 import { Events } from './events';
 import { identityMatrix } from './math';
 import { createProgram } from './utils/createProgram';
 import { createShader } from './utils/createShader';
+import { tick } from './utils/tick';
 
 const vertexShaderSource = `
   attribute vec2 a_position;
@@ -14,7 +16,7 @@ const vertexShaderSource = `
 
   void main() {
     vec2 position = (u_viewport_transform_matrix * u_object_transformation_matrix * vec3(a_position, 1)).xy;
-    vec2 zeroToOne = position / u_resolution + 0.5;
+    vec2 zeroToOne = position / u_resolution;
     vec2 zeroToTwo = zeroToOne * 2.0;
     vec2 clipSpace = zeroToTwo - 1.0;
     gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
@@ -50,7 +52,6 @@ export class Renderer {
     this.camera = camera;
 
     this.setupBaseProgram();
-
     this.initListeners();
   }
 
@@ -67,6 +68,8 @@ export class Renderer {
 
   onCameraChanged() {
     this.updateCameraUniforms(this.baseProgram.basic2D as WebGLProgram);
+
+    this.render();
   }
 
   setupBaseProgram() {
@@ -85,6 +88,10 @@ export class Renderer {
     this.updateCameraUniforms(this.baseProgram.basic2D as WebGLProgram);
 
     this.canvas.clear();
+
+    tick().then(() => {
+      this.render();
+    });
   }
 
   updateResolutionUniform(program: WebGLProgram) {
@@ -118,6 +125,11 @@ export class Renderer {
     this.canvas.clear();
 
     this.canvas.objects.forEach((object) => {
+      console.log('rendering', object.type, object.isVisible());
+      if (!object.isVisible()) {
+        return;
+      }
+
       object.draw(this.ctx, {
         program: this.baseProgram.basic2D as WebGLProgram,
       });

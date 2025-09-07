@@ -10,16 +10,7 @@ import type { Shape } from './webgl/shapes/types';
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const webglCanvasRef = useRef<Canvas>(null);
-  const animationFrameRef = useRef<number | null>(null);
   const [cameraInfo, setCameraInfo] = useState({ zoom: 1 });
-
-  const animate = useCallback(() => {
-    if (webglCanvasRef.current) {
-      webglCanvasRef.current?.render();
-    }
-
-    animationFrameRef.current = requestAnimationFrame(animate);
-  }, []);
 
   const handleReset = useCallback(() => {
     if (webglCanvasRef.current) {
@@ -36,6 +27,8 @@ function App() {
         setCameraInfo({ zoom });
       });
 
+      window.cx = canvas;
+
       canvas.add(
         new Grid({
           gridSize: 100,
@@ -46,10 +39,10 @@ function App() {
       );
 
       // Add some demo objects scattered around the infinite canvas
-      const demoObjects: Shape[] = [new Rectangle({ x: 0, y: 0, width: 100, height: 100, color: [1, 0.2, 0.2, 0.8], scaleX: 1 })];
+      const demoObjects: Shape[] = [new Rectangle({ x: 0, y: 0, width: 100, height: 100, color: [1, 0.2, 0.2, 0.8], scaleX: 1, canvas })];
 
-      const rows = 10;
-      const cols = 10;
+      const rows = 1;
+      const cols = 1;
       const spacing = 100;
 
       for (let i = -rows / 2; i < rows / 2; i++) {
@@ -69,24 +62,15 @@ function App() {
           const height = Math.random() * 10 + 10;
 
           // demoObjects.push(new Rectangle({ x, y, width, height, color, scaleX, scaleY, angle }));
-          demoObjects.push(new Circle({ x, y, color, radius: radius }));
+          demoObjects.push(new Circle({ x: 0, y: 0, color, radius: radius, canvas }));
         }
       }
 
       demoObjects.forEach((obj) => {
         canvas.add(obj);
       });
-
-      // Start animation loop
-      animate();
     }
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [animate]);
+  }, []);
 
   return (
     <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column' }}>

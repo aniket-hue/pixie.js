@@ -31,7 +31,8 @@ export class Camera {
 
     const clampedZoom = Math.max(this.minZoom, Math.min(this.maxZoom, zoom));
     const scaleMatrix = m3.scaling(clampedZoom, clampedZoom);
-    const translationMatrix = m3.translation(x, y);
+    const translationMatrix = m3.translation(x + this.canvas.width / 2, y + this.canvas.height / 2);
+
     this.viewportTransformMatrix = m3.multiply(scaleMatrix, translationMatrix);
   }
 
@@ -79,10 +80,8 @@ export class Camera {
     if (dZoom === 1) return;
 
     if (screenX !== undefined && screenY !== undefined) {
-      const canvasWidth = this.canvas.width;
-      const canvasHeight = this.canvas.height;
-      const pointX = screenX - canvasWidth / 2;
-      const pointY = screenY - canvasHeight / 2;
+      const pointX = screenX;
+      const pointY = screenY;
 
       const translateToPoint = m3.translation(pointX, pointY);
       const scale = m3.scaling(dZoom, dZoom);
@@ -106,19 +105,18 @@ export class Camera {
     const panY = -deltaY / currentZoom;
 
     const translationMatrix = m3.translation(panX, panY);
+
     this.viewportTransformMatrix = m3.multiply(this.viewportTransformMatrix, translationMatrix);
+
     this.canvas.fire(Events.PAN_CHANGED, this.x, this.y);
   }
 
-  convertScreenToWorld(screenX: number, screenY: number) {
-    const canvasWidth = this.canvas.width;
-    const canvasHeight = this.canvas.height;
-
-    const x = screenX - canvasWidth / 2;
-    const y = screenY - canvasHeight / 2;
-
+  screenToWorld(screenX: number, screenY: number) {
     const inverseMatrix = m3.inverse(this.viewportTransformMatrix);
+    return m3.transformPoint(inverseMatrix, screenX, screenY);
+  }
 
-    return m3.transformPoint(inverseMatrix, x, y);
+  worldToScreen(x: number, y: number) {
+    return m3.transformPoint(this.viewportTransformMatrix, x, y);
   }
 }
