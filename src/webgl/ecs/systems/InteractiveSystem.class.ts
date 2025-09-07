@@ -10,7 +10,6 @@ export class InteractiveSystem {
   private canvas: Canvas;
   private camera: Camera;
 
-  // Interaction state
   private draggedEntity: number | null = null;
   private isDragging = false;
   private dragOffset = { x: 0, y: 0 };
@@ -123,22 +122,19 @@ export class InteractiveSystem {
 
   private pointInEntity(worldX: number, worldY: number, transform: Transform, size: Size): boolean {
     if (size.width && size.height) {
-      const halfWidth = (size.width * transform.scale.x) / 2;
-      const halfHeight = (size.height * transform.scale.y) / 2;
+      const matrix = transform.matrix;
+      const inMatrix = m3.inverse(matrix);
+      const point = m3.transformPoint(inMatrix, worldX, worldY);
 
-      return (
-        worldX >= transform.position.x - halfWidth &&
-        worldX <= transform.position.x + halfWidth &&
-        worldY >= transform.position.y - halfHeight &&
-        worldY <= transform.position.y + halfHeight
-      );
+      return point.x >= -0.5 && point.x <= 0.5 && point.y >= -0.5 && point.y <= 0.5;
     }
 
     if (size.radius) {
-      const dx = worldX - transform.position.x;
-      const dy = worldY - transform.position.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      return distance <= size.radius * Math.max(transform.scale.x, transform.scale.y);
+      const matrix = transform.matrix;
+      const inMatrix = m3.inverse(matrix);
+      const point = m3.transformPoint(inMatrix, worldX, worldY);
+
+      return point.x >= -0.5 && point.x <= 0.5 && point.y >= -0.5 && point.y <= 0.5;
     }
 
     return false;
