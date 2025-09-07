@@ -29,7 +29,8 @@ function App() {
       (window as any).cx = canvas;
 
       // Add some demo objects scattered around the infinite canvas
-      new Rectangle({ x: 0, y: 0, width: 100, height: 100, fill: [1, 0.2, 0.2, 0.8], canvas });
+      new Circle({ x: 0, y: 0, fill: [1, 0.2, 0.2, 0.8], radius: 100, canvas });
+      // new Rectangle({ x: 0, y: 0, width: 100, height: 100, fill: [1, 0.2, 0.2, 0.8], canvas });
 
       const rows = 10;
       const cols = 10;
