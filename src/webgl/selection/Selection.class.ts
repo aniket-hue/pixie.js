@@ -63,8 +63,10 @@ export class Selection {
   }
 
   findTarget(mouseX: number, mouseY: number) {
-    for (const object of this.canvas.objects) {
-      if (!object.isVisible() || !object.getBoundsOnScreen()) {
+    for (let i = this.canvas.objects.length - 1; i >= 0; i--) {
+      const object = this.canvas.objects[i];
+
+      if (!object.isVisible()) {
         continue;
       }
 

@@ -6,19 +6,36 @@ import type { IRectangleConstructorData, IShapeDrawParams } from './types';
 
 class Rectangle extends Shape {
   angle: number;
-  color: [number, number, number, number];
+
+  fill: [number, number, number, number];
+  stroke: [number, number, number, number];
+  strokeWidth: number;
+
   center: [number, number];
   width: number;
   height: number;
   canvas: Canvas;
   scaleX: number;
   scaleY: number;
+
   type: 'rectangle';
 
   transformationMatrix: number[];
   private vertices: Float32Array;
 
-  constructor({ x, y, width, height, color, angle = 0, scaleX = 1, scaleY = 1, canvas }: IRectangleConstructorData) {
+  constructor({
+    x,
+    y,
+    width,
+    height,
+    fill = [0, 0, 0, 1],
+    stroke = [0, 0, 0, 1],
+    strokeWidth = 0,
+    angle = 0,
+    scaleX = 1,
+    scaleY = 1,
+    canvas,
+  }: IRectangleConstructorData) {
     super();
 
     this.canvas = canvas;
@@ -35,6 +52,9 @@ class Rectangle extends Shape {
     this.scaleY = scaleY;
     this.width = width;
     this.height = height;
+    this.fill = fill;
+    this.stroke = stroke;
+    this.strokeWidth = strokeWidth;
 
     const scale = m3.scaling(scaleX * width, scaleY * height);
     const rotation = m3.rotation(angle);
@@ -48,7 +68,6 @@ class Rectangle extends Shape {
       // Second triangle
       -0.5, 0.5, 0.5, -0.5, 0.5, 0.5,
     ]);
-    this.color = color;
   }
 
   getVertices() {
@@ -126,7 +145,7 @@ class Rectangle extends Shape {
     const colorLocation = gl.getUniformLocation(program, 'u_color');
     const transformationMatrixLocation = gl.getUniformLocation(program, 'u_object_transformation_matrix');
 
-    gl.uniform4f(colorLocation, this.color[0], this.color[1], this.color[2], this.color[3]);
+    gl.uniform4f(colorLocation, this.fill[0], this.fill[1], this.fill[2], this.fill[3]);
 
     gl.enableVertexAttribArray(positionLocation);
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);

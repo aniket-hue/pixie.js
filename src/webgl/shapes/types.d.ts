@@ -16,10 +16,12 @@ export interface IRectangleConstructorData extends IShapeConstructorData {
   y: number;
   width: number;
   height: number;
-  color: [number, number, number, number];
   angle?: number;
   scaleX?: number;
   scaleY?: number;
+  fill?: [number, number, number, number];
+  stroke?: [number, number, number, number];
+  strokeWidth?: number;
 }
 
 export interface ICircleConstructorData extends IShapeConstructorData {
