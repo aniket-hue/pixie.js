@@ -1,6 +1,6 @@
 import { Camera } from './Camera.class';
 import { World } from './ecs/World.class';
-import { EventEmitter, type EventKeys } from './events';
+import { EventEmitter, type EventKeys, Events } from './events';
 import { InputHandler } from './input/InputHandler.class';
 import { Renderer } from './Renderer.class';
 
@@ -33,6 +33,18 @@ export class Canvas {
     this.inputHandler = new InputHandler(this, this.camera);
 
     this.resize();
+  }
+
+  add(object: any) {
+    const entityId = this.world.createEntity();
+
+    ['transform', 'style', 'size', 'bounds', 'interaction'].forEach((component) => {
+      if (object[component]) {
+        this.world.addComponent(component, entityId, object[component]);
+      }
+    });
+
+    this.renderer.componentsUpdated(entityId, 'transform');
   }
 
   getCtx() {

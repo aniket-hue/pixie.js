@@ -2,7 +2,7 @@ import type { Camera } from '../../Camera.class';
 import type { Canvas } from '../../Canvas.class';
 import { Events } from '../../events';
 import { m3 } from '../../math';
-import type { InteractionComponent, Size, Transform } from '../components/types';
+import type { Bounds, Interaction, Size, Transform } from '../components/types';
 import type { World } from '../World.class';
 
 export class InteractiveSystem {
@@ -37,7 +37,7 @@ export class InteractiveSystem {
     const entity = this.findEntityAtPoint(worldPos.x, worldPos.y);
 
     if (entity !== null) {
-      const interaction = this.world.getComponent<InteractionComponent>('interaction', entity);
+      const interaction = this.world.getComponent<Interaction>('interaction', entity);
 
       if (interaction?.draggable) {
         this.draggedEntity = entity;
@@ -52,7 +52,7 @@ export class InteractiveSystem {
 
     if (this.isDragging && this.draggedEntity !== null) {
       this.handleDrag(worldPos.x, worldPos.y);
-      this.canvas.fire(Events.RENDER);
+      this.canvas.fire(Events.COMPONENTS_UPDATED, this.draggedEntity, 'transform');
     }
   }
 
@@ -76,6 +76,7 @@ export class InteractiveSystem {
 
   private calculateDragOffset(entity: number, worldX: number, worldY: number): void {
     const transform = this.world.getComponent<Transform>('transform', entity);
+
     if (transform) {
       this.dragOffset.x = worldX - transform.position.x;
       this.dragOffset.y = worldY - transform.position.y;
@@ -84,7 +85,8 @@ export class InteractiveSystem {
 
   private updateTransformMatrix(entityId: number, transform: Transform): void {
     const size = this.world.getComponent<Size>('size', entityId);
-    if (!size) return;
+    const bounds = this.world.getComponent<Bounds>('bounds', entityId);
+    if (!size || !bounds) return;
 
     const sx = size.width ? size.width : size.radius ? size.radius : 1;
     const sy = size.height ? size.height : size.radius ? size.radius : 1;
@@ -93,26 +95,28 @@ export class InteractiveSystem {
     const rotation = m3.rotation(transform.rotation);
     const translation = m3.translation(transform.position.x, transform.position.y);
 
-    transform.matrix = m3.multiply(translation, m3.multiply(rotation, scale));
+    bounds.matrix = m3.multiply(translation, m3.multiply(rotation, scale));
   }
 
   private findEntityAtPoint(worldX: number, worldY: number): number | null {
     const transformStore = this.world.store<Transform>('transform');
     const sizeStore = this.world.store<Size>('size');
-    const interactionStore = this.world.store<InteractionComponent>('interaction');
+    const boundsStore = this.world.store<Bounds>('bounds');
+    const interactionStore = this.world.store<Interaction>('interaction');
 
     const entities = Array.from(transformStore.keys()).reverse();
 
     for (const entityId of entities) {
       const transform = transformStore.get(entityId);
       const size = sizeStore.get(entityId);
+      const bounds = boundsStore.get(entityId);
       const interaction = interactionStore.get(entityId);
 
-      if (!transform || !size || !interaction?.draggable) {
+      if (!transform || !size || !bounds || !interaction?.draggable) {
         continue;
       }
 
-      if (this.pointInEntity(worldX, worldY, transform, size)) {
+      if (this.pointInEntity(worldX, worldY, bounds, size)) {
         return entityId;
       }
     }
@@ -120,9 +124,9 @@ export class InteractiveSystem {
     return null;
   }
 
-  private pointInEntity(worldX: number, worldY: number, transform: Transform, size: Size): boolean {
+  private pointInEntity(worldX: number, worldY: number, bounds: Bounds, size: Size): boolean {
     if (size.width && size.height) {
-      const matrix = transform.matrix;
+      const matrix = bounds.matrix;
       const inMatrix = m3.inverse(matrix);
       const point = m3.transformPoint(inMatrix, worldX, worldY);
 
@@ -130,7 +134,7 @@ export class InteractiveSystem {
     }
 
     if (size.radius) {
-      const matrix = transform.matrix;
+      const matrix = bounds.matrix;
       const inMatrix = m3.inverse(matrix);
       const point = m3.transformPoint(inMatrix, worldX, worldY);
 
@@ -141,7 +145,7 @@ export class InteractiveSystem {
   }
 
   private getWorldPosition(screenX: number, screenY: number): { x: number; y: number } {
-    const y = this.canvas.height - screenY; // Flip Y coordinate
+    const y = this.canvas.height - screenY;
     return this.camera.screenToWorld(screenX, y);
   }
 

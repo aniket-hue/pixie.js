@@ -1,6 +1,7 @@
 import type { Camera } from './Camera.class';
 
 import type { Canvas } from './Canvas.class';
+import { BoundsSystem } from './ecs/systems/BoundsSystem.class';
 import { InteractiveSystem } from './ecs/systems/InteractiveSystem.class';
 import { RenderSystem } from './ecs/systems/RenderSystem.class';
 import { Events } from './events';
@@ -17,6 +18,7 @@ export class Renderer {
 
   ecsRenderSystem: RenderSystem;
   interactiveSystem: InteractiveSystem;
+  boundsSystem: BoundsSystem;
 
   constructor(canvas: Canvas, camera: Camera) {
     this.canvas = canvas;
@@ -35,10 +37,21 @@ export class Renderer {
       majorColor: [0.8, 0.8, 0.8, 1],
     });
 
+    this.initListeners();
+
     this.ecsRenderSystem = new RenderSystem(this.ctx, this.canvas.world, this.camera);
     this.interactiveSystem = new InteractiveSystem(this.canvas.world, this.canvas, this.camera);
+    this.boundsSystem = new BoundsSystem(this.canvas.world);
+  }
 
-    this.initListeners();
+  componentsUpdated(entityId: number, componentName: string) {
+    switch (componentName) {
+      case 'transform':
+      case 'size':
+        this.boundsSystem.updateEntity(entityId);
+        this.render();
+        break;
+    }
   }
 
   render() {
@@ -47,15 +60,19 @@ export class Renderer {
 
   initListeners() {
     this.render = this.render.bind(this);
+    this.componentsUpdated = this.componentsUpdated.bind(this);
+
     this.canvas.on(Events.ZOOM_CHANGED, this.render);
     this.canvas.on(Events.PAN_CHANGED, this.render);
     this.canvas.on(Events.RENDER, this.render);
+    this.canvas.on(Events.COMPONENTS_UPDATED, this.componentsUpdated);
   }
 
   destroyListeners() {
     this.canvas.off(Events.ZOOM_CHANGED, this.render);
     this.canvas.off(Events.PAN_CHANGED, this.render);
     this.canvas.off(Events.RENDER, this.render);
+    this.canvas.off(Events.COMPONENTS_UPDATED, this.componentsUpdated);
   }
 
   destroy() {

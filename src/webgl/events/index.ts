@@ -11,6 +11,8 @@ export enum Events {
   KEY_UP = 'key_up',
 
   RENDER = 'render',
+
+  COMPONENTS_UPDATED = 'components_updated',
 }
 
 export type EventKeys = Events;

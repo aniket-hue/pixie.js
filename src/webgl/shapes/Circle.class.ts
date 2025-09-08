@@ -1,48 +1,49 @@
-import type { Canvas } from '../Canvas.class';
-import type { InteractionComponent, Size, Style, Transform } from '../ecs/components/types';
-import { m3 } from '../math';
+import type { Bounds, Interaction, Size, Style, Transform } from '../ecs/components/types';
 import type { ICircleConstructorData } from './types';
 
 class Circle {
   // ECS entity reference
   entityId: number;
+  transform: Transform;
+
+  style: Style;
+  size: Size;
+  interaction: Interaction;
+  bounds: Bounds;
 
   constructor({ x, y, fill, radius, angle = 0, canvas }: ICircleConstructorData) {
-    // Create ECS entity
     this.entityId = canvas.world.createEntity();
     const center = { x, y };
 
-    const translation = m3.translation(center.x, center.y);
-    const rotation = m3.rotation(angle);
-    const scale = m3.scaling(radius, radius);
-    const combined = m3.multiply(rotation, scale);
-    const matrix = m3.multiply(translation, combined);
-
-    const transformComponent: Transform = {
+    this.transform = {
       position: { x: center.x, y: center.y },
       rotation: angle,
       scale: { x: 1, y: 1 },
-      matrix,
     };
 
-    const styleComponent: Style = {
+    this.style = {
       fill,
       stroke: [0, 0, 0, 1],
       strokeWidth: 0,
     };
 
-    const sizeComponent: Size = {
+    this.size = {
       radius,
     };
 
-    const interactionComponent: InteractionComponent = {
+    this.interaction = {
       draggable: true,
     };
 
-    canvas.world.addComponent('transform', this.entityId, transformComponent);
-    canvas.world.addComponent('style', this.entityId, styleComponent);
-    canvas.world.addComponent('size', this.entityId, sizeComponent);
-    canvas.world.addComponent('interaction', this.entityId, interactionComponent);
+    this.bounds = {
+      matrix: [],
+      bounds: {
+        minX: 0,
+        minY: 0,
+        maxX: 0,
+        maxY: 0,
+      },
+    };
   }
 }
 
