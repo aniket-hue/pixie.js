@@ -22,6 +22,7 @@ export interface IRectangleConstructorData extends IShapeConstructorData {
   fill?: [number, number, number, number];
   stroke?: [number, number, number, number];
   strokeWidth?: number;
+  canvas: Canvas;
 }
 
 export interface ICircleConstructorData extends IShapeConstructorData {

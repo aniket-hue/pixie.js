@@ -49,10 +49,9 @@ export class InteractiveSystem {
 
   private onMouseMove(event: MouseEvent): void {
     const worldPos = this.getWorldPosition(event.offsetX, event.offsetY);
-
     if (this.isDragging && this.draggedEntity !== null) {
       this.handleDrag(worldPos.x, worldPos.y);
-      this.canvas.fire(Events.COMPONENTS_UPDATED, this.draggedEntity, 'transform');
+      this.canvas.renderer.requestRender();
     }
   }
 
@@ -64,13 +63,16 @@ export class InteractiveSystem {
 
   private handleDrag(worldX: number, worldY: number): void {
     if (this.draggedEntity !== null) {
-      const transform = this.world.getComponent<Transform>('transform', this.draggedEntity);
+      const entities = [this.draggedEntity];
 
-      if (transform) {
-        transform.position.x = worldX - this.dragOffset.x;
-        transform.position.y = worldY - this.dragOffset.y;
-        this.updateTransformMatrix(this.draggedEntity, transform);
-      }
+      entities.forEach((child) => {
+        this.world.updateComponent<Transform>('transform', child, {
+          position: {
+            x: worldX - this.dragOffset.x,
+            y: worldY - this.dragOffset.y,
+          },
+        });
+      });
     }
   }
 
@@ -83,36 +85,19 @@ export class InteractiveSystem {
     }
   }
 
-  private updateTransformMatrix(entityId: number, transform: Transform): void {
-    const size = this.world.getComponent<Size>('size', entityId);
-    const bounds = this.world.getComponent<Bounds>('bounds', entityId);
-    if (!size || !bounds) return;
-
-    const sx = size.width ? size.width : size.radius ? size.radius : 1;
-    const sy = size.height ? size.height : size.radius ? size.radius : 1;
-
-    const scale = m3.scaling(transform.scale.x * sx, transform.scale.y * sy);
-    const rotation = m3.rotation(transform.rotation);
-    const translation = m3.translation(transform.position.x, transform.position.y);
-
-    bounds.matrix = m3.multiply(translation, m3.multiply(rotation, scale));
-  }
-
   private findEntityAtPoint(worldX: number, worldY: number): number | null {
-    const transformStore = this.world.store<Transform>('transform');
-    const sizeStore = this.world.store<Size>('size');
     const boundsStore = this.world.store<Bounds>('bounds');
+    const sizeStore = this.world.store<Size>('size');
     const interactionStore = this.world.store<Interaction>('interaction');
 
-    const entities = Array.from(transformStore.keys()).reverse();
+    const entities = Array.from(boundsStore.keys()).reverse();
 
     for (const entityId of entities) {
-      const transform = transformStore.get(entityId);
-      const size = sizeStore.get(entityId);
       const bounds = boundsStore.get(entityId);
+      const size = sizeStore.get(entityId);
       const interaction = interactionStore.get(entityId);
 
-      if (!transform || !size || !bounds || !interaction?.draggable) {
+      if (!bounds || !interaction?.draggable) {
         continue;
       }
 
@@ -124,21 +109,23 @@ export class InteractiveSystem {
     return null;
   }
 
-  private pointInEntity(worldX: number, worldY: number, bounds: Bounds, size: Size): boolean {
-    if (size.width && size.height) {
-      const matrix = bounds.matrix;
-      const inMatrix = m3.inverse(matrix);
-      const point = m3.transformPoint(inMatrix, worldX, worldY);
+  private pointInEntity(worldX: number, worldY: number, bounds: Bounds, size: Size | undefined): boolean {
+    if (!size) return false;
 
-      return point.x >= -0.5 && point.x <= 0.5 && point.y >= -0.5 && point.y <= 0.5;
-    }
+    const matrix = bounds.matrix;
+    const inMatrix = m3.inverse(matrix);
+    const localPoint = m3.transformPoint(inMatrix, worldX, worldY);
 
     if (size.radius) {
-      const matrix = bounds.matrix;
-      const inMatrix = m3.inverse(matrix);
-      const point = m3.transformPoint(inMatrix, worldX, worldY);
+      // Circle collision - use radius
+      const distance = Math.sqrt(localPoint.x * localPoint.x + localPoint.y * localPoint.y);
+      return distance <= size.radius;
+    } else if (size.width && size.height) {
+      // Rectangle collision - use actual dimensions
+      const halfWidth = size.width * 0.5;
+      const halfHeight = size.height * 0.5;
 
-      return point.x >= -0.5 && point.x <= 0.5 && point.y >= -0.5 && point.y <= 0.5;
+      return localPoint.x >= -halfWidth && localPoint.x <= halfWidth && localPoint.y >= -halfHeight && localPoint.y <= halfHeight;
     }
 
     return false;

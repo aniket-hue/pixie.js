@@ -1,7 +1,9 @@
 import { Camera } from './Camera.class';
+import type { Bounds, Children, Transform } from './ecs/components/types';
 import { World } from './ecs/World.class';
-import { EventEmitter, type EventKeys, Events } from './events';
+import { EventEmitter, type EventKeys } from './events';
 import { InputHandler } from './input/InputHandler.class';
+import { m3 } from './math';
 import { Renderer } from './Renderer.class';
 
 export class Canvas {
@@ -36,15 +38,54 @@ export class Canvas {
   }
 
   add(object: any) {
-    const entityId = this.world.createEntity();
+    ['transform', 'style', 'size', 'bounds', 'interaction', 'parent', 'children'].forEach((component) => {
+      if (component in object) {
+        this.world.addComponent(component, object.entityId, object[component]);
 
-    ['transform', 'style', 'size', 'bounds', 'interaction'].forEach((component) => {
-      if (object[component]) {
-        this.world.addComponent(component, entityId, object[component]);
+        if (component === 'children') {
+          const parentEntityId = object.entityId;
+          const children = object.children;
+          const parentTransform = object.transform;
+
+          children.forEach((childId: number) => {
+            // Get the child's current world position before setting parent
+            const childTransform = this.world.getComponent<Transform>('transform', childId);
+
+            if (childTransform && parentTransform) {
+              // Convert child's world position to local position relative to parent
+              // Local position = child world position - parent world position
+              const localX = childTransform.position.x - parentTransform.position.x;
+              const localY = childTransform.position.y - parentTransform.position.y;
+
+              // Update child's transform to use local coordinates
+              this.world.updateComponent<Transform>('transform', childId, {
+                position: { x: localX, y: localY },
+              });
+            }
+
+            this.world.addComponent('parent', childId, parentEntityId);
+          });
+        }
       }
     });
 
-    this.renderer.componentsUpdated(entityId, 'transform');
+    this.world.markDirty(object.entityId);
+    this.renderer.requestRender();
+
+    return object.entityId;
+  }
+
+  remove(object: any) {
+    if (object.children) {
+      object.children.forEach((child: number) => {
+        this.world.removeComponent('parent', child);
+        this.world.markDirty(child);
+      });
+    }
+
+    this.world.removeEntity(object.entityId);
+
+    this.renderer.requestRender();
   }
 
   getCtx() {

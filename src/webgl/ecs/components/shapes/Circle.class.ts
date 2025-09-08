@@ -1,4 +1,4 @@
-import type { Bounds, Interaction, Size, Style, Transform } from '../ecs/components/types';
+import type { Bounds, Interaction, Size, Style, Transform } from '../types';
 import type { ICircleConstructorData } from './types';
 
 class Circle {

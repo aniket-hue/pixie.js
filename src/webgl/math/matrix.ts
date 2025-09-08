@@ -1,17 +1,43 @@
+export const identityMatrix = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+
 export const m3 = {
-  translation: (tx: number, ty: number) => {
-    return [1, 0, 0, 0, 1, 0, tx, ty, 1];
+  translation: (...args: [number, number] | [number[], number, number]) => {
+    if (args.length === 2) {
+      const [tx, ty] = args;
+      return [1, 0, 0, 0, 1, 0, tx, ty, 1];
+    }
+
+    const [matrix, tx, ty] = args;
+    return [matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5], tx, ty, matrix[8]];
   },
 
-  rotation: (angleInRadians: number) => {
+  identity: () => {
+    return [1, 0, 0, 0, 1, 0, 0, 0, 1];
+  },
+
+  rotation: (...args: [number] | [number[], number]) => {
+    if (args.length === 1) {
+      const [angleInRadians] = args;
+      const c = Math.cos(angleInRadians);
+      const s = Math.sin(angleInRadians);
+      return [c, -s, 0, s, c, 0, 0, 0, 1];
+    }
+
+    const [matrix, angleInRadians] = args;
     const c = Math.cos(angleInRadians);
     const s = Math.sin(angleInRadians);
 
-    return [c, -s, 0, s, c, 0, 0, 0, 1];
+    return [matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5], c, -s, 0, s, c, 0, 0, 0, 1];
   },
 
-  scaling: (sx: number, sy: number) => {
-    return [sx, 0, 0, 0, sy, 0, 0, 0, 1];
+  scaling: (...args: [number, number] | [number[], number, number]) => {
+    if (args.length === 2) {
+      const [sx, sy] = args;
+      return [sx, 0, 0, 0, sy, 0, 0, 0, 1];
+    }
+
+    const [matrix, sx, sy] = args;
+    return [matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5], sx, 0, 0, 0, sy, 0, 0, 0, 1];
   },
 
   multiply: (a: number[], b: number[]) => {
@@ -77,5 +103,3 @@ export const m3 = {
     };
   },
 };
-
-export const identityMatrix = [1, 0, 0, 0, 1, 0, 0, 0, 1];
