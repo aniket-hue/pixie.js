@@ -4,7 +4,6 @@ import { Canvas } from './webgl/Canvas.class';
 import { Events } from './webgl/events';
 import Circle from './webgl/shapes/Circle.class';
 import Rectangle from './webgl/shapes/Rectangle.class';
-import type { Shape } from './webgl/shapes/Shape.class';
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -29,8 +28,10 @@ function App() {
       (window as any).cx = canvas;
 
       // Add some demo objects scattered around the infinite canvas
-      new Circle({ x: 0, y: 0, fill: [1, 0.2, 0.2, 0.8], radius: 100, canvas });
-      // new Rectangle({ x: 0, y: 0, width: 100, height: 100, fill: [1, 0.2, 0.2, 0.8], canvas });
+      // new Circle({ x: 0, y: 0, fill: [1, 0.2, 0.2, 0.8], radius: 100, canvas });
+      const rect = new Rectangle({ x: 0, y: 0, width: 100, height: 100, fill: [1, 0.2, 0.2, 0.8], canvas });
+
+      canvas.add(rect);
 
       const rows = 10;
       const cols = 10;
@@ -52,8 +53,10 @@ function App() {
           const width = Math.random() * 10 + 10;
           const height = Math.random() * 10 + 10;
 
-          // new Rectangle({ x, y, width, height, fill, scaleX, scaleY, angle, canvas });
-          new Circle({ x, y, fill, radius, canvas });
+          const rect = new Rectangle({ x, y, width, height, fill, scaleX, scaleY, angle, canvas });
+          const circle = new Circle({ x, y, fill, radius, canvas });
+          // canvas.add(circle);
+          canvas.add(rect);
         }
       }
     }

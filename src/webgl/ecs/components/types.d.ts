@@ -6,7 +6,6 @@ export interface Transform {
   position: { x: number; y: number };
   rotation: number;
   scale: { x: number; y: number };
-  matrix: number[];
 }
 
 export interface Selectable {
@@ -20,13 +19,23 @@ export interface Size {
   radius?: number;
 }
 
+export interface Bounds {
+  matrix: number[];
+  bounds: {
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+  };
+}
+
 export interface Style {
   fill: [number, number, number, number];
   stroke: [number, number, number, number];
   strokeWidth: number;
 }
 
-export interface InteractionComponent {
+export interface Interaction {
   draggable?: boolean;
   selectable?: boolean;
 }
