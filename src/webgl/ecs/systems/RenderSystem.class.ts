@@ -1,8 +1,9 @@
 import type { Camera } from '../../Camera.class';
+import { m3 } from '../../math';
 import { createProgram } from '../../utils/createProgram';
 import { createShader } from '../../utils/createShader';
 import { tick } from '../../utils/tick';
-import type { Bounds, Size, Style, Transform } from '../components/types';
+import type { Bounds, Parent, Size, Style, Transform } from '../components/types';
 import type { World } from '../World.class';
 
 const vss = `
@@ -10,9 +11,11 @@ const vss = `
     uniform vec2 u_resolution;
     uniform mat3 u_viewport_transform_matrix;
     uniform mat3 u_object_transformation_matrix;
+    uniform vec2 u_size; 
+
 
     void main() {
-        vec2 position = (u_viewport_transform_matrix * u_object_transformation_matrix * vec3(a_position, 1)).xy;
+        vec2 position = (u_viewport_transform_matrix * u_object_transformation_matrix * vec3(a_position * u_size, 1)).xy;
         vec2 zeroToOne = position / u_resolution;
         vec2 zeroToTwo = zeroToOne * 2.0;
         vec2 clipSpace = zeroToTwo - 1.0;
@@ -31,7 +34,7 @@ const fss = `
 
 export class RenderSystem {
   private gl: WebGLRenderingContext;
-  private program: WebGLProgram;
+  program: WebGLProgram;
   private vertexShaderSource: string;
   private fragmentShaderSource: string;
   private rectangleVertices: Float32Array;
@@ -50,6 +53,9 @@ export class RenderSystem {
     const vertexShader = createShader(gl, gl.VERTEX_SHADER, this.vertexShaderSource);
     const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, this.fragmentShaderSource);
     this.program = createProgram(gl, vertexShader, fragmentShader);
+
+    this.gl.enable(this.gl.BLEND);
+    this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
 
     this.rectangleVertices = new Float32Array([
       -0.5, -0.5, 0.5, -0.5, -0.5, 0.5,
@@ -98,6 +104,7 @@ export class RenderSystem {
     const sizeStore = world.store<Size>('size');
     const styleStore = world.store<Style>('style');
     const boundsStore = world.store<Bounds>('bounds');
+    const parentStore = world.store<Parent>('parent');
 
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
@@ -106,9 +113,10 @@ export class RenderSystem {
     const positionLocation = gl.getAttribLocation(program, 'a_position');
     const colorLocation = gl.getUniformLocation(program, 'u_color');
     const transformationMatrixLocation = gl.getUniformLocation(program, 'u_object_transformation_matrix');
+    const sizeLocation = gl.getUniformLocation(program, 'u_size');
 
-    const rectangles: Array<{ transform: Transform; style: Style; matrix: number[] }> = [];
-    const circles: Array<{ transform: Transform; style: Style; matrix: number[] }> = [];
+    const rectangles: Array<{ transform: Transform; style: Style; matrix: number[]; size: Size }> = [];
+    const circles: Array<{ transform: Transform; style: Style; matrix: number[]; size: Size }> = [];
 
     for (const [entity, t] of transformStore.entries()) {
       const bounds = boundsStore.get(entity);
@@ -119,10 +127,12 @@ export class RenderSystem {
         continue;
       }
 
+      const matrix = bounds.matrix;
+
       if (size.radius) {
-        circles.push({ transform: t, style, matrix: bounds.matrix });
+        circles.push({ transform: t, style, matrix, size });
       } else {
-        rectangles.push({ transform: t, style, matrix: bounds.matrix });
+        rectangles.push({ transform: t, style, matrix, size });
       }
     }
 
@@ -130,9 +140,10 @@ export class RenderSystem {
       gl.enableVertexAttribArray(positionLocation);
       gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-      for (const { style, matrix } of rectangles) {
+      for (const { style, matrix, size } of rectangles) {
         gl.uniform4f(colorLocation, style.fill[0], style.fill[1], style.fill[2], style.fill[3]);
         gl.uniformMatrix3fv(transformationMatrixLocation, false, matrix);
+        gl.uniform2f(sizeLocation, size.width!, size.height!);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
       }
     }
@@ -142,9 +153,10 @@ export class RenderSystem {
       gl.enableVertexAttribArray(positionLocation);
       gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-      for (const { style, matrix } of circles) {
+      for (const { style, matrix, size } of circles) {
         gl.uniform4f(colorLocation, style.fill[0], style.fill[1], style.fill[2], style.fill[3]);
         gl.uniformMatrix3fv(transformationMatrixLocation, false, matrix);
+        gl.uniform2f(sizeLocation, size.radius!, size.radius!);
         gl.drawArrays(gl.TRIANGLE_FAN, 0, 34); // 32 segments + center + closing vertex
       }
     }

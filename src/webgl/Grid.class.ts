@@ -1,4 +1,4 @@
-import { identityMatrix } from '../math';
+import { identityMatrix } from './math';
 
 export class Grid {
   private gridSize: number;

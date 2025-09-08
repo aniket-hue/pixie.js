@@ -39,3 +39,6 @@ export interface Interaction {
   draggable?: boolean;
   selectable?: boolean;
 }
+
+export type Children = number[];
+export type Parent = number | null;

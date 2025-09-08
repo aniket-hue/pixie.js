@@ -5,7 +5,7 @@ import { BoundsSystem } from './ecs/systems/BoundsSystem.class';
 import { InteractiveSystem } from './ecs/systems/InteractiveSystem.class';
 import { RenderSystem } from './ecs/systems/RenderSystem.class';
 import { Events } from './events';
-import { Grid } from './shapes/Grid.class';
+import { Grid } from './Grid.class';
 
 export class Renderer {
   canvas: Canvas;
@@ -19,6 +19,8 @@ export class Renderer {
   ecsRenderSystem: RenderSystem;
   interactiveSystem: InteractiveSystem;
   boundsSystem: BoundsSystem;
+
+  private renderRequested = false;
 
   constructor(canvas: Canvas, camera: Camera) {
     this.canvas = canvas;
@@ -55,7 +57,30 @@ export class Renderer {
   }
 
   render() {
+    this.grid.draw(this.ctx, { program: this.ecsRenderSystem.program });
     this.ecsRenderSystem.update();
+  }
+
+  requestRender() {
+    if (!this.renderRequested) {
+      this.renderRequested = true;
+
+      requestAnimationFrame(() => {
+        this.updateDirtyComponents();
+        this.render();
+        this.renderRequested = false;
+      });
+    }
+  }
+
+  private updateDirtyComponents() {
+    const dirtyEntities = this.canvas.world.getDirtyEntities();
+
+    for (const entityId of dirtyEntities) {
+      this.boundsSystem.updateEntity(entityId);
+    }
+
+    this.canvas.world.clearDirty();
   }
 
   initListeners() {
