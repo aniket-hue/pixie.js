@@ -1,16 +1,15 @@
 import { Camera } from './Camera.class';
-import type { Bounds, Children, Transform } from './ecs/components/types';
-import { World } from './ecs/World.class';
+import { Object } from './entities/Object.class';
+import type { ObjectFactory } from './entities/types';
 import { EventEmitter, type EventKeys } from './events';
 import { InputHandler } from './input/InputHandler.class';
-import { m3 } from './math';
 import { Renderer } from './Renderer.class';
+import { World } from './World.class';
 
 export class Canvas {
-  objects = [];
-
   // ECS World
   world: World;
+  objects: Object[];
 
   canvasElement: HTMLCanvasElement;
   events: EventEmitter;
@@ -22,6 +21,7 @@ export class Canvas {
     this.canvasElement = canvas;
 
     this.world = new World();
+    this.objects = [];
     this.events = new EventEmitter();
     this.camera = new Camera(
       {
@@ -37,42 +37,16 @@ export class Canvas {
     this.resize();
   }
 
-  add(object: any) {
-    ['transform', 'style', 'size', 'bounds', 'interaction', 'parent', 'children'].forEach((component) => {
-      if (component in object) {
-        this.world.addComponent(component, object.entityId, object[component]);
+  add(object: ObjectFactory) {
+    const entityId = object.register(this.world);
+    const objectInstance = new Object(this, entityId);
 
-        if (component === 'children') {
-          const parentEntityId = object.entityId;
-          const children = object.children;
-          const parentTransform = object.transform;
+    this.objects.push(objectInstance);
 
-          children.forEach((childId: number) => {
-            // Get the child's current world position before setting parent
-            const childTransform = this.world.getComponent<Transform>('transform', childId);
-
-            if (childTransform && parentTransform) {
-              // Convert child's world position to local position relative to parent
-              // Local position = child world position - parent world position
-              const localX = childTransform.position.x - parentTransform.position.x;
-              const localY = childTransform.position.y - parentTransform.position.y;
-
-              // Update child's transform to use local coordinates
-              this.world.updateComponent<Transform>('transform', childId, {
-                position: { x: localX, y: localY },
-              });
-            }
-
-            this.world.addComponent('parent', childId, parentEntityId);
-          });
-        }
-      }
-    });
-
-    this.world.markDirty(object.entityId);
+    this.world.markDirty(entityId);
     this.renderer.requestRender();
 
-    return object.entityId;
+    return objectInstance;
   }
 
   remove(object: any) {

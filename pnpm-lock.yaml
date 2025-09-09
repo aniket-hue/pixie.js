@@ -8,6 +8,12 @@ importers:
 
   .:
     dependencies:
+      gl-mat3:
+        specifier: ^2.0.0
+        version: 2.0.0
+      gl-matrix:
+        specifier: ^3.4.4
+        version: 3.4.4
       react:
         specifier: ^19.1.1
         version: 19.1.1
@@ -631,6 +637,12 @@ packages:
 
   getpass@0.1.7:
     resolution: {integrity: sha512-0fzj9JxOLfJ+XGLhR8ze3unN0KZCgZwiSSDz168VERjK8Wl8kVSdcu2kspd4s4wtAa1y/qrVRiAA0WclVsu0ng==}
+
+  gl-mat3@2.0.0:
+    resolution: {integrity: sha512-/RfKyizhztkG+gH07lA0/OI9uXVEqDrvjza1U8kZc3Sjvn/iT1a99jyL1WtLzXMn/BYp0geE2/DsNp9GCXp28Q==}
+
+  gl-matrix@3.4.4:
+    resolution: {integrity: sha512-latSnyDNt/8zYUB6VIJ6PCh2jBjJX6gnDsoCZ7LyW7GkqrD51EWwa9qCoGixj8YqBtETQK/xY7OmpTF8xz1DdQ==}
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
@@ -1518,6 +1530,10 @@ snapshots:
   getpass@0.1.7:
     dependencies:
       assert-plus: 1.0.0
+
+  gl-mat3@2.0.0: {}
+
+  gl-matrix@3.4.4: {}
 
   glob@7.2.3:
     dependencies:

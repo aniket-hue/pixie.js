@@ -30,14 +30,14 @@ export class Camera {
     this.viewportTransformMatrix = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 
     const clampedZoom = Math.max(this.minZoom, Math.min(this.maxZoom, zoom));
-    const scaleMatrix = m3.scaling(clampedZoom, clampedZoom);
-    const translationMatrix = m3.translation(x + this.canvas.width / 2, y + this.canvas.height / 2);
+    const scaleMatrix = m3.scale(clampedZoom, clampedZoom);
+    const translationMatrix = m3.translate(x + this.canvas.width / 2, y + this.canvas.height / 2);
 
     this.viewportTransformMatrix = m3.multiply(scaleMatrix, translationMatrix);
   }
 
   get zoom(): number {
-    return m3.getScale(this.viewportTransformMatrix);
+    return this.viewportTransformMatrix[0];
   }
 
   get x(): number {
@@ -54,7 +54,7 @@ export class Camera {
     const scale = newZoom / currentZoom;
 
     if (scale !== 1) {
-      const scaleMatrix = m3.scaling(scale, scale);
+      const scaleMatrix = m3.scale(scale, scale);
       this.viewportTransformMatrix = m3.multiply(this.viewportTransformMatrix, scaleMatrix);
     }
 
@@ -83,16 +83,16 @@ export class Camera {
       const pointX = screenX;
       const pointY = this.canvas.height - screenY;
 
-      const translateToPoint = m3.translation(pointX, pointY);
-      const scale = m3.scaling(dZoom, dZoom);
-      const translateFromPoint = m3.translation(-pointX, -pointY);
+      const translateToPoint = m3.translate(pointX, pointY);
+      const scale = m3.scale(dZoom, dZoom);
+      const translateFromPoint = m3.translate(-pointX, -pointY);
 
       let scaleAtPoint = m3.multiply(scale, translateFromPoint);
       scaleAtPoint = m3.multiply(translateToPoint, scaleAtPoint);
 
       this.viewportTransformMatrix = m3.multiply(scaleAtPoint, this.viewportTransformMatrix);
     } else {
-      const scaleMatrix = m3.scaling(dZoom, dZoom);
+      const scaleMatrix = m3.scale(dZoom, dZoom);
       this.viewportTransformMatrix = m3.multiply(this.viewportTransformMatrix, scaleMatrix);
     }
 
@@ -104,7 +104,7 @@ export class Camera {
     const panX = -deltaX / currentZoom;
     const panY = deltaY / currentZoom;
 
-    const translationMatrix = m3.translation(panX, panY);
+    const translationMatrix = m3.translate(panX, panY);
 
     this.viewportTransformMatrix = m3.multiply(this.viewportTransformMatrix, translationMatrix);
 

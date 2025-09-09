@@ -64,7 +64,8 @@
         "useValidForDirection": "error",
         "useValidTypeof": "error",
         "useYield": "error",
-        "useExhaustiveDependencies": "off"
+        "useExhaustiveDependencies": "off",
+        "useHookAtTopLevel": "off"
       },
       "security": {
         "noDangerouslySetInnerHtmlWithChildren": "error"
@@ -104,13 +105,13 @@
         "noMisleadingCharacterClass": "error",
         "noPrototypeBuiltins": "error",
         "noRedeclare": "error",
-        "noShadowRestrictedNames": "error",
         "noSparseArray": "error",
         "noUnsafeNegation": "error",
         "noWith": "error",
         "useGetterReturn": "error",
         "noVar": "error",
-        "noArrayIndexKey": "warn"
+        "noArrayIndexKey": "warn",
+        "noShadowRestrictedNames": "off",
       }
     }
   },

@@ -1,10 +1,9 @@
-import type { Camera } from '../../Camera.class';
-import { m3 } from '../../math';
-import { createProgram } from '../../utils/createProgram';
-import { createShader } from '../../utils/createShader';
-import { tick } from '../../utils/tick';
-import type { Bounds, Parent, Size, Style, Transform } from '../components/types';
-import type { World } from '../World.class';
+import type { Camera } from '../Camera.class';
+import type { Canvas } from '../Canvas.class';
+import type { Size, Style } from '../factory/types';
+import { createProgram } from '../utils/createProgram';
+import { createShader } from '../utils/createShader';
+import { tick } from '../utils/tick';
 
 const vss = `
     attribute vec2 a_position;
@@ -33,26 +32,29 @@ const fss = `
 `;
 
 export class RenderSystem {
+  private program: WebGLProgram;
   private gl: WebGLRenderingContext;
-  program: WebGLProgram;
+
   private vertexShaderSource: string;
   private fragmentShaderSource: string;
+
   private rectangleVertices: Float32Array;
   private circleVertices: Float32Array;
-  private world: World;
   private camera: Camera;
+  private canvas: Canvas;
 
-  constructor(gl: WebGLRenderingContext, world: World, camera: Camera) {
-    this.world = world;
-    this.gl = gl;
-    this.camera = camera;
+  constructor(canvas: Canvas) {
+    this.canvas = canvas;
+    this.gl = canvas.getCtx()!;
+    this.camera = canvas.camera;
 
     this.vertexShaderSource = vss;
     this.fragmentShaderSource = fss;
 
-    const vertexShader = createShader(gl, gl.VERTEX_SHADER, this.vertexShaderSource);
-    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, this.fragmentShaderSource);
-    this.program = createProgram(gl, vertexShader, fragmentShader);
+    const vertexShader = createShader(this.gl, this.gl.VERTEX_SHADER, this.vertexShaderSource);
+    const fragmentShader = createShader(this.gl, this.gl.FRAGMENT_SHADER, this.fragmentShaderSource);
+    this.program = createProgram(this.gl, vertexShader, fragmentShader);
+    this.gl.useProgram(this.program);
 
     this.gl.enable(this.gl.BLEND);
     this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
@@ -82,9 +84,6 @@ export class RenderSystem {
   update() {
     const gl = this.gl;
     const program = this.program;
-    const world = this.world;
-
-    gl.useProgram(program);
 
     gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -100,12 +99,6 @@ export class RenderSystem {
       gl.uniformMatrix3fv(cameraViewportTransformLocation, false, this.camera.viewportTransformMatrix);
     }
 
-    const transformStore = world.store<Transform>('transform');
-    const sizeStore = world.store<Size>('size');
-    const styleStore = world.store<Style>('style');
-    const boundsStore = world.store<Bounds>('bounds');
-    const parentStore = world.store<Parent>('parent');
-
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, this.rectangleVertices, gl.STATIC_DRAW);
@@ -115,24 +108,18 @@ export class RenderSystem {
     const transformationMatrixLocation = gl.getUniformLocation(program, 'u_object_transformation_matrix');
     const sizeLocation = gl.getUniformLocation(program, 'u_size');
 
-    const rectangles: Array<{ transform: Transform; style: Style; matrix: number[]; size: Size }> = [];
-    const circles: Array<{ transform: Transform; style: Style; matrix: number[]; size: Size }> = [];
+    const rectangles: Array<{ style: Style; matrix: number[]; size: Size }> = [];
+    const circles: Array<{ style: Style; matrix: number[]; size: Size }> = [];
 
-    for (const [entity, t] of transformStore.entries()) {
-      const bounds = boundsStore.get(entity);
-      const size = sizeStore.get(entity);
-      const style = styleStore.get(entity);
-
-      if (!size || !style || !bounds) {
-        continue;
-      }
-
-      const matrix = bounds.matrix;
+    for (const object of this.canvas.objects) {
+      const style = object.style;
+      const size = object.size;
+      const matrix = object.transformMatrix;
 
       if (size.radius) {
-        circles.push({ transform: t, style, matrix, size });
+        circles.push({ style, matrix, size });
       } else {
-        rectangles.push({ transform: t, style, matrix, size });
+        rectangles.push({ style, matrix, size });
       }
     }
 
@@ -157,7 +144,7 @@ export class RenderSystem {
         gl.uniform4f(colorLocation, style.fill[0], style.fill[1], style.fill[2], style.fill[3]);
         gl.uniformMatrix3fv(transformationMatrixLocation, false, matrix);
         gl.uniform2f(sizeLocation, size.radius!, size.radius!);
-        gl.drawArrays(gl.TRIANGLE_FAN, 0, 34); // 32 segments + center + closing vertex
+        gl.drawArrays(gl.TRIANGLE_FAN, 0, 34);
       }
     }
 
