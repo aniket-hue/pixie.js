@@ -1,11 +1,7 @@
+import type { Object } from '../entities/Object.class';
+
 export interface Component {
   readonly type: string;
-}
-
-export interface Transform {
-  position: { x: number; y: number };
-  rotation: number;
-  scale: { x: number; y: number };
 }
 
 export interface Selectable {
@@ -19,14 +15,8 @@ export interface Size {
   radius?: number;
 }
 
-export interface Bounds {
+export interface Transform {
   matrix: number[];
-  bounds: {
-    minX: number;
-    minY: number;
-    maxX: number;
-    maxY: number;
-  };
 }
 
 export interface Style {
@@ -40,5 +30,5 @@ export interface Interaction {
   selectable?: boolean;
 }
 
-export type Children = number[];
+export type Children = Object[];
 export type Parent = number | null;
