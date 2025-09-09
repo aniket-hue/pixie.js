@@ -13,7 +13,6 @@ export class Canvas {
     this.engine = new GraphicsEngine(canvas);
   }
 
-  // Delegate all graphics operations to the engine
   add(objectFactory: any) {
     return this.engine.add(objectFactory);
   }

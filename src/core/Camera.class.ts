@@ -1,5 +1,5 @@
 import { Events } from './events';
-import type { IEventTarget, IRenderTarget } from './interfaces';
+import type { GraphicsEngine } from './GraphicsEngine.class';
 import { m3 } from './math';
 
 export interface Point {
@@ -7,31 +7,25 @@ export interface Point {
   y: number;
 }
 
+const DEFAULT_CAMERA_CONFIG = {
+  zoom: 1,
+  x: 0,
+  y: 0,
+};
 export class Camera {
   minZoom: number = 0.1;
   maxZoom: number = 5;
 
-  context: IRenderTarget & IEventTarget;
+  context: GraphicsEngine;
   viewportTransformMatrix: number[];
 
-  constructor(
-    context: IRenderTarget & IEventTarget,
-    {
-      zoom,
-      x,
-      y,
-    }: {
-      zoom: number;
-      x: number;
-      y: number;
-    },
-  ) {
+  constructor(context: GraphicsEngine, config: typeof DEFAULT_CAMERA_CONFIG = DEFAULT_CAMERA_CONFIG) {
     this.context = context;
     this.viewportTransformMatrix = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 
-    const clampedZoom = Math.max(this.minZoom, Math.min(this.maxZoom, zoom));
+    const clampedZoom = Math.max(this.minZoom, Math.min(this.maxZoom, config.zoom));
     const scaleMatrix = m3.scale(clampedZoom, clampedZoom);
-    const translationMatrix = m3.translate(x + this.context.width / 2, y + this.context.height / 2);
+    const translationMatrix = m3.translate(config.x + this.context.width / 2, config.y + this.context.height / 2);
 
     this.viewportTransformMatrix = m3.multiply(scaleMatrix, translationMatrix);
   }
