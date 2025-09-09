@@ -59,18 +59,13 @@ function App() {
         fill: [1, 1, 1, 0.3],
       });
 
+      const shapes = [];
       const rect1 = canvas.add(rect1Factory);
       const rect2 = canvas.add(rect2Factory);
       const rect3 = canvas.add(rect3Factory);
 
-      const groupFactory = createGroup([rect1, rect2]);
-      const group = canvas.add(groupFactory);
-
-      const group2Factory = createGroup([group, rect3]);
-      const group2 = canvas.add(group2Factory);
-
-      const rows = 10;
-      const cols = 10;
+      const rows = 50;
+      const cols = 50;
       const spacing = 100;
 
       const ids = [];
@@ -91,11 +86,18 @@ function App() {
           const width = Math.random() * 10 + 10;
           const height = Math.random() * 10 + 10;
 
-          const rect = createRectangle({ x, y, width, height, fill, scaleX, scaleY, angle });
+          const rectFactory = createRectangle({ x, y, width, height, fill, scaleX, scaleY, angle });
           // canvas.add(circle);
-          canvas.add(rect);
+          const rect = canvas.add(rectFactory);
+          shapes.push(rect);
         }
       }
+
+      const groupFactory = createGroup(shapes);
+      const group = canvas.add(groupFactory);
+
+      const group2Factory = createGroup([group, rect3]);
+      const group2 = canvas.add(group2Factory);
     }
   }, []);
 

@@ -35,7 +35,8 @@ export class Renderer {
   }
 
   render() {
-    this.ecsRenderSystem.update();
+    this.ecsRenderSystem.update(this.canvas.objects);
+    this.canvas.world.clearDirty();
   }
 
   requestRender() {
@@ -43,7 +44,6 @@ export class Renderer {
       this.renderRequested = true;
 
       requestAnimationFrame(() => {
-        this.canvas.world.clearDirty();
         this.render();
         this.renderRequested = false;
       });

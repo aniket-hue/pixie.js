@@ -1,9 +1,9 @@
 import type { Camera } from '../Camera.class';
 import type { Canvas } from '../Canvas.class';
+import type { Object } from '../entities/Object.class';
 import type { Size, Style } from '../factory/types';
 import { createProgram } from '../utils/createProgram';
 import { createShader } from '../utils/createShader';
-import { tick } from '../utils/tick';
 
 const vss = `
     attribute vec2 a_position;
@@ -41,10 +41,8 @@ export class RenderSystem {
   private rectangleVertices: Float32Array;
   private circleVertices: Float32Array;
   private camera: Camera;
-  private canvas: Canvas;
 
   constructor(canvas: Canvas) {
-    this.canvas = canvas;
     this.gl = canvas.getCtx()!;
     this.camera = canvas.camera;
 
@@ -75,13 +73,9 @@ export class RenderSystem {
       this.circleVertices[(i + 1) * 2] = Math.cos(angle);
       this.circleVertices[(i + 1) * 2 + 1] = Math.sin(angle);
     }
-
-    tick().then(() => {
-      this.update();
-    });
   }
 
-  update() {
+  update(objects: Object[]) {
     const gl = this.gl;
     const program = this.program;
 
@@ -111,7 +105,7 @@ export class RenderSystem {
     const rectangles: Array<{ style: Style; matrix: number[]; size: Size }> = [];
     const circles: Array<{ style: Style; matrix: number[]; size: Size }> = [];
 
-    for (const object of this.canvas.objects) {
+    for (const object of objects) {
       const style = object.style;
       const size = object.size;
       const matrix = object.transformMatrix;
