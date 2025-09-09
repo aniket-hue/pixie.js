@@ -1,24 +1,24 @@
 import type { Camera } from '../Camera.class';
-import type { Canvas } from '../Canvas.class';
 import type { Object } from '../entities/Object.class';
 import { Events } from '../events';
 import type { Size } from '../factory/types';
+import type { IInputTarget, ISceneTarget } from '../interfaces';
 import { m3 } from '../math';
 import type { World } from '../World.class';
 
 export class InteractiveSystem {
   private world: World;
-  private canvas: Canvas;
+  private context: IInputTarget & ISceneTarget & { renderer: { requestRender(): void } };
   private camera: Camera;
 
   private draggedObject: Object | null = null;
   private isDragging = false;
   private dragOffset = { x: 0, y: 0 };
 
-  constructor(canvas: Canvas) {
-    this.canvas = canvas;
-    this.world = canvas.world;
-    this.camera = canvas.camera;
+  constructor(context: IInputTarget & ISceneTarget & { renderer: { requestRender(): void } }) {
+    this.context = context;
+    this.world = context.world;
+    this.camera = context.camera;
 
     this.initListeners();
   }
@@ -28,9 +28,9 @@ export class InteractiveSystem {
     this.onMouseDown = this.onMouseDown.bind(this);
     this.onMouseUp = this.onMouseUp.bind(this);
 
-    this.canvas.on(Events.MOUSE_MOVE, this.onMouseMove);
-    this.canvas.on(Events.MOUSE_DOWN, this.onMouseDown);
-    this.canvas.on(Events.MOUSE_UP, this.onMouseUp);
+    this.context.on(Events.MOUSE_MOVE, this.onMouseMove);
+    this.context.on(Events.MOUSE_DOWN, this.onMouseDown);
+    this.context.on(Events.MOUSE_UP, this.onMouseUp);
   }
 
   private onMouseDown(event: MouseEvent): void {
@@ -54,7 +54,7 @@ export class InteractiveSystem {
 
     if (this.isDragging && this.draggedObject !== null) {
       this.handleDrag(worldPos.x, worldPos.y);
-      this.canvas.renderer.requestRender();
+      this.context.renderer.requestRender();
     }
   }
 
@@ -81,7 +81,7 @@ export class InteractiveSystem {
   }
 
   private findObjectAtPoint(worldX: number, worldY: number): Object | null {
-    for (const object of this.canvas.objects) {
+    for (const object of this.context.objects) {
       const transform = object.transformMatrix;
       const size = object.size;
       const isDraggable = object.isDraggable;
@@ -118,13 +118,13 @@ export class InteractiveSystem {
   }
 
   private getWorldPosition(screenX: number, screenY: number): { x: number; y: number } {
-    const y = this.canvas.height - screenY;
+    const y = this.context.height - screenY;
     return this.camera.screenToWorld(screenX, y);
   }
 
   public destroy(): void {
-    this.canvas.off(Events.MOUSE_MOVE, this.onMouseMove);
-    this.canvas.off(Events.MOUSE_DOWN, this.onMouseDown);
-    this.canvas.off(Events.MOUSE_UP, this.onMouseUp);
+    this.context.off(Events.MOUSE_MOVE, this.onMouseMove);
+    this.context.off(Events.MOUSE_DOWN, this.onMouseDown);
+    this.context.off(Events.MOUSE_UP, this.onMouseUp);
   }
 }

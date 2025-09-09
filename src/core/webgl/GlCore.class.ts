@@ -1,4 +1,3 @@
-import type { Canvas } from '../Canvas.class';
 import fss from './shaders/fss.frag?raw';
 import vss from './shaders/vss.vert?raw';
 
@@ -8,8 +7,8 @@ export class GlCore {
   ctx: WebGLRenderingContext;
   _basic2DProgram: WebGLProgram;
 
-  constructor(canvas: Canvas) {
-    const gl = canvas.canvasElement.getContext('webgl2');
+  constructor(canvasElement: HTMLCanvasElement) {
+    const gl = canvasElement.getContext('webgl2');
 
     if (!gl) {
       throw new Error('WebGL not supported');
