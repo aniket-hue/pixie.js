@@ -1,17 +1,14 @@
-import type { Camera } from '../Camera.class';
 import { Events } from '../events';
-import type { IEventTarget } from '../interfaces';
+import type { GraphicsEngine } from '../GraphicsEngine.class';
 import { PRIMARY_MODIFIER_KEY } from './constants';
 
 export class InputHandler {
-  private context: IEventTarget & { element: HTMLCanvasElement };
-  private camera: Camera;
+  private context: GraphicsEngine;
   private canvasElement: HTMLCanvasElement;
 
-  constructor(context: IEventTarget & { element: HTMLCanvasElement }, camera: Camera) {
+  constructor(context: GraphicsEngine) {
     this.context = context;
     this.canvasElement = context.element;
-    this.camera = camera;
     this.setupEventListeners();
   }
 
@@ -38,9 +35,9 @@ export class InputHandler {
       const mouseX = event.clientX - rect.left;
       const mouseY = event.clientY - rect.top;
 
-      this.camera.zoomAt(event.deltaY, mouseX, mouseY);
+      this.context.camera.zoomAt(event.deltaY, mouseX, mouseY);
     } else {
-      this.camera.pan(event.deltaX, event.deltaY);
+      this.context.camera.pan(event.deltaX, event.deltaY);
     }
   }
 

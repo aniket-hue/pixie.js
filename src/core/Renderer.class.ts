@@ -1,9 +1,9 @@
 import { Events } from './events';
-import type { IRenderingContext } from './interfaces';
+import type { GraphicsEngine } from './GraphicsEngine.class';
 import { InteractiveSystem, RenderSystem } from './systems';
 
 export class Renderer {
-  context: IRenderingContext & { getGlCore(): any };
+  context: GraphicsEngine;
   baseProgram: Partial<{
     basic2D: WebGLProgram;
   }> = {};
@@ -13,13 +13,13 @@ export class Renderer {
 
   private renderRequested = false;
 
-  constructor(context: IRenderingContext & { getGlCore(): any }) {
+  constructor(context: GraphicsEngine) {
     this.context = context;
 
     this.initListeners();
 
     this.ecsRenderSystem = new RenderSystem(this.context);
-    this.interactiveSystem = new InteractiveSystem(this.context as any);
+    this.interactiveSystem = new InteractiveSystem(this.context);
   }
 
   render() {

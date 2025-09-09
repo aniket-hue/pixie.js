@@ -195,4 +195,17 @@ export class BaseEntity {
       maxY: transform[7] + h / 2,
     };
   }
+
+  containsPoint(worldX: number, worldY: number) {
+    const matrix = this.transformMatrix;
+    const size = this.size;
+
+    const inMatrix = m3.inverse(matrix);
+    const localPoint = m3.transformPoint(inMatrix, worldX, worldY);
+
+    const halfWidth = 'radius' in size ? size.radius! : size.width! * 0.5;
+    const halfHeight = 'radius' in size ? size.radius! : size.height! * 0.5;
+
+    return localPoint.x >= -halfWidth && localPoint.x <= halfWidth && localPoint.y >= -halfHeight && localPoint.y <= halfHeight;
+  }
 }

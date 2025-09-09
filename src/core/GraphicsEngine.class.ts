@@ -6,32 +6,27 @@ import { Renderer } from './Renderer.class';
 import { Scene } from './Scene.class';
 import { GlCore } from './webgl/GlCore.class';
 
-const DEFAULT_CAMERA_CONFIG = {
-  zoom: 1,
-  x: 0,
-  y: 0,
-};
-
 export class GraphicsEngine implements IRenderingContext, IInputTarget {
   private canvasElement: HTMLCanvasElement;
   private events: EventEmitter;
   private glCore: GlCore;
-  private scene: Scene;
   private renderer: Renderer;
   private inputHandler: InputHandler;
 
   camera: Camera;
+  scene: Scene;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvasElement = canvas;
+
     this.events = new EventEmitter();
     this.scene = new Scene();
 
     this.glCore = new GlCore(this.canvasElement);
 
-    this.camera = new Camera(this, DEFAULT_CAMERA_CONFIG);
+    this.camera = new Camera(this);
     this.renderer = new Renderer(this);
-    this.inputHandler = new InputHandler(this, this.camera);
+    this.inputHandler = new InputHandler(this);
 
     this.resize();
   }
@@ -127,7 +122,6 @@ export class GraphicsEngine implements IRenderingContext, IInputTarget {
     return this.glCore;
   }
 
-  // Lifecycle
   destroy(): void {
     this.events.destroy();
     this.renderer.destroy();
