@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
-import { Canvas } from './webgl/Canvas.class';
-import { Events } from './webgl/events';
-import { createGroup } from './webgl/factory/group';
-import { createRectangle } from './webgl/factory/shapes/rectangle';
+import { Canvas } from './core/Canvas.class';
+import { Events } from './core/events';
+import { createGroup } from './core/factory';
+import { createRectangle } from './core/factory/shapes/rectangle';
+
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -13,7 +14,7 @@ function App() {
   const handleReset = useCallback(() => {
     if (webglCanvasRef.current) {
       webglCanvasRef.current?.setZoom(1);
-    }
+    }  
   }, []);
 
   useEffect(() => {

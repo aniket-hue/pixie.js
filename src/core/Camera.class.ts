@@ -15,6 +15,7 @@ export class Camera {
   viewportTransformMatrix: number[];
 
   constructor(
+    canvas: Canvas,
     {
       zoom,
       x,
@@ -24,7 +25,6 @@ export class Camera {
       x: number;
       y: number;
     },
-    canvas: Canvas,
   ) {
     this.canvas = canvas;
     this.viewportTransformMatrix = [1, 0, 0, 0, 1, 0, 0, 0, 1];
