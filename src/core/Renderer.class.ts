@@ -1,13 +1,9 @@
-import type { Camera } from './Camera.class';
-
 import type { Canvas } from './Canvas.class';
 import { Events } from './events';
 import { InteractiveSystem, RenderSystem } from './systems';
 
 export class Renderer {
   canvas: Canvas;
-  ctx: WebGLRenderingContext;
-  camera: Camera;
   baseProgram: Partial<{
     basic2D: WebGLProgram;
   }> = {};
@@ -17,16 +13,8 @@ export class Renderer {
 
   private renderRequested = false;
 
-  constructor(canvas: Canvas, camera: Camera) {
+  constructor(canvas: Canvas) {
     this.canvas = canvas;
-    const webglCtx = this.canvas.getCtx();
-
-    if (!webglCtx) {
-      throw new Error('WebGL not supported');
-    }
-
-    this.ctx = webglCtx;
-    this.camera = camera;
 
     this.initListeners();
 

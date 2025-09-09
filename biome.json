@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["src/**/*.{ts,tsx,js,jsx,mjs,cjs,json,css,html}", "!src/app/routeTree.gen.ts"]
+    "includes": ["src/**/*.{ts,tsx,js,jsx,mjs,cjs,json,css,html,frag,vert}", "!src/app/routeTree.gen.ts"]
   },
   "formatter": {
     "enabled": true,
@@ -111,7 +111,7 @@
         "useGetterReturn": "error",
         "noVar": "error",
         "noArrayIndexKey": "warn",
-        "noShadowRestrictedNames": "off",
+        "noShadowRestrictedNames": "off"
       }
     }
   },

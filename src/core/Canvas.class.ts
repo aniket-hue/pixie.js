@@ -5,9 +5,15 @@ import { EventEmitter, type EventKeys } from './events';
 import { InputHandler } from './input/InputHandler.class';
 import { Renderer } from './Renderer.class';
 import { World } from './World.class';
+import { GlCore } from './webgl/GlCore.class';
+
+const DEFAULT_CAMERA_CONFIG = {
+  zoom: 1,
+  x: 0,
+  y: 0,
+};
 
 export class Canvas {
-  // ECS World
   world: World;
   objects: Object[];
 
@@ -16,22 +22,18 @@ export class Canvas {
   renderer: Renderer;
   camera: Camera;
   inputHandler: InputHandler;
+  glCore: GlCore;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvasElement = canvas;
 
-    this.world = new World();
     this.objects = [];
+
+    this.world = new World();
     this.events = new EventEmitter();
-    this.camera = new Camera(
-      {
-        zoom: 1,
-        x: 0,
-        y: 0,
-      },
-      this,
-    );
-    this.renderer = new Renderer(this, this.camera);
+    this.glCore = new GlCore(this);
+    this.camera = new Camera(this, DEFAULT_CAMERA_CONFIG);
+    this.renderer = new Renderer(this);
     this.inputHandler = new InputHandler(this, this.camera);
 
     this.resize();
@@ -63,7 +65,7 @@ export class Canvas {
   }
 
   getCtx() {
-    return this.canvasElement.getContext('webgl');
+    return this.glCore.ctx;
   }
 
   setZoom(zoom: number) {
