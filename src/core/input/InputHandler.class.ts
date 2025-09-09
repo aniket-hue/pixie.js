@@ -1,16 +1,16 @@
 import type { Camera } from '../Camera.class';
-import type { Canvas } from '../Canvas.class';
 import { Events } from '../events';
+import type { IEventTarget } from '../interfaces';
 import { PRIMARY_MODIFIER_KEY } from './constants';
 
 export class InputHandler {
-  private canvas: Canvas;
+  private context: IEventTarget & { element: HTMLCanvasElement };
   private camera: Camera;
   private canvasElement: HTMLCanvasElement;
 
-  constructor(canvas: Canvas, camera: Camera) {
-    this.canvas = canvas;
-    this.canvasElement = canvas.canvasElement;
+  constructor(context: IEventTarget & { element: HTMLCanvasElement }, camera: Camera) {
+    this.context = context;
+    this.canvasElement = context.element;
     this.camera = camera;
     this.setupEventListeners();
   }
@@ -47,19 +47,19 @@ export class InputHandler {
   private handleMouseMove(event: MouseEvent) {
     event.preventDefault();
 
-    this.canvas.fire(Events.MOUSE_MOVE, event);
+    this.context.fire(Events.MOUSE_MOVE, event);
   }
 
   private handleMouseDown(event: MouseEvent) {
     event.preventDefault();
 
-    this.canvas.fire(Events.MOUSE_DOWN, event);
+    this.context.fire(Events.MOUSE_DOWN, event);
   }
 
   private handleMouseUp(event: MouseEvent) {
     event.preventDefault();
 
-    this.canvas.fire(Events.MOUSE_UP, event);
+    this.context.fire(Events.MOUSE_UP, event);
   }
 
   // Cleanup event listeners

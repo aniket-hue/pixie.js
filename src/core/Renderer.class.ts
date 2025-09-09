@@ -1,9 +1,9 @@
-import type { Canvas } from './Canvas.class';
 import { Events } from './events';
+import type { IRenderingContext } from './interfaces';
 import { InteractiveSystem, RenderSystem } from './systems';
 
 export class Renderer {
-  canvas: Canvas;
+  context: IRenderingContext & { getGlCore(): any };
   baseProgram: Partial<{
     basic2D: WebGLProgram;
   }> = {};
@@ -13,18 +13,18 @@ export class Renderer {
 
   private renderRequested = false;
 
-  constructor(canvas: Canvas) {
-    this.canvas = canvas;
+  constructor(context: IRenderingContext & { getGlCore(): any }) {
+    this.context = context;
 
     this.initListeners();
 
-    this.ecsRenderSystem = new RenderSystem(this.canvas);
-    this.interactiveSystem = new InteractiveSystem(this.canvas);
+    this.ecsRenderSystem = new RenderSystem(this.context);
+    this.interactiveSystem = new InteractiveSystem(this.context as any);
   }
 
   render() {
-    this.ecsRenderSystem.update(this.canvas.objects);
-    this.canvas.world.clearDirty();
+    this.ecsRenderSystem.update(this.context.objects);
+    this.context.world.clearDirty();
   }
 
   requestRender() {
@@ -41,15 +41,15 @@ export class Renderer {
   initListeners() {
     this.render = this.render.bind(this);
 
-    this.canvas.on(Events.ZOOM_CHANGED, this.render);
-    this.canvas.on(Events.PAN_CHANGED, this.render);
-    this.canvas.on(Events.RENDER, this.render);
+    this.context.on(Events.ZOOM_CHANGED, this.render);
+    this.context.on(Events.PAN_CHANGED, this.render);
+    this.context.on(Events.RENDER, this.render);
   }
 
   destroyListeners() {
-    this.canvas.off(Events.ZOOM_CHANGED, this.render);
-    this.canvas.off(Events.PAN_CHANGED, this.render);
-    this.canvas.off(Events.RENDER, this.render);
+    this.context.off(Events.ZOOM_CHANGED, this.render);
+    this.context.off(Events.PAN_CHANGED, this.render);
+    this.context.off(Events.RENDER, this.render);
   }
 
   destroy() {

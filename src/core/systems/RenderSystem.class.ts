@@ -1,7 +1,7 @@
 import type { Camera } from '../Camera.class';
-import type { Canvas } from '../Canvas.class';
 import type { Object } from '../entities/Object.class';
 import type { Size, Style } from '../factory/types';
+import type { ICameraTarget, IRenderTarget } from '../interfaces';
 import type { GlCore } from '../webgl/GlCore.class';
 
 export class RenderSystem {
@@ -11,9 +11,9 @@ export class RenderSystem {
   private circleVertices: Float32Array;
   private camera: Camera;
 
-  constructor(canvas: Canvas) {
-    this.gl = canvas.glCore;
-    this.camera = canvas.camera;
+  constructor(context: IRenderTarget & ICameraTarget & { getGlCore(): GlCore }) {
+    this.gl = context.getGlCore();
+    this.camera = context.camera;
 
     this.rectangleVertices = new Float32Array([
       -0.5, -0.5, 0.5, -0.5, -0.5, 0.5,
