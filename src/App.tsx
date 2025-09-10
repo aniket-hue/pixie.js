@@ -45,10 +45,10 @@ function App() {
       const rect2Factory = createRectangle({
         x: 200,
         y: 200,
-        width: 100,
-        height: 100,
+        width: 200,
+        height: 200,
         fill: [1, 1, 0.2, 0.3],
-        angle: Math.PI / 4,
+        // angle: Math.PI / 4,
         scaleX: 2,
         scaleY: 2,
       });
@@ -64,7 +64,7 @@ function App() {
       const shapes = [];
       const rect1 = canvas.add(rect1Factory);
       const rect2 = canvas.add(rect2Factory);
-      const rect3 = canvas.add(rect3Factory);
+      // const rect3 = canvas.add(rect3Factory);
 
       const rows = 50;
       const cols = 50;
