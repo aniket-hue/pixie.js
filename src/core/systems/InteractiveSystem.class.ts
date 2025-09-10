@@ -36,12 +36,10 @@ export class InteractiveSystem {
     const worldPos = this.getWorldPosition(event.offsetX, event.offsetY);
     const object = this.context.scene.findObjectAtPoint(worldPos.x, worldPos.y);
 
+    this.deselectAll();
+
     if (object === null) {
-      for (const selectedObject of this.selectedObjects) {
-        selectedObject.selected = false;
-        this.world.markDirty(selectedObject.entityId);
-        this.context.requestRender();
-      }
+      this.context.requestRender();
 
       return;
     }
@@ -93,6 +91,15 @@ export class InteractiveSystem {
   private getWorldPosition(screenX: number, screenY: number): { x: number; y: number } {
     const y = this.context.height - screenY;
     return this.camera.screenToWorld(screenX, y);
+  }
+
+  private deselectAll(): void {
+    this.selectedObjects.forEach((selectedObject) => {
+      selectedObject.selected = false;
+      this.world.markDirty(selectedObject.entityId);
+    });
+
+    this.selectedObjects = [];
   }
 
   public destroy(): void {
