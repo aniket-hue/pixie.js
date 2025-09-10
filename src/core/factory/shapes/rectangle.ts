@@ -1,5 +1,5 @@
 import { m3 } from '../../math';
-import type { World } from '../../World.class';
+import type { World } from '../../world/World.class';
 import type { IRectangleConstructorData } from './types';
 
 export function createRectangle({
@@ -8,7 +8,7 @@ export function createRectangle({
   width,
   height,
   fill = [0, 0, 0, 1],
-  stroke = [0, 0, 0, 1],
+  stroke = [1, 0, 0, 1],
   strokeWidth = 0,
   angle = 0,
   scaleX = 1,
@@ -27,6 +27,7 @@ export function createRectangle({
 
       world.addComponent('interaction', entityId, {
         draggable: true,
+        selectable: true,
       });
 
       world.addComponent('transform', entityId, {

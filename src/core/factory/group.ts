@@ -1,7 +1,7 @@
 import { Object } from '../entities/Object.class';
 import type { ObjectFactory } from '../entities/types';
 import { m3 } from '../math';
-import type { World } from '../World.class';
+import type { World } from '../world/World.class';
 
 export function createGroup(objects: Object[]): ObjectFactory {
   return {

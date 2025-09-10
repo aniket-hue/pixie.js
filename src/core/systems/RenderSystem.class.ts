@@ -1,25 +1,30 @@
 import type { Camera } from '../Camera.class';
 import type { Object } from '../entities/Object.class';
-import type { Size, Style } from '../factory/types';
 import type { ICameraTarget, IRenderTarget } from '../interfaces';
 import type { GlCore } from '../webgl/GlCore.class';
+import type { Size, Style } from '../world/types';
 
 export class RenderSystem {
   private gl: GlCore;
 
   private rectangleVertices: Float32Array;
   private circleVertices: Float32Array;
+  private rectangleOutlineVertices: Float32Array;
+
+  private rectangleBuffer: WebGLBuffer | null;
+  private rectangleOutlineBuffer: WebGLBuffer | null;
+  private circleBuffer: WebGLBuffer | null;
+
   private camera: Camera;
 
   constructor(context: IRenderTarget & ICameraTarget & { getGlCore(): GlCore }) {
     this.gl = context.getGlCore();
     this.camera = context.camera;
 
-    this.rectangleVertices = new Float32Array([
-      -0.5, -0.5, 0.5, -0.5, -0.5, 0.5,
-      // Second triangle
-      -0.5, 0.5, 0.5, -0.5, 0.5, 0.5,
-    ]);
+    // Define geometry data
+    this.rectangleVertices = new Float32Array([-0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5]);
+
+    this.rectangleOutlineVertices = new Float32Array([-0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5]);
 
     const segments = 32;
     this.circleVertices = new Float32Array((segments + 2) * 2);
@@ -31,11 +36,23 @@ export class RenderSystem {
       this.circleVertices[(i + 1) * 2] = Math.cos(angle);
       this.circleVertices[(i + 1) * 2 + 1] = Math.sin(angle);
     }
+
+    // Create buffers once
+    this.rectangleBuffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ctx.ARRAY_BUFFER, this.rectangleBuffer);
+    this.gl.bufferData(this.gl.ctx.ARRAY_BUFFER, this.rectangleVertices, this.gl.ctx.STATIC_DRAW);
+
+    this.rectangleOutlineBuffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ctx.ARRAY_BUFFER, this.rectangleOutlineBuffer);
+    this.gl.bufferData(this.gl.ctx.ARRAY_BUFFER, this.rectangleOutlineVertices, this.gl.ctx.STATIC_DRAW);
+
+    this.circleBuffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ctx.ARRAY_BUFFER, this.circleBuffer);
+    this.gl.bufferData(this.gl.ctx.ARRAY_BUFFER, this.circleVertices, this.gl.ctx.STATIC_DRAW);
   }
 
   update(objects: Object[]) {
     const gl = this.gl;
-
     gl.clear();
 
     const resolutionLocation = gl.getUniformLocation('basic2DProgram', 'u_resolution');
@@ -44,46 +61,57 @@ export class RenderSystem {
     if (resolutionLocation) {
       gl.setUniform2f('basic2DProgram', 'u_resolution', [gl.width, gl.height]);
     }
-
     if (cameraViewportTransformLocation) {
       gl.setUniformMatrix3fv('basic2DProgram', 'u_viewport_transform_matrix', this.camera.viewportTransformMatrix);
     }
 
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ctx.ARRAY_BUFFER, positionBuffer);
-
     const positionLocation = gl.getAttribLocation('basic2DProgram', 'a_position');
 
-    const rectangles: Array<{ style: Style; matrix: number[]; size: Size }> = [];
-    const circles: Array<{ style: Style; matrix: number[]; size: Size }> = [];
+    const rectangles: Array<{ style: Style; matrix: number[]; size: Size; selected: boolean }> = [];
+    const circles: Array<{ style: Style; matrix: number[]; size: Size; selected: boolean }> = [];
 
     for (const object of objects) {
       const style = object.style;
       const size = object.size;
       const matrix = object.transformMatrix;
+      const selected = object.selected;
 
       if (size.radius) {
-        circles.push({ style, matrix, size });
+        circles.push({ style, matrix, size, selected });
       } else {
-        rectangles.push({ style, matrix, size });
+        rectangles.push({ style, matrix, size, selected });
       }
     }
 
-    if (rectangles.length > 0) {
-      gl.bufferData(gl.ctx.ARRAY_BUFFER, this.rectangleVertices, gl.ctx.STATIC_DRAW);
+    // ---- Rectangles ----
+    if (rectangles.length > 0 && this.rectangleBuffer) {
+      gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.rectangleBuffer);
       gl.enableVertexAttribArray(positionLocation);
       gl.vertexAttribPointer(positionLocation, 2, gl.ctx.FLOAT, false, 0, 0);
 
-      for (const { style, matrix, size } of rectangles) {
+      for (const { style, matrix, size, selected } of rectangles) {
         gl.setUniform4f('basic2DProgram', 'u_color', style.fill);
         gl.setUniformMatrix3fv('basic2DProgram', 'u_object_transformation_matrix', matrix);
         gl.setUniform2f('basic2DProgram', 'u_size', [size.width!, size.height!]);
         gl.drawArrays(gl.ctx.TRIANGLES, 0, 6);
+
+        if (selected && this.rectangleOutlineBuffer) {
+          gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.rectangleOutlineBuffer);
+          gl.vertexAttribPointer(positionLocation, 2, gl.ctx.FLOAT, false, 0, 0);
+
+          gl.setUniform4f('basic2DProgram', 'u_color', style.stroke);
+          gl.lineWidth(1);
+          gl.drawArrays(gl.ctx.LINE_LOOP, 0, 4);
+
+          gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.rectangleBuffer);
+          gl.vertexAttribPointer(positionLocation, 2, gl.ctx.FLOAT, false, 0, 0);
+        }
       }
     }
 
-    if (circles.length > 0) {
-      gl.bufferData(gl.ctx.ARRAY_BUFFER, this.circleVertices, gl.ctx.STATIC_DRAW);
+    // ---- Circles ----
+    if (circles.length > 0 && this.circleBuffer) {
+      gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.circleBuffer);
       gl.enableVertexAttribArray(positionLocation);
       gl.vertexAttribPointer(positionLocation, 2, gl.ctx.FLOAT, false, 0, 0);
 
@@ -91,10 +119,8 @@ export class RenderSystem {
         gl.setUniform4f('basic2DProgram', 'u_color', style.fill);
         gl.setUniformMatrix3fv('basic2DProgram', 'u_object_transformation_matrix', matrix);
         gl.setUniform2f('basic2DProgram', 'u_size', [size.radius!, size.radius!]);
-        gl.drawArrays(gl.ctx.TRIANGLE_FAN, 0, 34);
+        gl.drawArrays(gl.ctx.TRIANGLE_FAN, 0, this.circleVertices.length / 2);
       }
     }
-
-    gl.deleteBuffer(positionBuffer);
   }
 }

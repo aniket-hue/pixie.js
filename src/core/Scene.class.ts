@@ -1,6 +1,6 @@
 import { Object } from './entities/Object.class';
 import type { ObjectFactory } from './entities/types';
-import { World } from './World.class';
+import { World } from './world/World.class';
 
 export class Scene {
   private world: World;

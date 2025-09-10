@@ -1,8 +1,10 @@
+import type { ComponentToData, ComponentType } from './types';
+
 export class World {
   private nextEntityId = 0;
   private entities = new Set<number>();
 
-  private stores: Map<string, Map<number, any>> = new Map();
+  private stores: Map<ComponentType, Map<number, ComponentToData<any>>> = new Map();
   private dirtyEntities = new Set<number>();
 
   createEntity(): number {
@@ -11,7 +13,7 @@ export class World {
     return id;
   }
 
-  addComponent<T>(type: string, entity: number, data: T) {
+  addComponent<T extends ComponentType>(type: T, entity: number, data: ComponentToData<T>) {
     if (!this.stores.has(type)) {
       this.stores.set(type, new Map());
     }
@@ -19,16 +21,16 @@ export class World {
     this.stores.get(type)!.set(entity, data);
   }
 
-  removeComponent<T>(type: string, entity: number) {
+  removeComponent(type: ComponentType, entity: number) {
     this.stores.get(type)?.delete(entity);
   }
 
-  getComponent<T>(type: string, entity: number): T | undefined {
+  getComponent<T extends ComponentType>(type: T, entity: number): ComponentToData<T> | undefined {
     return this.stores.get(type)?.get(entity);
   }
 
-  store<T>(type: string): Map<number, T> {
-    return (this.stores.get(type) as Map<number, T>) ?? new Map();
+  store<T extends ComponentType>(type: T): Map<number, ComponentToData<T>> {
+    return (this.stores.get(type) as Map<number, ComponentToData<T>>) ?? new Map();
   }
 
   removeEntity(entity: number) {
@@ -41,11 +43,12 @@ export class World {
     this.dirtyEntities.delete(entity);
   }
 
-  updateComponent<T>(type: string, entity: number, updates: Partial<T>) {
+  updateComponent<T extends ComponentType>(type: T, entity: number, updates: Partial<ComponentToData<T>>) {
     const store = this.stores.get(type);
+    const data = store?.get(entity);
 
-    if (store && store.has(entity)) {
-      Object.assign(store.get(entity), updates);
+    if (data) {
+      Object.assign(data, updates);
       this.markDirty(entity);
     }
   }
