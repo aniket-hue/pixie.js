@@ -163,4 +163,8 @@ export class GlCore {
   deleteBuffer(buffer: WebGLBuffer) {
     this.ctx.deleteBuffer(buffer);
   }
+
+  lineWidth(width: number) {
+    this.ctx.lineWidth(width);
+  }
 }

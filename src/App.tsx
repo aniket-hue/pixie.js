@@ -38,6 +38,8 @@ function App() {
         width: 100,
         height: 100,
         fill: [1, 0.2, 0.2, 0.3],
+        stroke: [0, 0, 0, 1],
+        strokeWidth: 1,
       });
 
       const rect2Factory = createRectangle({

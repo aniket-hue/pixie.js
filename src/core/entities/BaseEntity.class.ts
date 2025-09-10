@@ -1,6 +1,6 @@
 import type { Canvas } from '../Canvas.class';
-import type { Children, Interaction, Size, Style, Transform } from '../factory/types';
 import { m3 } from '../math';
+import type { Children, Interaction, Size, Style, Transform } from '../world/types';
 
 export class BaseEntity {
   canvas: Canvas;
@@ -167,6 +167,30 @@ export class BaseEntity {
     const interaction = this.interaction;
 
     return interaction?.draggable;
+  }
+
+  get isSelectable() {
+    const interaction = this.interaction;
+
+    return interaction?.selectable;
+  }
+
+  set selectable(selected: boolean) {
+    const interaction = this.interaction;
+
+    this.canvas.world.updateComponent('interaction', this.entityId, { ...interaction, selectable: selected });
+  }
+
+  get selected() {
+    const interaction = this.interaction;
+
+    return interaction?.selected ?? false;
+  }
+
+  set selected(selected: boolean) {
+    const interaction = this.interaction;
+
+    this.canvas.world.updateComponent('interaction', this.entityId, { ...interaction, selected });
   }
 
   get style(): Style {

@@ -2,7 +2,7 @@ import type { Camera } from '../Camera.class';
 import type { Object } from '../entities/Object.class';
 import { Events } from '../events';
 import type { GraphicsEngine } from '../GraphicsEngine.class';
-import type { World } from '../World.class';
+import type { World } from '../world/World.class';
 
 export class InteractiveSystem {
   private world: World;
@@ -12,6 +12,7 @@ export class InteractiveSystem {
   private draggedObject: Object | null = null;
   private isDragging = false;
   private dragOffset = { x: 0, y: 0 };
+  private selectedObjects: Object[] = [];
 
   constructor(context: GraphicsEngine) {
     this.context = context;
@@ -36,8 +37,19 @@ export class InteractiveSystem {
     const object = this.context.scene.findObjectAtPoint(worldPos.x, worldPos.y);
 
     if (object === null) {
+      for (const selectedObject of this.selectedObjects) {
+        selectedObject.selected = false;
+        this.world.markDirty(selectedObject.entityId);
+        this.context.requestRender();
+      }
+
       return;
     }
+
+    object.selected = true;
+    this.selectedObjects = [...this.selectedObjects, object];
+    this.world.markDirty(object.entityId);
+    this.context.requestRender();
 
     const isDraggable = object.isDraggable;
 
