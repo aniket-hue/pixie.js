@@ -120,6 +120,10 @@ export class GlCore {
     this.ctx.uniform1f(this.getUniformLocation(program, name), value);
   }
 
+  setUniform1i(program: Programs, name: string, value: number) {
+    this.ctx.uniform1i(this.getUniformLocation(program, name), value);
+  }
+
   setUniform2f(program: Programs, name: string, value: [number, number]) {
     this.ctx.uniform2f(this.getUniformLocation(program, name), value[0], value[1]);
   }

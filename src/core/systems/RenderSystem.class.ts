@@ -90,15 +90,10 @@ export class RenderSystem {
       gl.vertexAttribPointer(positionLocation, 2, gl.ctx.FLOAT, false, 0, 0);
 
       for (const { style, matrix, size, selected } of rectangles) {
-        if (selected) {
-          gl.setUniform4f('basic2DProgram', 'u_stroke_color', [204 / 255, 136 / 255, 255 / 255, 1]);
-          gl.setUniform1f('basic2DProgram', 'u_stroke_width', 2);
-        } else {
-          gl.setUniform4f('basic2DProgram', 'u_stroke_color', [0, 0, 0, 0]);
-          gl.setUniform1f('basic2DProgram', 'u_stroke_width', 0);
-        }
-
-        gl.setUniform4f('basic2DProgram', 'u_color', style.fill);
+        gl.setUniform1i('basic2DProgram', 'u_selected', selected ? 1 : 0);
+        gl.setUniform1f('basic2DProgram', 'u_stroke_width', style.strokeWidth);
+        gl.setUniform4f('basic2DProgram', 'u_stroke_color', style.stroke);
+        gl.setUniform4f('basic2DProgram', 'u_fill_color', style.fill);
         gl.setUniformMatrix3fv('basic2DProgram', 'u_object_transformation_matrix', matrix);
         gl.setUniform2f('basic2DProgram', 'u_size', [size.width!, size.height!]);
         gl.drawArrays(gl.ctx.TRIANGLES, 0, 6);
@@ -112,7 +107,7 @@ export class RenderSystem {
       gl.vertexAttribPointer(positionLocation, 2, gl.ctx.FLOAT, false, 0, 0);
 
       for (const { style, matrix, size } of circles) {
-        gl.setUniform4f('basic2DProgram', 'u_color', style.fill);
+        gl.setUniform4f('basic2DProgram', 'u_fill_color', style.fill);
         gl.setUniformMatrix3fv('basic2DProgram', 'u_object_transformation_matrix', matrix);
         gl.setUniform2f('basic2DProgram', 'u_size', [size.radius!, size.radius!]);
         gl.drawArrays(gl.ctx.TRIANGLE_FAN, 0, this.circleVertices.length / 2);

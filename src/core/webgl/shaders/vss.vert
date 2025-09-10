@@ -11,7 +11,8 @@ out vec2 v_texCoord;
 out vec2 v_size;
 
 void main() {
-    vec2 scaledPosition = a_position * u_size;
+    float selected_stroke_width = 2.0; // In pixels
+    vec2 scaledPosition = a_position * (u_size);
 
     vec2 position = (u_viewport_transform_matrix * u_object_transformation_matrix * vec3(scaledPosition, 1)).xy;
     vec2 zeroToOne = position / u_resolution;
