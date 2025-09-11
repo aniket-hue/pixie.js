@@ -88,7 +88,7 @@ export class RenderSystem {
       gl.setUniform1f('basic2DProgram', 'u_stroke_width', style.strokeWidth);
       gl.setUniform4f('basic2DProgram', 'u_stroke_color', style.stroke);
       gl.setUniform4f('basic2DProgram', 'u_fill_color', style.fill);
-      gl.setUniformMatrix3fv('basic2DProgram', 'u_object_transformation_matrix', transform.localMatrix);
+      gl.setUniformMatrix3fv('basic2DProgram', 'u_object_transformation_matrix', transform.worldMatrix);
       gl.setUniform2f('basic2DProgram', 'u_size', [size.width!, size.height!]);
       gl.drawArrays(gl.ctx.TRIANGLES, 0, 6);
     }

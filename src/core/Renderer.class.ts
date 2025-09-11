@@ -1,6 +1,6 @@
 import { Events } from './events';
 import type { GraphicsEngine } from './GraphicsEngine.class';
-import { InteractiveSystem, RenderSystem } from './systems';
+import { InteractiveSystem, RenderSystem, TransformSystem } from './systems';
 
 export class Renderer {
   context: GraphicsEngine;
@@ -10,6 +10,7 @@ export class Renderer {
 
   ecsRenderSystem: RenderSystem;
   interactiveSystem: InteractiveSystem;
+  transformSystem: TransformSystem;
 
   private renderRequested = false;
 
@@ -20,10 +21,13 @@ export class Renderer {
 
     this.ecsRenderSystem = new RenderSystem(this.context);
     this.interactiveSystem = new InteractiveSystem(this.context);
+    this.transformSystem = new TransformSystem(this.context);
   }
 
   render() {
+    this.transformSystem.update(this.context.objects);
     this.ecsRenderSystem.update(this.context.objects);
+
     this.context.world.clearDirty();
   }
 

@@ -45,12 +45,10 @@ function App() {
       const rect2Factory = createRectangle({
         x: 200,
         y: 200,
-        width: 200,
-        height: 200,
+        width: 400,
+        height: 400,
         fill: [1, 1, 0.2, 0.3],
         // angle: Math.PI / 4,
-        scaleX: 2,
-        scaleY: 2,
       });
 
       const rect3Factory = createRectangle({
@@ -66,8 +64,8 @@ function App() {
       const rect2 = canvas.add(rect2Factory);
       const rect3 = canvas.add(rect3Factory);
 
-      const rows = 120;
-      const cols = 120;
+      const rows = 10;
+      const cols = 10;
       const spacing = 100;
 
       // for (let i = -rows / 2; i < rows / 2; i++) {
@@ -93,11 +91,11 @@ function App() {
       //   }
       // }
 
-      // const groupFactory = createGroup(shapes);
-      // const group = canvas.add(groupFactory);
+      const group2Factory = createGroup([rect1, rect2]);
+      const group2 = canvas.add(group2Factory);
 
-      // const group2Factory = createGroup([group, rect3]);
-      // const group2 = canvas.add(group2Factory);
+      // const groupFactory = createGroup([...shapes, group2]);
+      // const group = canvas.add(groupFactory);
     }
   }, []);
 
