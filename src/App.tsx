@@ -64,36 +64,36 @@ function App() {
       const shapes = [];
       const rect1 = canvas.add(rect1Factory);
       const rect2 = canvas.add(rect2Factory);
-      // const rect3 = canvas.add(rect3Factory);
+      const rect3 = canvas.add(rect3Factory);
 
-      const rows = 50;
-      const cols = 50;
+      const rows = 120;
+      const cols = 120;
       const spacing = 100;
 
       const ids = [];
 
-      // for (let i = -rows / 2; i < rows / 2; i++) {
-      //   for (let j = -cols / 2; j < cols / 2; j++) {
-      //     const fill = [Math.random(), Math.random(), Math.random(), 1];
-      //     const angle = Math.random() * 2 * Math.PI;
-      //     const scaleX = Math.random() * 2 + 1;
-      //     const scaleY = Math.random() * 2 + 1;
-      //     const radius = Math.random() * 10 + 10;
+      for (let i = -rows / 2; i < rows / 2; i++) {
+        for (let j = -cols / 2; j < cols / 2; j++) {
+          const fill = [Math.random(), Math.random(), Math.random(), 1];
+          const angle = Math.random() * 2 * Math.PI;
+          const scaleX = Math.random() * 2 + 1;
+          const scaleY = Math.random() * 2 + 1;
+          const radius = Math.random() * 10 + 10;
 
-      //     const row = i;
-      //     const col = j;
+          const row = i;
+          const col = j;
 
-      //     const x = col * spacing + Math.random();
-      //     const y = row * spacing + Math.random();
-      //     const width = Math.random() * 10 + 10;
-      //     const height = Math.random() * 10 + 10;
+          const x = col * spacing + Math.random();
+          const y = row * spacing + Math.random();
+          const width = Math.random() * 10 + 10;
+          const height = Math.random() * 10 + 10;
 
-      //     const rectFactory = createRectangle({ x, y, width, height, fill, scaleX, scaleY, angle });
-      //     // canvas.add(circle);
-      //     const rect = canvas.add(rectFactory);
-      //     shapes.push(rect);
-      //   }
-      // }
+          const rectFactory = createRectangle({ x, y, width, height, fill, scaleX, scaleY, angle });
+          // canvas.add(circle);
+          const rect = canvas.add(rectFactory);
+          shapes.push(rect);
+        }
+      }
 
       // const groupFactory = createGroup(shapes);
       // const group = canvas.add(groupFactory);
