@@ -14,7 +14,6 @@ export class TransformSystem {
 
     for (const object of objectsWithChildrens) {
       const parentMatrix = object.transform.worldMatrix;
-      console.log(parentMatrix);
 
       if (object.children) {
         for (const child of object.children) {
