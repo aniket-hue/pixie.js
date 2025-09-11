@@ -17,7 +17,7 @@ export class BaseEntity {
     if (!transform) {
       console.error('Transform not found');
 
-      return { matrix: m3.identity() };
+      return { localMatrix: m3.identity() };
     }
 
     return transform;
@@ -28,7 +28,7 @@ export class BaseEntity {
   }
 
   set transformMatrix(matrix: number[]) {
-    this.canvas.world.updateComponent('transform', this.entityId, { matrix });
+    this.canvas.world.updateComponent('transform', this.entityId, { localMatrix: matrix });
   }
 
   get transformMatrix() {
@@ -40,7 +40,7 @@ export class BaseEntity {
       return m3.identity();
     }
 
-    return transform.matrix;
+    return transform.localMatrix;
   }
 
   get size() {
@@ -69,14 +69,14 @@ export class BaseEntity {
     matrix[3] = angle;
     matrix[4] = angle;
 
-    this.transform = { matrix };
+    this.transform = { localMatrix: matrix };
   }
 
   set scaleX(scale: number) {
     const matrix = this.transformMatrix;
     matrix[0] = scale;
 
-    this.transform = { matrix };
+    this.transform = { localMatrix: matrix };
   }
 
   get scaleX() {
@@ -88,7 +88,7 @@ export class BaseEntity {
     const matrix = this.transformMatrix;
     matrix[4] = scale;
 
-    this.transform = { matrix };
+    this.transform = { localMatrix: matrix };
   }
 
   get x() {
@@ -118,7 +118,7 @@ export class BaseEntity {
       });
     }
 
-    this.transform = { matrix };
+    this.transform = { localMatrix: matrix };
   }
 
   set y(y: number) {
@@ -136,7 +136,7 @@ export class BaseEntity {
       });
     }
 
-    this.transform = { matrix };
+    this.transform = { localMatrix: matrix };
   }
 
   get width() {

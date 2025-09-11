@@ -34,7 +34,7 @@ export function createGroup(objects: Object[]): ObjectFactory {
       world.addComponent('size', entityId, { width, height });
       world.addComponent('interaction', entityId, { draggable: true });
       world.addComponent('transform', entityId, {
-        matrix: m3.compose({ tx: gcx, ty: gcy, sx: 1, sy: 1, r: 0 }),
+        localMatrix: m3.compose({ tx: gcx, ty: gcy, sx: 1, sy: 1, r: 0 }),
       });
 
       return entityId;

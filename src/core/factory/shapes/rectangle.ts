@@ -31,7 +31,7 @@ export function createRectangle({
       });
 
       world.addComponent('transform', entityId, {
-        matrix: m3.compose({ tx: x, ty: y, sx: scaleX, sy: scaleY, r: angle }),
+        localMatrix: m3.compose({ tx: x, ty: y, sx: scaleX, sy: scaleY, r: angle }),
       });
 
       return entityId;

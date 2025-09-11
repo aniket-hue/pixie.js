@@ -21,7 +21,7 @@ export interface Size {
 }
 
 export interface Transform {
-  matrix: number[];
+  localMatrix: number[];
 }
 
 export interface Style {
