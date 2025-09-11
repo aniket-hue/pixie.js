@@ -1,6 +1,6 @@
 import { Camera } from './Camera.class';
 import { EventEmitter, type EventKeys } from './events';
-import { InputHandler } from './input/InputHandler.class';
+import { InputHandler } from './events/input/InputHandler.class';
 import type { IInputTarget, IRenderingContext } from './interfaces';
 import { Renderer } from './Renderer.class';
 import { Scene } from './Scene.class';

@@ -1,5 +1,5 @@
-import { Events } from '../events';
-import type { GraphicsEngine } from '../GraphicsEngine.class';
+import type { GraphicsEngine } from '../../GraphicsEngine.class';
+import { Events } from '..';
 import { PRIMARY_MODIFIER_KEY } from './constants';
 
 export class InputHandler {
