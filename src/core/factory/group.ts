@@ -23,6 +23,8 @@ export function createGroup(objects: Object[]): ObjectFactory {
         world.addComponent('parent', object.entityId, entityId);
       });
 
+      console.log(groupBounds);
+
       const gcx = (groupBounds.minX + groupBounds.maxX) / 2;
       const gcy = (groupBounds.minY + groupBounds.maxY) / 2;
 

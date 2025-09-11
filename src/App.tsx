@@ -48,7 +48,7 @@ function App() {
         width: 400,
         height: 400,
         fill: [1, 1, 0.2, 0.3],
-        // angle: Math.PI / 4,
+        angle: Math.PI / 4,
       });
 
       const rect3Factory = createRectangle({
@@ -62,34 +62,34 @@ function App() {
       const shapes = [];
       const rect1 = canvas.add(rect1Factory);
       const rect2 = canvas.add(rect2Factory);
-      const rect3 = canvas.add(rect3Factory);
+      // const rect3 = canvas.add(rect3Factory);
 
       const rows = 10;
       const cols = 10;
       const spacing = 100;
 
-      // for (let i = -rows / 2; i < rows / 2; i++) {
-      //   for (let j = -cols / 2; j < cols / 2; j++) {
-      //     const fill = [Math.random(), Math.random(), Math.random(), 1];
-      //     const angle = Math.random() * 2 * Math.PI;
-      //     const scaleX = Math.random() * 2 + 1;
-      //     const scaleY = Math.random() * 2 + 1;
-      //     const radius = Math.random() * 10 + 10;
+      for (let i = -rows / 2; i < rows / 2; i++) {
+        for (let j = -cols / 2; j < cols / 2; j++) {
+          const fill = [Math.random(), Math.random(), Math.random(), 1];
+          const angle = Math.random() * 2 * Math.PI;
+          const scaleX = Math.random() * 2 + 1;
+          const scaleY = Math.random() * 2 + 1;
+          const radius = Math.random() * 10 + 10;
 
-      //     const row = i;
-      //     const col = j;
+          const row = i;
+          const col = j;
 
-      //     const x = col * spacing + Math.random();
-      //     const y = row * spacing + Math.random();
-      //     const width = Math.random() * 10 + 10;
-      //     const height = Math.random() * 10 + 10;
+          const x = col * spacing + Math.random();
+          const y = row * spacing + Math.random();
+          const width = Math.random() * 10 + 10;
+          const height = Math.random() * 10 + 10;
 
-      //     const rectFactory = createRectangle({ x, y, width, height, fill, scaleX, scaleY, angle });
-      //     // canvas.add(circle);
-      //     const rect = canvas.add(rectFactory);
-      //     shapes.push(rect);
-      //   }
-      // }
+          const rectFactory = createRectangle({ x, y, width, height, fill, scaleX, scaleY, angle });
+          // canvas.add(circle);
+          const rect = canvas.add(rectFactory);
+          shapes.push(rect);
+        }
+      }
 
       const group2Factory = createGroup([rect1, rect2]);
       const group2 = canvas.add(group2Factory);

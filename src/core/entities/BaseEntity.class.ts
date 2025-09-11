@@ -1,5 +1,6 @@
 import type { Canvas } from '../Canvas.class';
 import { m3 } from '../math';
+import { computeBoundsOfMatrix } from '../utils/computeBoundsOfMatrix';
 import type { Size, Style, Transform } from '../world/types';
 
 export class BaseEntity {
@@ -168,24 +169,29 @@ export class BaseEntity {
   }
 
   get bounds() {
-    const transform = this.transform.worldMatrix;
+    const m = this.transform.worldMatrix;
     const size = this.size;
 
     const w = 'width' in size ? size.width! : size.radius! * 2;
     const h = 'height' in size ? size.height! : size.radius! * 2;
 
-    return {
-      minX: transform[6] - w / 2,
-      minY: transform[7] - h / 2,
-      maxX: transform[6] + w / 2,
-      maxY: transform[7] + h / 2,
-    };
+    return computeBoundsOfMatrix({
+      matrix: m,
+      size: {
+        width: w,
+        height: h,
+      },
+    });
   }
 
   get children() {
     const children = this.canvas.world.getComponent('children', this.entityId);
 
     return children;
+  }
+
+  get dirty() {
+    return this.canvas.world.isDirty(this.entityId);
   }
 
   containsPoint(worldX: number, worldY: number) {
