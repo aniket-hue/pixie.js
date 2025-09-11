@@ -1,4 +1,4 @@
-import { Object } from '../entities/Object.class';
+import type { Object } from '../entities/Object.class';
 import type { ObjectFactory } from '../entities/types';
 import { m3 } from '../math';
 import type { World } from '../world/World.class';
@@ -29,12 +29,19 @@ export function createGroup(objects: Object[]): ObjectFactory {
       const width = groupBounds.maxX - groupBounds.minX;
       const height = groupBounds.maxY - groupBounds.minY;
 
+      const localMatrix = m3.compose({ tx: gcx, ty: gcy, sx: 1, sy: 1, r: 0 });
+
       world.addComponent('children', entityId, objects);
       world.addComponent('style', entityId, { fill: [0, 0, 0, 0.1], stroke: [0, 0, 0, 1], strokeWidth: 0 });
       world.addComponent('size', entityId, { width, height });
       world.addComponent('interaction', entityId, { draggable: true });
       world.addComponent('transform', entityId, {
-        localMatrix: m3.compose({ tx: gcx, ty: gcy, sx: 1, sy: 1, r: 0 }),
+        localMatrix,
+        worldMatrix: localMatrix,
+      });
+
+      objects.forEach((object) => {
+        object.transform.localMatrix = m3.multiply(m3.inverse(localMatrix), object.transform.worldMatrix);
       });
 
       return entityId;

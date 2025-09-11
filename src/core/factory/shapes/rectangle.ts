@@ -17,6 +17,7 @@ export function createRectangle({
   return {
     register: (world: World) => {
       const entityId = world.createEntity();
+      const localMatrix = m3.compose({ tx: x, ty: y, sx: scaleX, sy: scaleY, r: angle });
 
       world.addComponent('style', entityId, { fill, stroke, strokeWidth });
 
@@ -31,7 +32,8 @@ export function createRectangle({
       });
 
       world.addComponent('transform', entityId, {
-        localMatrix: m3.compose({ tx: x, ty: y, sx: scaleX, sy: scaleY, r: angle }),
+        localMatrix,
+        worldMatrix: localMatrix,
       });
 
       return entityId;

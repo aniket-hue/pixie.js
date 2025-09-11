@@ -46,7 +46,7 @@ export class Scene {
 
   findObjectAtPoint(worldX: number, worldY: number): Object | null {
     for (const object of this.objects) {
-      const transform = object.transformMatrix;
+      const transform = object.transform.worldMatrix;
       const size = object.size;
       const isDraggable = object.isDraggable;
 

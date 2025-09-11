@@ -1,6 +1,6 @@
 import type { Canvas } from '../Canvas.class';
 import { m3 } from '../math';
-import type { Children, Interaction, Size, Style, Transform } from '../world/types';
+import type { Size, Style, Transform } from '../world/types';
 
 export class BaseEntity {
   canvas: Canvas;
@@ -12,12 +12,12 @@ export class BaseEntity {
   }
 
   get transform() {
-    const transform = this.canvas.world.getComponent<Transform>('transform', this.entityId);
+    const transform = this.canvas.world.getComponent('transform', this.entityId);
 
     if (!transform) {
       console.error('Transform not found');
 
-      return { localMatrix: m3.identity() };
+      return { localMatrix: m3.identity(), worldMatrix: m3.identity() };
     }
 
     return transform;
@@ -27,24 +27,8 @@ export class BaseEntity {
     this.canvas.world.updateComponent('transform', this.entityId, transform);
   }
 
-  set transformMatrix(matrix: number[]) {
-    this.canvas.world.updateComponent('transform', this.entityId, { localMatrix: matrix });
-  }
-
-  get transformMatrix() {
-    const transform = this.transform;
-
-    if (!transform) {
-      console.error('Transform not found');
-
-      return m3.identity();
-    }
-
-    return transform.localMatrix;
-  }
-
   get size() {
-    const size = this.canvas.world.getComponent<Size>('size', this.entityId);
+    const size = this.canvas.world.getComponent('size', this.entityId);
 
     if (!size) {
       console.error('Size not found');
@@ -60,83 +44,61 @@ export class BaseEntity {
   }
 
   get rotation() {
-    const matrix = this.transformMatrix;
+    const matrix = this.transform.localMatrix;
     return matrix[3];
   }
 
   set rotation(angle: number) {
-    const matrix = this.transformMatrix;
+    const matrix = this.transform.localMatrix;
     matrix[3] = angle;
     matrix[4] = angle;
 
-    this.transform = { localMatrix: matrix };
+    this.transform.localMatrix = matrix;
   }
 
   set scaleX(scale: number) {
-    const matrix = this.transformMatrix;
+    const matrix = this.transform.localMatrix;
     matrix[0] = scale;
 
-    this.transform = { localMatrix: matrix };
+    this.transform.localMatrix = matrix;
   }
 
   get scaleX() {
-    const matrix = this.transformMatrix;
+    const matrix = this.transform.localMatrix;
     return matrix[0];
   }
 
   set scaleY(scale: number) {
-    const matrix = this.transformMatrix;
+    const matrix = this.transform.localMatrix;
     matrix[4] = scale;
 
-    this.transform = { localMatrix: matrix };
+    this.transform.localMatrix = matrix;
   }
 
   get x() {
-    const matrix = this.transformMatrix;
+    const matrix = this.transform.localMatrix;
 
     return matrix[6];
   }
 
   get y() {
-    const matrix = this.transformMatrix;
+    const matrix = this.transform.localMatrix;
 
     return matrix[7];
   }
 
   set x(x: number) {
-    const oldX = this.x;
-    const deltaX = x - oldX;
-
-    const children = this.canvas.world.getComponent<Children>('children', this.entityId);
-    const matrix = this.transformMatrix;
+    const matrix = this.transform.localMatrix;
     matrix[6] = x;
 
-    if (children) {
-      children.forEach((child) => {
-        child.x = child.x + deltaX;
-        this.canvas.world.markDirty(child.entityId);
-      });
-    }
-
-    this.transform = { localMatrix: matrix };
+    this.transform.localMatrix = matrix;
   }
 
   set y(y: number) {
-    const oldY = this.y;
-    const deltaY = y - oldY;
-
-    const children = this.canvas.world.getComponent<Children>('children', this.entityId);
-    const matrix = this.transformMatrix;
+    const matrix = this.transform.localMatrix;
     matrix[7] = y;
 
-    if (children) {
-      children.forEach((child) => {
-        child.y = child.y + deltaY;
-        this.canvas.world.markDirty(child.entityId);
-      });
-    }
-
-    this.transform = { localMatrix: matrix };
+    this.transform.localMatrix = matrix;
   }
 
   get width() {
@@ -152,7 +114,7 @@ export class BaseEntity {
   }
 
   get interaction() {
-    const interaction = this.canvas.world.getComponent<Interaction>('interaction', this.entityId);
+    const interaction = this.canvas.world.getComponent('interaction', this.entityId);
 
     if (!interaction) {
       console.error('Interaction not found');
@@ -194,7 +156,7 @@ export class BaseEntity {
   }
 
   get style(): Style {
-    const style = this.canvas.world.getComponent<Style>('style', this.entityId);
+    const style = this.canvas.world.getComponent('style', this.entityId);
 
     if (!style) {
       console.error('Style not found');
@@ -206,7 +168,7 @@ export class BaseEntity {
   }
 
   get bounds() {
-    const transform = this.transformMatrix;
+    const transform = this.transform.worldMatrix;
     const size = this.size;
 
     const w = 'width' in size ? size.width! : size.radius! * 2;
@@ -220,8 +182,14 @@ export class BaseEntity {
     };
   }
 
+  get children() {
+    const children = this.canvas.world.getComponent('children', this.entityId);
+
+    return children;
+  }
+
   containsPoint(worldX: number, worldY: number) {
-    const matrix = this.transformMatrix;
+    const matrix = this.transform.worldMatrix;
     const size = this.size;
 
     const inMatrix = m3.inverse(matrix);
