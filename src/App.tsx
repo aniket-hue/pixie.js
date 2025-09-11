@@ -94,8 +94,8 @@ function App() {
       const group2Factory = createGroup([rect1, rect2]);
       const group2 = canvas.add(group2Factory);
 
-      // const groupFactory = createGroup([...shapes, group2]);
-      // const group = canvas.add(groupFactory);
+      const groupFactory = createGroup([...shapes, group2]);
+      const group = canvas.add(groupFactory);
     }
   }, []);
 
