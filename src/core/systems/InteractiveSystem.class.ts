@@ -58,8 +58,8 @@ export class InteractiveSystem {
     this.draggedObject = object;
     this.isDragging = true;
 
-    this.dragOffset.x = worldPos.x - object.x;
-    this.dragOffset.y = worldPos.y - object.y;
+    this.dragOffset.x = worldPos.x - object.transform.worldMatrix[6];
+    this.dragOffset.y = worldPos.y - object.transform.worldMatrix[7];
   }
 
   private onMouseMove(event: MouseEvent): void {
@@ -85,8 +85,8 @@ export class InteractiveSystem {
       return;
     }
 
-    this.draggedObject.x = worldX;
-    this.draggedObject.y = worldY;
+    this.draggedObject.x = worldX - this.dragOffset.x;
+    this.draggedObject.y = worldY - this.dragOffset.y;
   }
 
   private getWorldPosition(screenX: number, screenY: number): { x: number; y: number } {
