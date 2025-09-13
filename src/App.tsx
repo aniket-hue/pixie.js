@@ -62,10 +62,9 @@ function App() {
       const shapes = [];
       const rect1 = canvas.add(rect1Factory);
       const rect2 = canvas.add(rect2Factory);
-      const rect3 = canvas.add(rect3Factory);
 
-      const rows = 10;
-      const cols = 10;
+      const rows = 120;
+      const cols = 120;
       const spacing = 100;
 
       for (let i = -rows / 2; i < rows / 2; i++) {

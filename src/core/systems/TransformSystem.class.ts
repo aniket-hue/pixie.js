@@ -36,7 +36,12 @@ export class TransformSystem {
       return;
     }
 
+    const size = this.context.world.getComponent('size', parentId);
     const { width, height, localMatrix } = createBoundingBoxOfchildren(children);
+
+    if (size && size.width === width && size.height === height) {
+      return;
+    }
 
     this.context.world.updateComponent('transform', parentId, { localMatrix, worldMatrix: localMatrix });
     this.context.world.updateComponent('size', parentId, { width, height });

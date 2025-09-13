@@ -2,7 +2,6 @@ import type { Camera } from '../Camera.class';
 import type { Object } from '../entities/Object.class';
 import { Events } from '../events';
 import type { GraphicsEngine } from '../GraphicsEngine.class';
-import { m3 } from '../math';
 import type { World } from '../world/World.class';
 
 export class InteractiveSystem {
