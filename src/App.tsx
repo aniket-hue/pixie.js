@@ -52,17 +52,17 @@ function App() {
       });
 
       const rect3Factory = createRectangle({
-        x: 0,
-        y: 0,
-        width: 20,
-        height: 20,
+        x: -100,
+        y: -100,
+        width: 60,
+        height: 60,
         fill: [1, 1, 1, 0.3],
       });
 
       const shapes = [];
       const rect1 = canvas.add(rect1Factory);
       const rect2 = canvas.add(rect2Factory);
-      // const rect3 = canvas.add(rect3Factory);
+      const rect3 = canvas.add(rect3Factory);
 
       const rows = 10;
       const cols = 10;
