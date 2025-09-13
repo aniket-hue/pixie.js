@@ -57,6 +57,10 @@ export class World {
     this.dirtyEntities.add(entityId);
   }
 
+  removeDirty(entityId: number) {
+    this.dirtyEntities.delete(entityId);
+  }
+
   getEntities(): Set<number> {
     return this.entities;
   }

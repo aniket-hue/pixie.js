@@ -30,9 +30,8 @@ export function Transformable<T extends Constructor<MixinBase>>(Base: T) {
     }
 
     set x(x: number) {
-      const matrix = this.transform.localMatrix;
-      matrix[6] = x;
-      this.transform.localMatrix = matrix;
+      console.log(x);
+      this.transform.localMatrix[6] = x;
     }
 
     get y() {
@@ -41,9 +40,7 @@ export function Transformable<T extends Constructor<MixinBase>>(Base: T) {
     }
 
     set y(y: number) {
-      const matrix = this.transform.localMatrix;
-      matrix[7] = y;
-      this.transform.localMatrix = matrix;
+      this.transform.localMatrix[7] = y;
     }
 
     // Rotation

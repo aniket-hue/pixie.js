@@ -67,6 +67,13 @@ export class InteractiveSystem {
 
     if (this.isDragging && this.draggedObject !== null) {
       this.handleDrag(worldPos.x, worldPos.y);
+
+      this.world.markDirty(this.draggedObject.entityId);
+
+      if (this.draggedObject.parent) {
+        this.world.markDirty(this.draggedObject.parent);
+      }
+
       this.context.requestRender();
     }
   }
@@ -84,8 +91,6 @@ export class InteractiveSystem {
 
     this.draggedObject.x = worldX - this.dragOffset.x;
     this.draggedObject.y = worldY - this.dragOffset.y;
-
-    this.world.markDirty(this.draggedObject.entityId);
   }
 
   private getWorldPosition(screenX: number, screenY: number): { x: number; y: number } {

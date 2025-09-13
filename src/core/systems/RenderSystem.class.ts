@@ -2,7 +2,6 @@ import type { Camera } from '../Camera.class';
 import type { Object } from '../entities/Object.class';
 import type { ICameraTarget, IRenderTarget } from '../interfaces';
 import type { GlCore } from '../webgl/GlCore.class';
-import type { Size, Style } from '../world/types';
 
 export class RenderSystem {
   private gl: GlCore;
@@ -83,7 +82,7 @@ export class RenderSystem {
     gl.enableVertexAttribArray(positionLocation);
     gl.vertexAttribPointer(positionLocation, 2, gl.ctx.FLOAT, false, 0, 0);
 
-    for (const { style, transform, size, selected } of objects) {
+    for (const { style, transform, size, selected } of objects.reverse()) {
       gl.setUniform1i('basic2DProgram', 'u_selected', selected ? 1 : 0);
       gl.setUniform1f('basic2DProgram', 'u_stroke_width', style.strokeWidth);
       gl.setUniform4f('basic2DProgram', 'u_stroke_color', style.stroke);
@@ -125,6 +124,10 @@ export class RenderSystem {
 
     for (const object of objects) {
       const size = object.size;
+
+      if (!object.visibility) {
+        continue;
+      }
 
       if (size.radius) {
         circles.push(object);
