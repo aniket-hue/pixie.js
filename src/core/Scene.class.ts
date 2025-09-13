@@ -16,7 +16,6 @@ export class Scene {
     const objectInstance = new Object(renderContext, entityId);
 
     this.objects.push(objectInstance);
-    this.world.markDirty(entityId);
     renderContext.requestRender();
 
     return objectInstance;
@@ -26,15 +25,14 @@ export class Scene {
     if ((object as any).children) {
       (object as any).children.forEach((child: number) => {
         this.world.removeComponent('parent', child);
-        this.world.markDirty(child);
       });
     }
 
     this.world.removeEntity(object.entityId);
     renderContext.requestRender();
 
-    // Remove from objects array
     const index = this.objects.indexOf(object);
+
     if (index > -1) {
       this.objects.splice(index, 1);
     }
