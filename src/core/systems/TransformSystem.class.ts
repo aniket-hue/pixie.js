@@ -9,18 +9,5 @@ export class TransformSystem {
     // this.context = context;
   }
 
-  update(objects: Object[]) {
-    const objectsWithChildrens = objects.filter((object) => object.children);
-
-    for (const object of objectsWithChildrens) {
-      const parentMatrix = object.transform.worldMatrix;
-
-      if (object.children) {
-        for (const child of object.children) {
-          const newWorldMatrix = m3.multiply(parentMatrix, child.transform.localMatrix);
-          child.transform = { localMatrix: child.transform.localMatrix, worldMatrix: newWorldMatrix };
-        }
-      }
-    }
-  }
+  update(objects: Object[]) {}
 }

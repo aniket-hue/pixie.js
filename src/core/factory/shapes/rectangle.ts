@@ -36,6 +36,8 @@ export function createRectangle({
         worldMatrix: localMatrix,
       });
 
+      world.addComponent('visibility', entityId, { visible: true });
+
       return entityId;
     },
   };

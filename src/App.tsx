@@ -48,7 +48,7 @@ function App() {
         width: 400,
         height: 400,
         fill: [1, 1, 0.2, 0.3],
-        angle: Math.PI / 4,
+        // angle: Math.PI / 4,
       });
 
       const rect3Factory = createRectangle({
@@ -96,6 +96,16 @@ function App() {
 
       const groupFactory = createGroup([...shapes, group2]);
       const group = canvas.add(groupFactory);
+
+      // setTimeout(() => {
+      //   group2.visibility = false;
+      //   canvas.renderer.requestRender();
+
+      //   setTimeout(() => {
+      //     rect2.visibility = true;
+      //     canvas.renderer.requestRender();
+      //   }, 2000);
+      // }, 1000);
     }
   }, []);
 

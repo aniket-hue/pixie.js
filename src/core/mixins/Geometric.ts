@@ -2,16 +2,13 @@ import { m3 } from '../math';
 import { computeBoundsOfMatrix } from '../utils/computeBoundsOfMatrix';
 import type { Constructor, MixinBase } from './types';
 
-/**
- * Geometric mixin - handles bounds calculation and point containment
- * Requires Transformable and Sizable mixins
- */
 export function Geometric<T extends Constructor<MixinBase>>(Base: T) {
   return class extends Base {
-    // Bounds calculation
     get bounds() {
-      const transform = (this as any).transform;
-      const size = (this as any).size;
+      //@ts-expect-error
+      const transform = this.transform;
+      //@ts-expect-error
+      const size = this.size;
 
       if (!transform || !size) {
         return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
@@ -30,7 +27,6 @@ export function Geometric<T extends Constructor<MixinBase>>(Base: T) {
       });
     }
 
-    // Point containment test
     containsPoint(worldX: number, worldY: number) {
       const transform = (this as any).transform;
       const size = (this as any).size;

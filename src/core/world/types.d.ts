@@ -38,10 +38,18 @@ export interface Interaction {
   hovered?: boolean;
 }
 
+export interface Visibility {
+  visible: boolean;
+}
+
+export interface Group {
+  isGroup: boolean;
+}
+
 export type Children = Object[];
 export type Parent = number | null;
 
-export type ComponentType = 'children' | 'parent' | 'style' | 'size' | 'interaction' | 'transform';
+export type ComponentType = 'children' | 'parent' | 'style' | 'size' | 'interaction' | 'transform' | 'visibility' | 'group';
 
 export type ComponentToData<T extends ComponentType> = T extends 'children'
   ? Children
@@ -55,4 +63,8 @@ export type ComponentToData<T extends ComponentType> = T extends 'children'
           ? Interaction
           : T extends 'transform'
             ? Transform
-            : T;
+            : T extends 'visibility'
+              ? Visibility
+              : T extends 'group'
+                ? Group
+                : T;

@@ -1,6 +1,10 @@
+export { Children } from './Children';
 export { Geometric } from './Geometric';
+export { Group } from './Group';
 export { Interactable } from './Interactable';
+export { Parent } from './Parent';
 export { Sizable } from './Sizable';
 export { Styleable } from './Styleable';
 export { Transformable } from './Transformable';
 export type { Constructor, MixinBase } from './types';
+export { Visiblity } from './Visiblity';
