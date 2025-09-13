@@ -29,9 +29,13 @@ export function Transformable<T extends Constructor<MixinBase>>(Base: T) {
       return matrix[6];
     }
 
-    set x(x: number) {
-      console.log(x);
-      this.transform.localMatrix[6] = x;
+    set x(worldX: number) {
+      /**
+       * We need to convert matrix translations to world coordinates, because transform system recalculates
+       * bounding box again and change child matrices
+       */
+      this.transform.localMatrix[6] = worldX;
+      this.transform.worldMatrix[6] = worldX;
     }
 
     get y() {
@@ -39,8 +43,13 @@ export function Transformable<T extends Constructor<MixinBase>>(Base: T) {
       return matrix[7];
     }
 
-    set y(y: number) {
-      this.transform.localMatrix[7] = y;
+    set y(worldY: number) {
+      /**
+       * We need to convert matrix translations to world coordinates, because transform system recalculates
+       * bounding box again and change child matrices
+       */
+      this.transform.worldMatrix[7] = worldY;
+      this.transform.localMatrix[7] = worldY;
     }
 
     // Rotation

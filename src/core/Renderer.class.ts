@@ -1,6 +1,6 @@
 import { Events } from './events';
 import type { GraphicsEngine } from './GraphicsEngine.class';
-import { ChildrenSystem, InteractiveSystem, ParentSystem, RenderSystem, TransformSystem, VisibleSystem } from './systems';
+import { InteractiveSystem, RenderSystem, TransformSystem, VisibleSystem } from './systems';
 
 export class Renderer {
   context: GraphicsEngine;
@@ -11,8 +11,6 @@ export class Renderer {
   ecsRenderSystem: RenderSystem;
   interactiveSystem: InteractiveSystem;
   transformSystem: TransformSystem;
-  childrenSystem: ChildrenSystem;
-  parentSystem: ParentSystem;
   visibleSystem: VisibleSystem;
 
   private renderRequested = false;
@@ -25,8 +23,6 @@ export class Renderer {
     this.ecsRenderSystem = new RenderSystem(this.context);
     this.interactiveSystem = new InteractiveSystem(this.context);
     this.transformSystem = new TransformSystem(this.context);
-    this.childrenSystem = new ChildrenSystem(this.context);
-    this.parentSystem = new ParentSystem(this.context);
     this.visibleSystem = new VisibleSystem(this.context);
   }
 
@@ -34,8 +30,6 @@ export class Renderer {
     const dirtyObjects = this.context.objects.filter((object) => object.dirty);
 
     this.transformSystem.update(dirtyObjects);
-    this.parentSystem.update(dirtyObjects);
-    this.childrenSystem.update(dirtyObjects);
     this.visibleSystem.update(dirtyObjects);
     this.ecsRenderSystem.update(this.context.objects);
 
