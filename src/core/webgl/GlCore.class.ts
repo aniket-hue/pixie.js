@@ -4,7 +4,7 @@ import vss from './shaders/vss.vert?raw';
 type Programs = 'basic2DProgram';
 
 export class GlCore {
-  ctx: WebGLRenderingContext;
+  ctx: WebGL2RenderingContext;
   _basic2DProgram: WebGLProgram;
 
   constructor(canvasElement: HTMLCanvasElement) {
@@ -164,8 +164,18 @@ export class GlCore {
     this.ctx.drawArrays(mode, first, count);
   }
 
-  deleteBuffer(buffer: WebGLBuffer) {
-    this.ctx.deleteBuffer(buffer);
+  drawArraysInstanced(mode: GLenum, first: GLint, count: GLsizei, instanceCount: GLsizei) {
+    this.ctx.drawArraysInstanced(mode, first, count, instanceCount);
+  }
+
+  vertexAttribDivisor(index: GLuint, divisor: GLuint) {
+    this.ctx.vertexAttribDivisor(index, divisor);
+  }
+
+  deleteBuffer(buffer: WebGLBuffer | null) {
+    if (buffer) {
+      this.ctx.deleteBuffer(buffer);
+    }
   }
 
   lineWidth(width: number) {

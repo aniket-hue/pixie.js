@@ -63,8 +63,8 @@ function App() {
       const rect1 = canvas.add(rect1Factory);
       const rect2 = canvas.add(rect2Factory);
 
-      const rows = 120;
-      const cols = 120;
+      const rows = 100;
+      const cols = 100;
       const spacing = 100;
 
       for (let i = -rows / 2; i < rows / 2; i++) {
