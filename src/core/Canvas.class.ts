@@ -1,4 +1,15 @@
-import { GraphicsEngine } from './GraphicsEngine.class';
+import { Camera } from './Camera.class';
+import { clearAllDirty, getHeight, getWidth, getWorldMatrix, isDirty, isVisible } from './ecs/components';
+import { ChildrenSystem } from './ecs/systems/ChildrenSystem.class';
+import { InteractiveSystem } from './ecs/systems/InteractiveSystem.class';
+import { ParentSystem } from './ecs/systems/ParentSystem.class';
+import { RenderSystem } from './ecs/systems/RenderSystem.class';
+import { VisibleSystem } from './ecs/systems/VisibleSystem.class';
+import { World } from './ecs/World.class';
+import { EventEmitter, type EventKeys } from './events';
+import { InputHandler } from './events/input/InputHandler.class';
+import { m3 } from './math/matrix';
+import { GlCore } from './webgl/GlCore.class';
 
 /**
  * Simple wrapper around HTMLCanvasElement that provides a clean API
@@ -6,92 +17,156 @@ import { GraphicsEngine } from './GraphicsEngine.class';
  */
 export class Canvas {
   private canvasElement: HTMLCanvasElement;
-  private engine: GraphicsEngine;
+  private events: EventEmitter;
+  private glCore: GlCore;
+  private inputHandler: InputHandler;
+  private renderSystem: RenderSystem;
+  private interactiveSystem: InteractiveSystem;
+  private parentSystem: ParentSystem;
+  private childrenSystem: ChildrenSystem;
+  private visibleSystem: VisibleSystem;
+
+  world: World;
+  camera: Camera;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvasElement = canvas;
-    this.engine = new GraphicsEngine(canvas);
+
+    this.glCore = new GlCore(this.canvasElement);
+    this.events = new EventEmitter();
+    this.world = new World();
+    this.camera = new Camera(this);
+    this.inputHandler = new InputHandler(this);
+
+    this.renderSystem = new RenderSystem(this);
+    this.interactiveSystem = new InteractiveSystem(this);
+    this.parentSystem = new ParentSystem();
+    this.childrenSystem = new ChildrenSystem();
+    this.visibleSystem = new VisibleSystem();
+    this.resize();
   }
 
-  add(objectFactory: any) {
-    return this.engine.add(objectFactory);
+  requestRender() {
+    requestAnimationFrame(() => {
+      const dirtyEntities = [];
+      const allEntities = this.world.getEntities();
+
+      for (const eid of allEntities) {
+        if (isDirty(eid)) {
+          dirtyEntities.push(eid);
+        }
+      }
+
+      this.visibleSystem.update(dirtyEntities);
+
+      this.parentSystem.update(dirtyEntities);
+      this.childrenSystem.update(dirtyEntities);
+      this.renderSystem.update(this.world);
+
+      clearAllDirty();
+    });
   }
 
-  remove(object: any) {
-    return this.engine.remove(object);
-  }
-
-  setZoom(zoom: number) {
-    return this.engine.setZoom(zoom);
-  }
-
-  on(event: any, callback: (...args: any[]) => void) {
-    return this.engine.on(event, callback);
-  }
-
-  off(event: any, callback: (...args: any[]) => void) {
-    return this.engine.off(event, callback);
-  }
-
-  fire(event: any, ...args: any[]) {
-    return this.engine.fire(event, ...args);
-  }
-
-  worldToScreen(x: number, y: number) {
-    return this.engine.worldToScreen(x, y);
-  }
-
-  screenToWorld(x: number, y: number) {
-    return this.engine.screenToWorld(x, y);
-  }
-
-  clear(r?: number, g?: number, b?: number, a?: number) {
-    return this.engine.clear(r, g, b, a);
-  }
-
-  resize() {
-    return this.engine.resize();
-  }
-
-  destroy() {
-    return this.engine.destroy();
-  }
-
-  // Canvas-specific properties
-  get width() {
+  get width(): number {
     return this.canvasElement.clientWidth;
   }
 
-  get height() {
+  get height(): number {
     return this.canvasElement.clientHeight;
   }
 
-  get zoom() {
-    return this.engine.zoom;
+  get zoom(): number {
+    return this.camera.zoom;
   }
 
-  get element() {
+  get element(): HTMLCanvasElement {
     return this.canvasElement;
   }
 
-  // For backward compatibility - expose the engine
-  get camera() {
-    return this.engine.camera;
+  getCtx(): WebGLRenderingContext | null {
+    return this.glCore.ctx;
   }
 
-  get world() {
-    return this.engine.world;
+  clear(r = 0, g = 0, b = 0, a = 1.0): void {
+    const gl = this.getCtx();
+    if (!gl) return;
+
+    gl.clearColor(r, g, b, a);
+    gl.clear(gl.COLOR_BUFFER_BIT);
   }
 
-  get objects() {
-    return this.engine.objects;
+  resize(): void {
+    const canvas = this.canvasElement;
+    const displayWidth = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+
+    if (canvas.width === displayWidth && canvas.height === displayHeight) {
+      return;
+    }
+
+    canvas.width = displayWidth;
+    canvas.height = displayHeight;
+
+    this.getCtx()?.viewport(0, 0, canvas.width, canvas.height);
   }
 
-  get renderer() {
-    return { requestRender: () => this.engine.requestRender() };
+  on(event: EventKeys, callback: (...args: any[]) => void): void {
+    this.events.on(event, callback);
   }
 
-  getCtx() {
-    return this.engine.getCtx();
+  off(event: EventKeys, callback: (...args: any[]) => void): void {
+    this.events.off(event, callback);
+  }
+
+  fire(event: EventKeys, ...args: any[]): void {
+    this.events.emit(event, ...args);
+  }
+
+  worldToScreen(x: number, y: number): { x: number; y: number } {
+    return this.camera.worldToScreen(x, y);
+  }
+
+  screenToWorld(x: number, y: number): { x: number; y: number } {
+    return this.camera.screenToWorld(x, y);
+  }
+
+  setZoom(zoom: number): void {
+    this.camera.zoom = zoom;
+  }
+
+  getGlCore() {
+    return this.glCore;
+  }
+
+  findObjectAtPoint(worldX: number, worldY: number): number | null {
+    function containsPoint(eid: number, worldX: number, worldY: number) {
+      const worldMatrix = getWorldMatrix(eid);
+      const inMatrix = m3.inverse(worldMatrix);
+      const localPoint = m3.transformPoint(inMatrix, worldX, worldY);
+
+      const w = getWidth(eid);
+      const h = getHeight(eid);
+
+      const halfWidth = w * 0.5;
+      const halfHeight = h * 0.5;
+
+      return localPoint.x >= -halfWidth && localPoint.x <= halfWidth && localPoint.y >= -halfHeight && localPoint.y <= halfHeight;
+    }
+
+    const allIntersecting = [];
+
+    for (const eid of this.world.getEntities()) {
+      if (isVisible(eid) && containsPoint(eid, worldX, worldY)) {
+        allIntersecting.push(eid);
+      }
+    }
+
+    return allIntersecting.at(-1) ?? null;
+  }
+
+  destroy(): void {
+    this.events.destroy();
+    this.inputHandler.destroy();
+    this.interactiveSystem.destroy();
   }
 }

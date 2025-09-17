@@ -1,13 +1,13 @@
-import type { GraphicsEngine } from '../../GraphicsEngine.class';
-import { Events } from '..';
+import type { Canvas } from '../../Canvas.class';
+import { Events } from '../index';
 import { PRIMARY_MODIFIER_KEY } from './constants';
 
 export class InputHandler {
-  private context: GraphicsEngine;
+  private canvas: Canvas;
   private canvasElement: HTMLCanvasElement;
 
-  constructor(context: GraphicsEngine) {
-    this.context = context;
+  constructor(context: Canvas) {
+    this.canvas = context;
     this.canvasElement = context.element;
     this.setupEventListeners();
   }
@@ -35,28 +35,28 @@ export class InputHandler {
       const mouseX = event.clientX - rect.left;
       const mouseY = event.clientY - rect.top;
 
-      this.context.camera.zoomAt(event.deltaY, mouseX, mouseY);
+      this.canvas.camera.zoomAt(event.deltaY, mouseX, mouseY);
     } else {
-      this.context.camera.pan(event.deltaX, event.deltaY);
+      this.canvas.camera.pan(event.deltaX, event.deltaY);
     }
   }
 
   private handleMouseMove(event: MouseEvent) {
     event.preventDefault();
 
-    this.context.fire(Events.MOUSE_MOVE, event);
+    this.canvas.fire(Events.MOUSE_MOVE, event);
   }
 
   private handleMouseDown(event: MouseEvent) {
     event.preventDefault();
 
-    this.context.fire(Events.MOUSE_DOWN, event);
+    this.canvas.fire(Events.MOUSE_DOWN, event);
   }
 
   private handleMouseUp(event: MouseEvent) {
     event.preventDefault();
 
-    this.context.fire(Events.MOUSE_UP, event);
+    this.canvas.fire(Events.MOUSE_UP, event);
   }
 
   // Cleanup event listeners

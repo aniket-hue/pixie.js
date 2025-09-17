@@ -1,18 +1,24 @@
-import type { Camera } from '../Camera.class';
-import type { Object } from '../entities/Object.class';
-import type { ICameraTarget, IRenderTarget } from '../interfaces';
-import type { GlCore } from '../webgl/GlCore.class';
+import type { Camera } from '../../Camera.class';
+import type { Canvas } from '../../Canvas.class';
+import type { GlCore } from '../../webgl/GlCore.class';
+import { getFill, getHeight, getSelectable, getStroke, getStrokeWidth, getWidth, getWorldMatrix, isVisible } from '../components';
+import type { World } from '../World.class';
+
+function hexToRgba(hex: number) {
+  const r = ((hex >> 16) & 0xff) / 255;
+  const g = ((hex >> 8) & 0xff) / 255;
+  const b = (hex & 0xff) / 255;
+  return [r, g, b, 1];
+}
 
 export class RenderSystem {
   private gl: GlCore;
 
   private rectangleVertices: Float32Array;
-  private circleVertices: Float32Array;
   private rectangleOutlineVertices: Float32Array;
 
   private rectangleBuffer: WebGLBuffer | null = null;
   private rectangleOutlineBuffer: WebGLBuffer | null = null;
-  private circleBuffer: WebGLBuffer | null = null;
 
   private instanceMatrixBuffer: WebGLBuffer | null = null;
   private instanceSizeBuffer: WebGLBuffer | null = null;
@@ -41,24 +47,14 @@ export class RenderSystem {
 
   private camera: Camera;
 
-  constructor(context: IRenderTarget & ICameraTarget & { getGlCore(): GlCore }) {
+  constructor(context: Canvas) {
     this.gl = context.getGlCore();
+    console.log(this.gl);
     this.camera = context.camera;
 
     this.rectangleVertices = new Float32Array([-0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5]);
 
     this.rectangleOutlineVertices = new Float32Array([-0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5]);
-
-    const segments = 32;
-    this.circleVertices = new Float32Array((segments + 2) * 2);
-    this.circleVertices[0] = 0;
-    this.circleVertices[1] = 0;
-
-    for (let i = 0; i <= segments; i++) {
-      const angle = (i * 2 * Math.PI) / segments;
-      this.circleVertices[(i + 1) * 2] = Math.cos(angle);
-      this.circleVertices[(i + 1) * 2 + 1] = Math.sin(angle);
-    }
 
     this.instanceMatrixData = new Float32Array(this.maxInstances * 9); // 3x3 matrices
     this.instanceSizeData = new Float32Array(this.maxInstances * 2); // width, height
@@ -82,10 +78,6 @@ export class RenderSystem {
     this.rectangleOutlineBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.rectangleOutlineBuffer);
     gl.bufferData(gl.ctx.ARRAY_BUFFER, this.rectangleOutlineVertices, gl.ctx.STATIC_DRAW);
-
-    this.circleBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.circleBuffer);
-    gl.bufferData(gl.ctx.ARRAY_BUFFER, this.circleVertices, gl.ctx.STATIC_DRAW);
 
     // Create instance data buffers
     this.instanceMatrixBuffer = gl.createBuffer();
@@ -200,7 +192,7 @@ export class RenderSystem {
     }
   }
 
-  private updateRectangles(rectangles: Object[]) {
+  private updateRectangles(rectangles: number[]) {
     const gl = this.gl;
     const instanceCount = Math.min(rectangles.length, this.maxInstances);
 
@@ -208,36 +200,39 @@ export class RenderSystem {
 
     // Pack instance data into arrays - FAST! No expensive matrix decomposition
     for (let i = 0; i < instanceCount; i++) {
-      const obj = rectangles[i];
+      const eid = rectangles[i];
 
       // Copy transformation matrix directly (9 floats) - MUCH faster than decomposition!
       const matrixOffset = i * 9;
-      const worldMatrix = obj.transform.worldMatrix;
+      const worldMatrix = getWorldMatrix(eid);
+
       for (let j = 0; j < 9; j++) {
         this.instanceMatrixData[matrixOffset + j] = worldMatrix[j];
       }
 
       // Size
-      this.instanceSizeData[i * 2] = obj.size.width || 100;
-      this.instanceSizeData[i * 2 + 1] = obj.size.height || 100;
+      this.instanceSizeData[i * 2] = getWidth(eid) || 100;
+      this.instanceSizeData[i * 2 + 1] = getHeight(eid) || 100;
 
       // Fill color
-      this.instanceFillColorData[i * 4] = obj.style.fill[0];
-      this.instanceFillColorData[i * 4 + 1] = obj.style.fill[1];
-      this.instanceFillColorData[i * 4 + 2] = obj.style.fill[2];
-      this.instanceFillColorData[i * 4 + 3] = obj.style.fill[3];
+      const fillColor = hexToRgba(getFill(eid));
+      this.instanceFillColorData[i * 4] = fillColor[0];
+      this.instanceFillColorData[i * 4 + 1] = fillColor[1];
+      this.instanceFillColorData[i * 4 + 2] = fillColor[2];
+      this.instanceFillColorData[i * 4 + 3] = fillColor[3];
 
       // Stroke color
-      this.instanceStrokeColorData[i * 4] = obj.style.stroke[0];
-      this.instanceStrokeColorData[i * 4 + 1] = obj.style.stroke[1];
-      this.instanceStrokeColorData[i * 4 + 2] = obj.style.stroke[2];
-      this.instanceStrokeColorData[i * 4 + 3] = obj.style.stroke[3];
+      const strokeColor = hexToRgba(getStroke(eid));
+      this.instanceStrokeColorData[i * 4] = strokeColor[0];
+      this.instanceStrokeColorData[i * 4 + 1] = strokeColor[1];
+      this.instanceStrokeColorData[i * 4 + 2] = strokeColor[2];
+      this.instanceStrokeColorData[i * 4 + 3] = strokeColor[3];
 
       // Stroke width
-      this.instanceStrokeWidthData[i] = obj.style.strokeWidth;
+      this.instanceStrokeWidthData[i] = getStrokeWidth(eid);
 
       // Selected
-      this.instanceSelectedData[i] = obj.selected ? 1.0 : 0.0;
+      this.instanceSelectedData[i] = getSelectable(eid) ? 1.0 : 0.0;
     }
 
     // Update buffers with instance data
@@ -276,58 +271,24 @@ export class RenderSystem {
     gl.drawArraysInstanced(gl.ctx.TRIANGLES, 0, 6, instanceCount);
   }
 
-  private updateCircles(objects: Object[]) {
-    const gl = this.gl;
-    const positionLocation = this.positionLocation;
-    const circleBuffer = this.circleBuffer;
-
-    if (!positionLocation || !circleBuffer) {
-      return;
-    }
-
-    gl.bindBuffer(gl.ctx.ARRAY_BUFFER, circleBuffer);
-    gl.enableVertexAttribArray(positionLocation);
-    gl.vertexAttribPointer(positionLocation, 2, gl.ctx.FLOAT, false, 0, 0);
-
-    // For circles, we still use the old method (could be instanced too)
-    for (const { style, transform, size } of objects) {
-      gl.setUniform4f('basic2DProgram', 'u_fill_color', style.fill);
-      gl.setUniformMatrix3fv('basic2DProgram', 'u_object_transformation_matrix', transform.localMatrix);
-      gl.setUniform2f('basic2DProgram', 'u_size', [size.radius!, size.radius!]);
-      gl.drawArrays(gl.ctx.TRIANGLE_FAN, 0, this.circleVertices.length / 2);
-    }
-  }
-
-  update(objects: Object[]) {
+  update(world: World) {
     this.gl.clear();
 
     this.updateViewportAndResolution();
 
-    const rectangles: Array<Object> = [];
-    const circles: Array<Object> = [];
+    const rectangles = [];
 
-    for (const object of objects) {
-      const size = object.size;
-
-      if (!object.visibility) {
+    for (const eid of world.getEntities()) {
+      if (!isVisible(eid)) {
         continue;
       }
 
-      if (size.radius) {
-        circles.push(object);
-      } else {
-        rectangles.push(object);
-      }
+      rectangles.push(eid);
     }
 
     // ---- Instanced Rectangles ----
     if (rectangles.length > 0) {
       this.updateRectangles(rectangles);
-    }
-
-    // ---- Circles ----
-    if (circles.length > 0) {
-      this.updateCircles(circles);
     }
   }
 }

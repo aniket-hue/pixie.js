@@ -1,7 +1,26 @@
-import type { Object } from '../entities/Object.class';
+import { getHeight, getWidth, getWorldMatrix } from '../ecs/components';
 import { m3 } from '../math';
+import { computeBoundsOfMatrix } from './computeBoundsOfMatrix';
 
-export function createBoundingBoxOfchildren(children: Object[]) {
+function getBounds({ worldMatrix, size }: { worldMatrix: number[]; size: { width: number; height: number } }) {
+  if (!worldMatrix || !size) {
+    return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+  }
+
+  const m = worldMatrix;
+  const w = 'width' in size ? (size.width ?? 0) : 0;
+  const h = 'height' in size ? (size.height ?? 0) : 0;
+
+  return computeBoundsOfMatrix({
+    matrix: m,
+    size: {
+      width: w,
+      height: h,
+    },
+  });
+}
+
+export function createBoundingBoxOfchildren(children: number[]) {
   if (!children.length) {
     return {
       localMatrix: m3.identity(),
@@ -17,11 +36,21 @@ export function createBoundingBoxOfchildren(children: Object[]) {
     maxY: -Infinity,
   };
 
-  children.forEach((object) => {
-    groupBounds.minX = Math.min(groupBounds.minX, object.bounds.minX);
-    groupBounds.minY = Math.min(groupBounds.minY, object.bounds.minY);
-    groupBounds.maxX = Math.max(groupBounds.maxX, object.bounds.maxX);
-    groupBounds.maxY = Math.max(groupBounds.maxY, object.bounds.maxY);
+  children.forEach((child) => {
+    const worldMatrix = getWorldMatrix(child);
+
+    const bounds = getBounds({
+      worldMatrix,
+      size: {
+        width: getWidth(child),
+        height: getHeight(child),
+      },
+    });
+
+    groupBounds.minX = Math.min(groupBounds.minX, bounds.minX);
+    groupBounds.minY = Math.min(groupBounds.minY, bounds.minY);
+    groupBounds.maxX = Math.max(groupBounds.maxX, bounds.maxX);
+    groupBounds.maxY = Math.max(groupBounds.maxY, bounds.maxY);
   });
 
   const gcx = (groupBounds.minX + groupBounds.maxX) / 2;

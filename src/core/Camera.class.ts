@@ -1,5 +1,5 @@
+import type { Canvas } from './Canvas.class';
 import { Events } from './events';
-import type { GraphicsEngine } from './GraphicsEngine.class';
 import { m3 } from './math';
 
 export interface Point {
@@ -16,10 +16,10 @@ export class Camera {
   minZoom: number = 0.1;
   maxZoom: number = 5;
 
-  context: GraphicsEngine;
+  context: Canvas;
   viewportTransformMatrix: number[];
 
-  constructor(context: GraphicsEngine, config: typeof DEFAULT_CAMERA_CONFIG = DEFAULT_CAMERA_CONFIG) {
+  constructor(context: Canvas, config: typeof DEFAULT_CAMERA_CONFIG = DEFAULT_CAMERA_CONFIG) {
     this.context = context;
     this.viewportTransformMatrix = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 
@@ -91,6 +91,8 @@ export class Camera {
     }
 
     this.context.fire(Events.ZOOM_CHANGED, this.zoom);
+
+    this.context.requestRender();
   }
 
   pan(deltaX: number, deltaY: number) {
@@ -103,6 +105,8 @@ export class Camera {
     this.viewportTransformMatrix = m3.multiply(this.viewportTransformMatrix, translationMatrix);
 
     this.context.fire(Events.PAN_CHANGED, this.x, this.y);
+
+    this.context.requestRender();
   }
 
   screenToWorld(screenX: number, screenY: number) {

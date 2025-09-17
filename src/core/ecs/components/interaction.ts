@@ -1,0 +1,22 @@
+import { defineComponent } from './lib';
+
+export const Interaction = defineComponent({
+  draggable: 'f32',
+  selectable: 'f32',
+});
+
+export const updateDraggable = (eid: number, draggable: boolean) => {
+  Interaction.draggable[eid] = draggable;
+};
+
+export const updateSelectable = (eid: number, selectable: boolean) => {
+  Interaction.selectable[eid] = selectable;
+};
+
+export const getDraggable = (eid: number) => {
+  return Interaction.draggable[eid];
+};
+
+export const getSelectable = (eid: number) => {
+  return Interaction.selectable[eid];
+};
