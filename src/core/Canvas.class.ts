@@ -11,6 +11,7 @@ import { m3 } from './math/matrix';
 import { OverlayRenderer } from './OverlayRenderer.class';
 import { SceneRenderer } from './SceneRenderer.class';
 import { SelectionManager } from './selection/SelectionManager.class';
+import { computeBoundsOfMatrix } from './utils/computeBoundsOfMatrix';
 import { GlCore } from './webgl/GlCore.class';
 
 /**
@@ -47,7 +48,7 @@ export class Canvas {
 
     this.selectionManager = new SelectionManager(this);
 
-    // this.interactiveSystem = new InteractiveSystem(this);
+    this.interactiveSystem = new InteractiveSystem(this);
     this.parentSystem = new ParentSystem();
     this.childrenSystem = new ChildrenSystem();
     this.visibleSystem = new VisibleSystem();
@@ -177,6 +178,29 @@ export class Canvas {
     }
 
     return allIntersecting.at(-1) ?? null;
+  }
+
+  findEntitiesInBoundingBox(boundingBox: { minX: number; minY: number; maxX: number; maxY: number }): number[] {
+    const allIntersecting = [];
+
+    for (const eid of this.world.getEntities()) {
+      if (!isVisible(eid)) {
+        continue;
+      }
+
+      const objBoundingBox = computeBoundsOfMatrix({ matrix: getWorldMatrix(eid), size: { width: getWidth(eid), height: getHeight(eid) } });
+
+      if (
+        boundingBox.minX <= objBoundingBox.maxX &&
+        boundingBox.minY <= objBoundingBox.maxY &&
+        boundingBox.maxX >= objBoundingBox.minX &&
+        boundingBox.maxY >= objBoundingBox.minY
+      ) {
+        allIntersecting.push(eid);
+      }
+    }
+
+    return allIntersecting;
   }
 
   destroy(): void {

@@ -1,15 +1,9 @@
 import type { Camera } from './Camera.class';
 import type { Canvas } from './Canvas.class';
-import { getFill, getHeight, getSelectable, getStroke, getStrokeWidth, getWidth, getWorldMatrix, isVisible } from './ecs/components';
+import { getFill, getHeight, getSelected, getStroke, getStrokeWidth, getWidth, getWorldMatrix, isVisible } from './ecs/components';
 import type { World } from './ecs/World.class';
+import { argbToRgba } from './lib/color';
 import type { GlCore } from './webgl/GlCore.class';
-
-function hexToRgba(hex: number) {
-  const r = ((hex >> 16) & 0xff) / 255;
-  const g = ((hex >> 8) & 0xff) / 255;
-  const b = (hex & 0xff) / 255;
-  return [r, g, b, 1];
-}
 
 export class SceneRenderer {
   private gl: GlCore;
@@ -214,14 +208,14 @@ export class SceneRenderer {
       this.instanceSizeData[i * 2 + 1] = getHeight(eid) || 100;
 
       // Fill color
-      const fillColor = hexToRgba(getFill(eid));
+      const fillColor = argbToRgba(getFill(eid));
       this.instanceFillColorData[i * 4] = fillColor[0];
       this.instanceFillColorData[i * 4 + 1] = fillColor[1];
       this.instanceFillColorData[i * 4 + 2] = fillColor[2];
       this.instanceFillColorData[i * 4 + 3] = fillColor[3];
 
       // Stroke color
-      const strokeColor = hexToRgba(getStroke(eid));
+      const strokeColor = argbToRgba(getStroke(eid));
       this.instanceStrokeColorData[i * 4] = strokeColor[0];
       this.instanceStrokeColorData[i * 4 + 1] = strokeColor[1];
       this.instanceStrokeColorData[i * 4 + 2] = strokeColor[2];
@@ -231,7 +225,7 @@ export class SceneRenderer {
       this.instanceStrokeWidthData[i] = getStrokeWidth(eid);
 
       // Selected
-      this.instanceSelectedData[i] = getSelectable(eid) ? 1.0 : 0.0;
+      this.instanceSelectedData[i] = getSelected(eid) ? 1.0 : 0.0;
     }
 
     // Update buffers with instance data

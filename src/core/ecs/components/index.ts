@@ -1,6 +1,15 @@
-export { addChild, getChildren } from './children';
+export { addChild, clearChildren, getChildren, removeChild } from './children';
 export { clearAllDirty, clearDirty, isDirty, markDirty } from './dirty';
-export { getDraggable, getSelectable, updateDraggable, updateSelectable } from './interaction';
+export {
+  getCanNotBeSelectedBySelection,
+  getDraggable,
+  getSelectable,
+  getSelected,
+  updateCanNotBeSelectedBySelection,
+  updateDraggable,
+  updateSelectable,
+  updateSelected,
+} from './interaction';
 export { defineComponent } from './lib';
 export { getLocalMatrix, getWorldMatrix, updateLocalMatrix, updateWorldMatrix } from './matrix';
 export { getParent, updateParent } from './parent';
