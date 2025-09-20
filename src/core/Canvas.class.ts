@@ -8,7 +8,9 @@ import { World } from './ecs/World.class';
 import { EventEmitter, type EventKeys } from './events';
 import { InputHandler } from './events/input/InputHandler.class';
 import { m3 } from './math/matrix';
+import { OverlayRenderer } from './OverlayRenderer.class';
 import { SceneRenderer } from './SceneRenderer.class';
+import { SelectionManager } from './selection/SelectionManager.class';
 import { GlCore } from './webgl/GlCore.class';
 
 /**
@@ -20,11 +22,16 @@ export class Canvas {
   private events: EventEmitter;
   private glCore: GlCore;
   private inputHandler: InputHandler;
-  private sceneRenderer: SceneRenderer;
+
   private interactiveSystem: InteractiveSystem;
   private parentSystem: ParentSystem;
   private childrenSystem: ChildrenSystem;
   private visibleSystem: VisibleSystem;
+
+  private sceneRenderer: SceneRenderer;
+  private overlayRenderer: OverlayRenderer;
+
+  selectionManager: SelectionManager;
 
   world: World;
   camera: Camera;
@@ -38,17 +45,23 @@ export class Canvas {
     this.camera = new Camera(this);
     this.inputHandler = new InputHandler(this);
 
-    this.sceneRenderer = new SceneRenderer(this);
-    this.interactiveSystem = new InteractiveSystem(this);
+    this.selectionManager = new SelectionManager(this);
+
+    // this.interactiveSystem = new InteractiveSystem(this);
     this.parentSystem = new ParentSystem();
     this.childrenSystem = new ChildrenSystem();
     this.visibleSystem = new VisibleSystem();
+
+    this.sceneRenderer = new SceneRenderer(this);
+    this.overlayRenderer = new OverlayRenderer(this);
 
     this.resize();
   }
 
   requestRender() {
     requestAnimationFrame(() => {
+      this.glCore.clear();
+
       const dirtyEntities = [];
       const allEntities = this.world.getEntities();
 
@@ -62,7 +75,8 @@ export class Canvas {
       this.parentSystem.update(dirtyEntities);
       this.childrenSystem.update(dirtyEntities);
 
-      this.sceneRenderer.update(this.world);
+      this.sceneRenderer.render(this.world);
+      this.overlayRenderer.render(this.world);
 
       clearAllDirty();
     });
