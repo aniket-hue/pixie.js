@@ -17,6 +17,7 @@ import {
   updateWorldMatrix,
 } from './core/ecs/components';
 import { Events } from './core/events';
+import { rgbaToArgb } from './core/lib/color';
 import { m3 } from './core/math';
 
 function App() {
@@ -92,7 +93,7 @@ function App() {
           updateStrokeWidth(rect, strokeWidth);
 
           updateDraggable(rect, true);
-          updateSelectable(rect, false);
+          updateSelectable(rect, true);
 
           markVisible(rect, true);
 

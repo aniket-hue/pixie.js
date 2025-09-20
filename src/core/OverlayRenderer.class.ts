@@ -1,7 +1,6 @@
 import type { Camera } from './Camera.class';
 import type { Canvas } from './Canvas.class';
 import type { World } from './ecs/World.class';
-import { m3 } from './math';
 import type { SelectionManager } from './selection/SelectionManager.class';
 import type { GlCore } from './webgl/GlCore.class';
 
