@@ -45,8 +45,6 @@ function App() {
       const shapes: number[] = [];
       const spacing = 200;
       const nums = 2;
-      const parent2 = world.addEntity();
-      const parent = world.addEntity();
 
       for (let i = -nums / 2; i < nums / 2; i++) {
         for (let j = -nums / 2; j < nums / 2; j++) {
@@ -102,62 +100,6 @@ function App() {
           shapes.push(rect);
         }
       }
-
-      updateLocalMatrix(parent, [0, 0, 0, 0, 0, 0, 0, 0, 1]);
-      updateWorldMatrix(parent, [0, 0, 0, 0, 0, 0, 0, 0, 1]);
-
-      updateWidth(parent, 0);
-      updateHeight(parent, 0);
-
-      updateFill(parent, 0x808080);
-
-      updateDraggable(parent, true);
-      updateSelectable(parent, false);
-      markVisible(parent, true);
-
-      updateLocalMatrix(parent2, [0, 0, 0, 0, 0, 0, 0, 0, 1]);
-      updateWorldMatrix(parent2, [0, 0, 0, 0, 0, 0, 0, 0, 1]);
-
-      updateWidth(parent2, 0);
-      updateHeight(parent2, 0);
-
-      updateFill(parent2, 0x808504);
-
-      updateDraggable(parent2, true);
-      updateSelectable(parent2, false);
-
-      markVisible(parent2, true);
-
-      markDirty(parent);
-      markDirty(parent2);
-
-      shapes.forEach((shape) => {
-        addChild(parent, shape);
-        updateParent(shape, parent);
-      });
-
-      const newShape = world.addEntity();
-      const localMatrix = m3.compose({ tx: 600, ty: 600, sx: 1, sy: 1, r: 0 });
-      updateLocalMatrix(newShape, localMatrix);
-      updateWorldMatrix(newShape, localMatrix);
-
-      updateFill(newShape, 0x806080);
-      updateStroke(newShape, 0xff0000);
-      updateStrokeWidth(newShape, 1);
-
-      updateDraggable(newShape, true);
-      updateSelectable(newShape, false);
-
-      markVisible(newShape, true);
-
-      updateWidth(newShape, 500);
-      updateHeight(newShape, 500);
-
-      addChild(parent2, newShape);
-      addChild(parent2, parent);
-
-      updateParent(newShape, parent2);
-      updateParent(parent, parent2);
 
       canvas.requestRender();
     }

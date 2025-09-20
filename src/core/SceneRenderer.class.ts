@@ -49,7 +49,6 @@ export class SceneRenderer {
 
   constructor(context: Canvas) {
     this.gl = context.getGlCore();
-    console.log(this.gl);
     this.camera = context.camera;
 
     this.rectangleVertices = new Float32Array([-0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5]);
@@ -271,9 +270,7 @@ export class SceneRenderer {
     gl.drawArraysInstanced(gl.ctx.TRIANGLES, 0, 6, instanceCount);
   }
 
-  update(world: World) {
-    this.gl.clear();
-
+  render(world: World) {
     this.updateViewportAndResolution();
 
     const rectangles = [];

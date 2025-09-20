@@ -7,12 +7,8 @@ export enum Events {
   MOUSE_DOWN = 'mouse_down',
   MOUSE_UP = 'mouse_up',
 
-  KEY_DOWN = 'key_down',
-  KEY_UP = 'key_up',
-
-  RENDER = 'render',
-
-  COMPONENTS_UPDATED = 'components_updated',
+  ADD_TO_SELECTION = 'add_to_selection',
+  REMOVE_FROM_SELECTION = 'remove_from_selection',
 }
 
 export type EventKeys = Events;
