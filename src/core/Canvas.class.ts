@@ -3,12 +3,12 @@ import { clearAllDirty, getHeight, getWidth, getWorldMatrix, isDirty, isVisible 
 import { ChildrenSystem } from './ecs/systems/ChildrenSystem.class';
 import { InteractiveSystem } from './ecs/systems/InteractiveSystem.class';
 import { ParentSystem } from './ecs/systems/ParentSystem.class';
-import { RenderSystem } from './ecs/systems/RenderSystem.class';
 import { VisibleSystem } from './ecs/systems/VisibleSystem.class';
 import { World } from './ecs/World.class';
 import { EventEmitter, type EventKeys } from './events';
 import { InputHandler } from './events/input/InputHandler.class';
 import { m3 } from './math/matrix';
+import { SceneRenderer } from './SceneRenderer.class';
 import { GlCore } from './webgl/GlCore.class';
 
 /**
@@ -20,7 +20,7 @@ export class Canvas {
   private events: EventEmitter;
   private glCore: GlCore;
   private inputHandler: InputHandler;
-  private renderSystem: RenderSystem;
+  private sceneRenderer: SceneRenderer;
   private interactiveSystem: InteractiveSystem;
   private parentSystem: ParentSystem;
   private childrenSystem: ChildrenSystem;
@@ -38,11 +38,12 @@ export class Canvas {
     this.camera = new Camera(this);
     this.inputHandler = new InputHandler(this);
 
-    this.renderSystem = new RenderSystem(this);
+    this.sceneRenderer = new SceneRenderer(this);
     this.interactiveSystem = new InteractiveSystem(this);
     this.parentSystem = new ParentSystem();
     this.childrenSystem = new ChildrenSystem();
     this.visibleSystem = new VisibleSystem();
+
     this.resize();
   }
 
@@ -58,10 +59,10 @@ export class Canvas {
       }
 
       this.visibleSystem.update(dirtyEntities);
-
       this.parentSystem.update(dirtyEntities);
       this.childrenSystem.update(dirtyEntities);
-      this.renderSystem.update(this.world);
+
+      this.sceneRenderer.update(this.world);
 
       clearAllDirty();
     });
