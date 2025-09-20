@@ -1,8 +1,8 @@
-import type { Camera } from '../../Camera.class';
-import type { Canvas } from '../../Canvas.class';
-import type { GlCore } from '../../webgl/GlCore.class';
-import { getFill, getHeight, getSelectable, getStroke, getStrokeWidth, getWidth, getWorldMatrix, isVisible } from '../components';
-import type { World } from '../World.class';
+import type { Camera } from './Camera.class';
+import type { Canvas } from './Canvas.class';
+import { getFill, getHeight, getSelectable, getStroke, getStrokeWidth, getWidth, getWorldMatrix, isVisible } from './ecs/components';
+import type { World } from './ecs/World.class';
+import type { GlCore } from './webgl/GlCore.class';
 
 function hexToRgba(hex: number) {
   const r = ((hex >> 16) & 0xff) / 255;
@@ -11,7 +11,7 @@ function hexToRgba(hex: number) {
   return [r, g, b, 1];
 }
 
-export class RenderSystem {
+export class SceneRenderer {
   private gl: GlCore;
 
   private rectangleVertices: Float32Array;
