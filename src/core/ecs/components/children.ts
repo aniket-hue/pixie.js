@@ -1,3 +1,4 @@
+import { markDirty } from './dirty';
 import { defineComponent } from './lib';
 import { clearParent, updateParent } from './parent';
 
@@ -58,6 +59,7 @@ export function clearChildren(parent: number) {
 
   children.forEach((child) => {
     clearParent(child);
+    markDirty(child);
   });
 
   Children.count[parent] = 0;

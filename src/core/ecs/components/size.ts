@@ -1,6 +1,6 @@
 import { defineComponent } from './lib';
 
-const Size = defineComponent({
+export const Size = defineComponent({
   width: 'f32',
   height: 'f32',
 });

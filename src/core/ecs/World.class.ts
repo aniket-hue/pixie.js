@@ -1,9 +1,7 @@
-import type { Component } from './components/lib';
-
 export class World {
   entities: Set<number>;
   nextEntity: number;
-  components: Map<Component, Set<number>>;
+  components: Map<any, Set<number>>;
 
   constructor() {
     this.entities = new Set();
@@ -19,12 +17,13 @@ export class World {
 
   removeEntity(eid: number) {
     this.entities.delete(eid);
+
     for (const comp of this.components.values()) {
       comp.delete(eid);
     }
   }
 
-  addComponent(comp: Component, eid: number) {
+  addComponent(comp: any, eid: number) {
     if (!this.components.has(comp)) {
       this.components.set(comp, new Set());
     }
@@ -32,16 +31,20 @@ export class World {
     this.components.get(comp)!.add(eid);
   }
 
-  removeComponent(comp: Component, eid: number) {
+  removeComponent(comp: any, eid: number) {
     this.components.get(comp)?.delete(eid);
   }
 
-  query(comps: Component[]) {
+  query(comps: any[]) {
     const sets = comps.map((c) => this.components.get(c) ?? new Set());
     return [...sets.reduce((a, b) => new Set([...a].filter((x) => b.has(x))))];
   }
 
   getEntities() {
     return this.entities;
+  }
+
+  hasComponent(comp: any, eid: number) {
+    return this.components.has(comp) && this.components.get(comp)!.has(eid);
   }
 }

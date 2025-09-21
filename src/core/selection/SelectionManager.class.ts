@@ -2,26 +2,32 @@ import type { Camera } from '../Camera.class';
 import type { Canvas } from '../Canvas.class';
 import {
   addChild,
-  getCanNotBeSelectedBySelection,
+  Bounds,
+  Interaction,
+  LocalMatrix,
   markDirty,
   markVisible,
-  setIsBoundsComputable,
+  Parent,
+  Size,
+  Style,
   updateCanNotBeSelectedBySelection,
   updateDraggable,
   updateFill,
   updateHeight,
   updateLocalMatrix,
   updateSelectable,
-  updateSelected,
   updateStroke,
   updateStrokeWidth,
   updateWidth,
   updateWorldMatrix,
+  Visibility,
+  WorldMatrix,
 } from '../ecs/components';
-import { clearChildren, getChildren, removeChild } from '../ecs/components/children';
+import { clearChildren } from '../ecs/components/children';
 import { Events } from '../events';
 import { rgbaToArgb } from '../lib/color';
 import { m3 } from '../math/matrix';
+import { createBoundingBoxOfchildren } from '../utils/createBoundingBoxOfchildren';
 
 export class SelectionManager {
   private camera: Camera;
@@ -32,8 +38,10 @@ export class SelectionManager {
   private isDragging = false;
   private dragStart: { x: number; y: number } | null = null;
 
-  group: number | null = null;
+  private group: number | null = null;
+
   selectionBox: number[] | null = null;
+  tempBoundingRect: number | null = null;
 
   constructor(context: Canvas) {
     this.canvas = context;
@@ -62,7 +70,10 @@ export class SelectionManager {
 
     if (this.group) {
       clearChildren(this.group);
+
+      this.selectedEntities = [];
       this.canvas.world.removeEntity(this.group);
+
       this.group = null;
     }
 
@@ -106,39 +117,36 @@ export class SelectionManager {
       r: 0,
     });
 
-    const entities = this.canvas.findEntitiesInBoundingBox({ minX, minY, maxX, maxY }).filter((entity) => !getCanNotBeSelectedBySelection(entity));
+    if (!this.tempBoundingRect) {
+      const world = this.canvas.world;
 
-    const added = entities.filter((entity) => !this.selectedEntities.includes(entity));
-    const removed = this.selectedEntities.filter((entity) => !entities.includes(entity));
+      this.tempBoundingRect = this.canvas.world.addEntity();
 
-    console.log(added, removed);
+      updateFill(this.tempBoundingRect, rgbaToArgb(255, 4, 0, 1));
+      updateStrokeWidth(this.tempBoundingRect, 1);
+      updateStroke(this.tempBoundingRect, rgbaToArgb(255, 4, 0, 1));
+      markVisible(this.tempBoundingRect, true);
+      updateCanNotBeSelectedBySelection(this.tempBoundingRect, true);
 
-    // if (added.length === 0 && removed.length === 0) {
-    //   this.canvas.requestRender();
-    //   return;
-    // }
-
-    this.selectedEntities = entities;
-
-    let group = this.group;
-
-    if (!group) {
-      this.group = this.initGroup();
-      group = this.group;
+      world.addComponent(LocalMatrix, this.tempBoundingRect);
+      world.addComponent(Size, this.tempBoundingRect);
+      world.addComponent(Interaction, this.tempBoundingRect);
+      world.addComponent(Visibility, this.tempBoundingRect);
+      world.addComponent(Style, this.tempBoundingRect);
+      world.addComponent(Parent, this.tempBoundingRect);
+      world.addComponent(WorldMatrix, this.tempBoundingRect);
     }
 
-    removed.forEach((entity) => {
-      removeChild(group, entity);
-    });
+    const entities = this.canvas.findEntitiesInBoundingBox({ minX, minY, maxX, maxY });
+    this.selectedEntities = entities;
 
-    added.forEach((entity) => {
-      addChild(group, entity);
-    });
+    const bounds = createBoundingBoxOfchildren(entities);
+    updateLocalMatrix(this.tempBoundingRect, bounds.localMatrix);
+    updateWorldMatrix(this.tempBoundingRect, bounds.localMatrix);
+    updateWidth(this.tempBoundingRect, bounds.width);
+    updateHeight(this.tempBoundingRect, bounds.height);
 
-    const child = getChildren(group)[0];
-
-    markDirty(child);
-    markDirty(group);
+    markDirty(this.tempBoundingRect);
 
     this.canvas.requestRender();
   }
@@ -146,7 +154,42 @@ export class SelectionManager {
   private onMouseUp(): void {
     this.isDragging = false;
     this.selectionBox = null;
+
+    if (this.tempBoundingRect) {
+      this.canvas.world.removeEntity(this.tempBoundingRect);
+      this.tempBoundingRect = null;
+    }
+
+    if (this.selectedEntities.length > 0) {
+      this.createGroupFromSelection();
+    }
+
     this.canvas.requestRender();
+  }
+
+  private createGroupFromSelection(): void {
+    if (this.group) {
+      clearChildren(this.group);
+      this.canvas.world.removeEntity(this.group);
+    }
+
+    this.group = this.initGroup();
+    const group = this.group;
+
+    this.selectedEntities.forEach((entity) => {
+      addChild(group, entity);
+    });
+
+    if (this.selectedEntities.length > 0) {
+      markDirty(group);
+      this.selectedEntities.forEach((entity) => {
+        markDirty(entity);
+      });
+    }
+
+    // Reset selection state
+    this.selectedEntities = [];
+    this.dragStart = null;
   }
 
   private getWorldPosition(screenX: number, screenY: number): { x: number; y: number } {
@@ -155,7 +198,8 @@ export class SelectionManager {
   }
 
   private initGroup() {
-    const newGroup = this.canvas.world.addEntity();
+    const world = this.canvas.world;
+    const newGroup = world.addEntity();
 
     updateLocalMatrix(newGroup, [0, 0, 0, 0, 0, 0, 0, 0, 1]);
     updateWorldMatrix(newGroup, [0, 0, 0, 0, 0, 0, 0, 0, 1]);
@@ -172,7 +216,15 @@ export class SelectionManager {
     updateSelectable(newGroup, true);
     markVisible(newGroup, true);
     updateCanNotBeSelectedBySelection(newGroup, true);
-    setIsBoundsComputable(newGroup, false);
+
+    world.addComponent(LocalMatrix, newGroup);
+    world.addComponent(Size, newGroup);
+    world.addComponent(Interaction, newGroup);
+    world.addComponent(Visibility, newGroup);
+    world.addComponent(Bounds, newGroup);
+    world.addComponent(Style, newGroup);
+    world.addComponent(Parent, newGroup);
+    world.addComponent(WorldMatrix, newGroup);
 
     return newGroup;
   }
