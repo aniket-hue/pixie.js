@@ -11,7 +11,16 @@ export {
   updateSelected,
 } from './interaction';
 export { defineComponent } from './lib';
-export { getBounds, getLocalMatrix, getWorldMatrix, updateBounds, updateLocalMatrix, updateWorldMatrix } from './matrix';
+export {
+  getBounds,
+  getLocalMatrix,
+  getWorldMatrix,
+  isComputableBounds,
+  setIsBoundsComputable,
+  updateBounds,
+  updateLocalMatrix,
+  updateWorldMatrix,
+} from './matrix';
 export { getParent, updateParent } from './parent';
 export { getHeight, getWidth, updateHeight, updateWidth } from './size';
 export { getFill, getStroke, getStrokeWidth, updateFill, updateStroke, updateStrokeWidth } from './style';

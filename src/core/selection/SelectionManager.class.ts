@@ -5,6 +5,7 @@ import {
   getCanNotBeSelectedBySelection,
   markDirty,
   markVisible,
+  setIsBoundsComputable,
   updateCanNotBeSelectedBySelection,
   updateDraggable,
   updateFill,
@@ -106,48 +107,38 @@ export class SelectionManager {
     });
 
     const entities = this.canvas.findEntitiesInBoundingBox({ minX, minY, maxX, maxY }).filter((entity) => !getCanNotBeSelectedBySelection(entity));
-    const group = this.group;
 
     const added = entities.filter((entity) => !this.selectedEntities.includes(entity));
     const removed = this.selectedEntities.filter((entity) => !entities.includes(entity));
 
-    if (added.length === 0 && removed.length === 0) {
-      this.canvas.requestRender();
-      return;
-    }
+    console.log(added, removed);
+
+    // if (added.length === 0 && removed.length === 0) {
+    //   this.canvas.requestRender();
+    //   return;
+    // }
 
     this.selectedEntities = entities;
 
-    if (this.selectedEntities.length > 0) {
-      let group = this.group;
+    let group = this.group;
 
-      if (!group) {
-        this.group = this.initGroup();
-        group = this.group;
-      }
-
-      removed.forEach((entity) => {
-        removeChild(group, entity);
-      });
-
-      added.forEach((entity) => {
-        addChild(group, entity);
-      });
-
-      const child = getChildren(group)[0];
-
-      markDirty(child);
-      markDirty(group);
-    } else {
-      if (group) {
-        this.canvas.world.removeEntity(group);
-        this.group = null;
-      }
-
-      this.selectedEntities.forEach((entity) => {
-        updateSelected(entity, true);
-      });
+    if (!group) {
+      this.group = this.initGroup();
+      group = this.group;
     }
+
+    removed.forEach((entity) => {
+      removeChild(group, entity);
+    });
+
+    added.forEach((entity) => {
+      addChild(group, entity);
+    });
+
+    const child = getChildren(group)[0];
+
+    markDirty(child);
+    markDirty(group);
 
     this.canvas.requestRender();
   }
@@ -181,6 +172,7 @@ export class SelectionManager {
     updateSelectable(newGroup, true);
     markVisible(newGroup, true);
     updateCanNotBeSelectedBySelection(newGroup, true);
+    setIsBoundsComputable(newGroup, false);
 
     return newGroup;
   }

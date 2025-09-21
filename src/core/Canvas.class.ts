@@ -1,5 +1,7 @@
+import RBush from 'rbush';
 import { Camera } from './Camera.class';
 import { clearAllDirty, getBounds, getHeight, getWidth, getWorldMatrix, isDirty, isVisible } from './ecs/components';
+import { BoundsSystem } from './ecs/systems/BoundsSystem.class';
 import { ChildrenSystem } from './ecs/systems/ChildrenSystem.class';
 import { InteractiveSystem } from './ecs/systems/InteractiveSystem.class';
 import { ParentSystem } from './ecs/systems/ParentSystem.class';
@@ -27,6 +29,7 @@ export class Canvas {
   private parentSystem: ParentSystem;
   private childrenSystem: ChildrenSystem;
   private visibleSystem: VisibleSystem;
+  private boundsSystem: BoundsSystem;
 
   private sceneRenderer: SceneRenderer;
   private overlayRenderer: OverlayRenderer;
@@ -35,6 +38,14 @@ export class Canvas {
 
   world: World;
   camera: Camera;
+
+  tree: RBush<{
+    id: number;
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+  }>;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvasElement = canvas;
@@ -51,9 +62,12 @@ export class Canvas {
     this.parentSystem = new ParentSystem();
     this.childrenSystem = new ChildrenSystem();
     this.visibleSystem = new VisibleSystem();
+    this.boundsSystem = new BoundsSystem(this);
 
     this.sceneRenderer = new SceneRenderer(this);
     this.overlayRenderer = new OverlayRenderer(this);
+
+    this.tree = new RBush();
 
     this.resize();
   }
@@ -74,6 +88,7 @@ export class Canvas {
       this.visibleSystem.update(dirtyEntities);
       this.parentSystem.update(dirtyEntities);
       this.childrenSystem.update(dirtyEntities);
+      this.boundsSystem.update(dirtyEntities);
 
       this.sceneRenderer.render(this.world);
       this.overlayRenderer.render(this.world);
@@ -182,22 +197,8 @@ export class Canvas {
   findEntitiesInBoundingBox(boundingBox: { minX: number; minY: number; maxX: number; maxY: number }): number[] {
     const allIntersecting = [];
 
-    for (const eid of this.world.getEntities()) {
-      if (!isVisible(eid)) {
-        continue;
-      }
-
-      const objBoundingBox = getBounds(eid);
-
-      if (
-        boundingBox.minX <= objBoundingBox.maxX &&
-        boundingBox.minY <= objBoundingBox.maxY &&
-        boundingBox.maxX >= objBoundingBox.minX &&
-        boundingBox.maxY >= objBoundingBox.minY
-      ) {
-        allIntersecting.push(eid);
-      }
-    }
+    const intersecting = this.tree.search(boundingBox);
+    allIntersecting.push(...intersecting.map((item) => item.id));
 
     return allIntersecting;
   }
