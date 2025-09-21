@@ -17,7 +17,7 @@ import {
   updateWidth,
   updateWorldMatrix,
 } from '../ecs/components';
-import { clearChildren, removeChild } from '../ecs/components/children';
+import { clearChildren, getChildren, removeChild } from '../ecs/components/children';
 import { Events } from '../events';
 import { rgbaToArgb } from '../lib/color';
 import { m3 } from '../math/matrix';
@@ -60,7 +60,6 @@ export class SelectionManager {
     }
 
     if (this.group) {
-      console.log('clearChildren', this.group);
       clearChildren(this.group);
       this.canvas.world.removeEntity(this.group);
       this.group = null;
@@ -129,14 +128,15 @@ export class SelectionManager {
 
       removed.forEach((entity) => {
         removeChild(group, entity);
-        markDirty(entity);
       });
 
       added.forEach((entity) => {
         addChild(group, entity);
-        markDirty(entity);
       });
 
+      const child = getChildren(group)[0];
+
+      markDirty(child);
       markDirty(group);
     } else {
       if (group) {

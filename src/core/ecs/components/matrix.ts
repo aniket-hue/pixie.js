@@ -1,4 +1,6 @@
+import { computeBoundsOfMatrix } from '../../utils/computeBoundsOfMatrix';
 import { defineComponent } from './lib';
+import { getHeight, getWidth } from './size';
 
 export const LocalMatrix = defineComponent({
   m00: 'f32',
@@ -24,6 +26,34 @@ export const WorldMatrix = defineComponent({
   m22: 'f32',
 });
 
+export const Bounds = defineComponent({
+  minX: 'f32',
+  minY: 'f32',
+  maxX: 'f32',
+  maxY: 'f32',
+});
+
+export function updateBounds(eid: number) {
+  const matrix = getWorldMatrix(eid);
+  const size = { width: getWidth(eid), height: getHeight(eid) };
+
+  const bounds = computeBoundsOfMatrix({ matrix, size });
+
+  Bounds.minX[eid] = bounds.minX;
+  Bounds.minY[eid] = bounds.minY;
+  Bounds.maxX[eid] = bounds.maxX;
+  Bounds.maxY[eid] = bounds.maxY;
+}
+
+export function getBounds(eid: number) {
+  return {
+    minX: Bounds.minX[eid],
+    minY: Bounds.minY[eid],
+    maxX: Bounds.maxX[eid],
+    maxY: Bounds.maxY[eid],
+  };
+}
+
 export function updateLocalMatrix(eid: number, matrix: number[]) {
   LocalMatrix.m00[eid] = matrix[0];
   LocalMatrix.m01[eid] = matrix[1];
@@ -46,6 +76,8 @@ export function updateWorldMatrix(eid: number, matrix: number[]) {
   WorldMatrix.m20[eid] = matrix[6];
   WorldMatrix.m21[eid] = matrix[7];
   WorldMatrix.m22[eid] = matrix[8];
+
+  updateBounds(eid);
 }
 
 export function getWorldMatrix(eid: number) {

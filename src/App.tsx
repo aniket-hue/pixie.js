@@ -2,14 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import { Canvas } from './core/Canvas.class';
 import {
-  addChild,
   markDirty,
   markVisible,
   updateDraggable,
   updateFill,
   updateHeight,
   updateLocalMatrix,
-  updateParent,
   updateSelectable,
   updateStroke,
   updateStrokeWidth,
@@ -17,7 +15,6 @@ import {
   updateWorldMatrix,
 } from './core/ecs/components';
 import { Events } from './core/events';
-import { rgbaToArgb } from './core/lib/color';
 import { m3 } from './core/math';
 
 function App() {
@@ -45,7 +42,7 @@ function App() {
 
       const shapes: number[] = [];
       const spacing = 200;
-      const nums = 2;
+      const nums = 70;
 
       for (let i = -nums / 2; i < nums / 2; i++) {
         for (let j = -nums / 2; j < nums / 2; j++) {
