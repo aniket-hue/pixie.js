@@ -31,6 +31,8 @@ export const Bounds = defineComponent({
   minY: 'f32',
   maxX: 'f32',
   maxY: 'f32',
+
+  notComputable: 'u8',
 });
 
 export function updateBounds(eid: number) {
@@ -43,6 +45,8 @@ export function updateBounds(eid: number) {
   Bounds.minY[eid] = bounds.minY;
   Bounds.maxX[eid] = bounds.maxX;
   Bounds.maxY[eid] = bounds.maxY;
+
+  return bounds;
 }
 
 export function getBounds(eid: number) {
@@ -52,6 +56,14 @@ export function getBounds(eid: number) {
     maxX: Bounds.maxX[eid],
     maxY: Bounds.maxY[eid],
   };
+}
+
+export function isComputableBounds(eid: number) {
+  return Bounds.notComputable[eid] === 0;
+}
+
+export function setIsBoundsComputable(eid: number, shouldCompute: boolean) {
+  Bounds.notComputable[eid] = shouldCompute ? 0 : 1;
 }
 
 export function updateLocalMatrix(eid: number, matrix: number[]) {
@@ -76,8 +88,6 @@ export function updateWorldMatrix(eid: number, matrix: number[]) {
   WorldMatrix.m20[eid] = matrix[6];
   WorldMatrix.m21[eid] = matrix[7];
   WorldMatrix.m22[eid] = matrix[8];
-
-  updateBounds(eid);
 }
 
 export function getWorldMatrix(eid: number) {
