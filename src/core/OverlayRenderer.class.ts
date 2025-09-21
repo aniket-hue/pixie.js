@@ -46,9 +46,7 @@ export class OverlayRenderer {
 
   drawSelectionBox(selectionMatrix: number[]) {
     const gl = this.gl;
-
     const buffer = this.selectionBoxBuffer;
-
     const positionLocation = this.selectionBoxPositionLocation;
 
     if (positionLocation === null || positionLocation === -1 || !buffer) {
@@ -58,18 +56,14 @@ export class OverlayRenderer {
     gl.setUniformMatrix3fv('overlayProgram', 'u_viewport_transform_matrix', this.camera.viewportTransformMatrix);
     gl.setUniformMatrix3fv('overlayProgram', 'u_object_transform_matrix', selectionMatrix);
     gl.setUniform2f('overlayProgram', 'u_resolution', [gl.width, gl.height]);
-
     gl.setUniform4f('overlayProgram', 'u_color', [0.2, 0.6, 1.0, 0.3]);
 
     gl.bindBuffer(gl.ctx.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ctx.ARRAY_BUFFER, this.selectionBoxVertices, gl.ctx.STATIC_DRAW);
-
     gl.enableVertexAttribArray(positionLocation);
     gl.vertexAttribPointer(positionLocation, 2, gl.ctx.FLOAT, false, 0, 0);
 
     gl.drawArrays(gl.ctx.LINE_STRIP, 0, 5);
-
-    gl.deleteBuffer(buffer);
+    gl.disableVertexAttribArray(positionLocation);
   }
 
   render(_world: World) {

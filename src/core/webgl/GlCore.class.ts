@@ -165,6 +165,10 @@ export class GlCore {
     this.ctx.enableVertexAttribArray(index);
   }
 
+  disableVertexAttribArray(index: GLuint) {
+    this.ctx.disableVertexAttribArray(index);
+  }
+
   vertexAttribPointer(index: GLuint, size: GLint, type: GLenum, normalized: GLboolean, stride: GLsizei, offset: GLintptr) {
     this.ctx.vertexAttribPointer(index, size, type, normalized, stride, offset);
   }

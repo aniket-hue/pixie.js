@@ -1,5 +1,5 @@
 import { Camera } from './Camera.class';
-import { clearAllDirty, getHeight, getWidth, getWorldMatrix, isDirty, isVisible } from './ecs/components';
+import { clearAllDirty, getBounds, getHeight, getWidth, getWorldMatrix, isDirty, isVisible } from './ecs/components';
 import { ChildrenSystem } from './ecs/systems/ChildrenSystem.class';
 import { InteractiveSystem } from './ecs/systems/InteractiveSystem.class';
 import { ParentSystem } from './ecs/systems/ParentSystem.class';
@@ -11,7 +11,6 @@ import { m3 } from './math/matrix';
 import { OverlayRenderer } from './OverlayRenderer.class';
 import { SceneRenderer } from './SceneRenderer.class';
 import { SelectionManager } from './selection/SelectionManager.class';
-import { computeBoundsOfMatrix } from './utils/computeBoundsOfMatrix';
 import { GlCore } from './webgl/GlCore.class';
 
 /**
@@ -188,7 +187,7 @@ export class Canvas {
         continue;
       }
 
-      const objBoundingBox = computeBoundsOfMatrix({ matrix: getWorldMatrix(eid), size: { width: getWidth(eid), height: getHeight(eid) } });
+      const objBoundingBox = getBounds(eid);
 
       if (
         boundingBox.minX <= objBoundingBox.maxX &&
