@@ -113,6 +113,15 @@ export class Canvas {
     return this.canvasElement;
   }
 
+  removeEntity(eid: number) {
+    this.world.removeEntity(eid);
+    const bounds = this.boundsSystem.getBounds(eid);
+
+    if (bounds) {
+      this.boundsSystem.removeBounds(eid);
+    }
+  }
+
   getCtx(): WebGLRenderingContext | null {
     return this.glCore.ctx;
   }
@@ -198,6 +207,7 @@ export class Canvas {
     const allIntersecting = [];
 
     const intersecting = this.tree.search(boundingBox);
+
     allIntersecting.push(...intersecting.map((item) => item.id));
 
     return allIntersecting;

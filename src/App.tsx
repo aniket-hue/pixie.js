@@ -2,8 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import { Canvas } from './core/Canvas.class';
 import {
+  Bounds,
+  Interaction,
+  LocalMatrix,
   markDirty,
   markVisible,
+  Parent,
+  Size,
+  Style,
   updateDraggable,
   updateFill,
   updateHeight,
@@ -13,6 +19,8 @@ import {
   updateStrokeWidth,
   updateWidth,
   updateWorldMatrix,
+  Visibility,
+  WorldMatrix,
 } from './core/ecs/components';
 import { Events } from './core/events';
 import { m3 } from './core/math';
@@ -42,7 +50,7 @@ function App() {
 
       const shapes: number[] = [];
       const spacing = 200;
-      const nums = 20;
+      const nums = 50;
 
       for (let i = -nums / 2; i < nums / 2; i++) {
         for (let j = -nums / 2; j < nums / 2; j++) {
@@ -67,9 +75,14 @@ function App() {
 
           const rect = world.addEntity();
 
-          // world.addComponent(LocalMatrix, rect);
-          // world.addComponent(Size, rect);
-          // world.addComponent(Interaction, rect);
+          world.addComponent(LocalMatrix, rect);
+          world.addComponent(Size, rect);
+          world.addComponent(Interaction, rect);
+          world.addComponent(Visibility, rect);
+          world.addComponent(Bounds, rect);
+          world.addComponent(Style, rect);
+          world.addComponent(Parent, rect);
+          world.addComponent(WorldMatrix, rect);
 
           const matrix = m3.compose({
             tx: x,
