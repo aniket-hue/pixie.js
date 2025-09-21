@@ -1,16 +1,15 @@
 // RGBA to ARGB (0-1 range)
-export function rgbaToArgb(r: number, g: number, b: number, a: number = 1): number {
+export function rgbaToArgb(r: number, g: number, b: number, a: number): number {
   const red = r;
   const green = g;
   const blue = b;
   const alpha = a * 255;
 
   if (a === undefined) {
-    return (red << 16) | (green << 8) | blue; // RGB format
+    return (red << 16) | (green << 8) | blue;
   }
 
-  console.log(alpha);
-  return (alpha << 24) | (red << 16) | (green << 8) | blue; // ARGB format
+  return (alpha << 24) | (red << 16) | (green << 8) | blue;
 }
 
 // ARGB to RGBA

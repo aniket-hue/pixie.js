@@ -1,12 +1,10 @@
 export { addChild, Children, clearChildren, getChildren, removeChild } from './children';
 export { clearAllDirty, clearDirty, isDirty, markDirty } from './dirty';
 export {
-  getCanNotBeSelectedBySelection,
   getDraggable,
   getSelectable,
   getSelected,
   Interaction,
-  updateCanNotBeSelectedBySelection,
   updateDraggable,
   updateSelectable,
   updateSelected,

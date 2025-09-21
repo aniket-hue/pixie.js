@@ -1,6 +1,6 @@
 import type { Canvas } from '../../Canvas.class';
-import { getCanNotBeSelectedBySelection } from '../components';
-import { Bounds, updateBounds } from '../components/matrix';
+import { getSelectable } from '../components';
+import { updateBounds } from '../components/matrix';
 
 export class BoundsSystem {
   private canvas: Canvas;
@@ -40,10 +40,6 @@ export class BoundsSystem {
 
   update(eids: number[]) {
     for (const eid of eids) {
-      if (!this.canvas.world.hasComponent(Bounds, eid)) {
-        continue;
-      }
-
       this._updateBounds(eid);
     }
   }

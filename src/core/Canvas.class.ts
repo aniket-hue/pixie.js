@@ -1,6 +1,6 @@
 import RBush from 'rbush';
 import { Camera } from './Camera.class';
-import { clearAllDirty, getBounds, getHeight, getWidth, getWorldMatrix, isDirty, isVisible } from './ecs/components';
+import { clearAllDirty, getHeight, getWidth, getWorldMatrix, isDirty, isVisible } from './ecs/components';
 import { BoundsSystem } from './ecs/systems/BoundsSystem.class';
 import { ChildrenSystem } from './ecs/systems/ChildrenSystem.class';
 import { InteractiveSystem } from './ecs/systems/InteractiveSystem.class';
@@ -14,6 +14,8 @@ import { OverlayRenderer } from './OverlayRenderer.class';
 import { SceneRenderer } from './SceneRenderer.class';
 import { SelectionManager } from './selection/SelectionManager.class';
 import { GlCore } from './webgl/GlCore.class';
+
+import './app/colors';
 
 /**
  * Simple wrapper around HTMLCanvasElement that provides a clean API

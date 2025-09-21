@@ -50,7 +50,7 @@ function App() {
 
       const shapes: number[] = [];
       const spacing = 200;
-      const nums = 50;
+      const nums = 4;
 
       for (let i = -nums / 2; i < nums / 2; i++) {
         for (let j = -nums / 2; j < nums / 2; j++) {
