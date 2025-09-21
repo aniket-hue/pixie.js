@@ -1,7 +1,6 @@
 import type { Camera } from '../Camera.class';
-import type { Object } from '../entities/Object.class';
+import type { World } from '../ecs/World.class';
 import type { EventKeys } from '../events';
-import type { World } from '../world/World.class';
 
 export interface IRenderTarget {
   width: number;

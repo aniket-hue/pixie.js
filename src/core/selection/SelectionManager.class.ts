@@ -1,8 +1,10 @@
+import { SELECTION_BOX_BORDER_COLOR, SELECTION_BOX_FILL_COLOR } from '../app/colors';
 import type { Camera } from '../Camera.class';
 import type { Canvas } from '../Canvas.class';
 import {
   addChild,
   Bounds,
+  getSelectable,
   Interaction,
   LocalMatrix,
   markDirty,
@@ -10,7 +12,6 @@ import {
   Parent,
   Size,
   Style,
-  updateCanNotBeSelectedBySelection,
   updateDraggable,
   updateFill,
   updateHeight,
@@ -25,7 +26,6 @@ import {
 } from '../ecs/components';
 import { clearChildren } from '../ecs/components/children';
 import { Events } from '../events';
-import { rgbaToArgb } from '../lib/color';
 import { m3 } from '../math/matrix';
 import { createBoundingBoxOfchildren } from '../utils/createBoundingBoxOfchildren';
 
@@ -122,11 +122,11 @@ export class SelectionManager {
 
       this.tempBoundingRect = this.canvas.world.addEntity();
 
-      updateFill(this.tempBoundingRect, rgbaToArgb(255, 4, 0, 1));
-      updateStrokeWidth(this.tempBoundingRect, 1);
-      updateStroke(this.tempBoundingRect, rgbaToArgb(255, 4, 0, 1));
+      updateFill(this.tempBoundingRect, SELECTION_BOX_FILL_COLOR);
+      updateStrokeWidth(this.tempBoundingRect, 1.5);
+      updateStroke(this.tempBoundingRect, SELECTION_BOX_BORDER_COLOR);
       markVisible(this.tempBoundingRect, true);
-      updateCanNotBeSelectedBySelection(this.tempBoundingRect, true);
+      updateSelectable(this.tempBoundingRect, false);
 
       world.addComponent(LocalMatrix, this.tempBoundingRect);
       world.addComponent(Size, this.tempBoundingRect);
@@ -137,7 +137,7 @@ export class SelectionManager {
       world.addComponent(WorldMatrix, this.tempBoundingRect);
     }
 
-    const entities = this.canvas.findEntitiesInBoundingBox({ minX, minY, maxX, maxY });
+    const entities = this.canvas.findEntitiesInBoundingBox({ minX, minY, maxX, maxY }).filter((eid) => getSelectable(eid));
     this.selectedEntities = entities;
 
     const bounds = createBoundingBoxOfchildren(entities);
@@ -208,14 +208,13 @@ export class SelectionManager {
     updateHeight(newGroup, 0);
 
     //Transparent
-    updateFill(newGroup, rgbaToArgb(0, 255, 4, 0.1));
-    updateStrokeWidth(newGroup, 1);
-    updateStroke(newGroup, rgbaToArgb(255, 4, 0, 1));
+    updateFill(newGroup, SELECTION_BOX_FILL_COLOR);
+    updateStrokeWidth(newGroup, 1.5);
+    updateStroke(newGroup, SELECTION_BOX_BORDER_COLOR);
 
     updateDraggable(newGroup, true);
-    updateSelectable(newGroup, true);
+    updateSelectable(newGroup, false);
     markVisible(newGroup, true);
-    updateCanNotBeSelectedBySelection(newGroup, true);
 
     world.addComponent(LocalMatrix, newGroup);
     world.addComponent(Size, newGroup);
