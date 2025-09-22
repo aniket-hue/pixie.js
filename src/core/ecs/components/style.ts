@@ -6,15 +6,15 @@ export const Style = defineComponent({
   strokeWidth: 'f32',
 });
 
-export const updateFill = (eid: number, fill: number) => {
+export const setFill = (eid: number, fill: number) => {
   Style.fill[eid] = fill;
 };
 
-export const updateStroke = (eid: number, stroke: number) => {
+export const setStroke = (eid: number, stroke: number) => {
   Style.stroke[eid] = stroke;
 };
 
-export const updateStrokeWidth = (eid: number, strokeWidth: number) => {
+export const setStrokeWidth = (eid: number, strokeWidth: number) => {
   Style.strokeWidth[eid] = strokeWidth;
 };
 

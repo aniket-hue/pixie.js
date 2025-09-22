@@ -8,19 +8,19 @@ import {
   Interaction,
   LocalMatrix,
   markDirty,
-  markVisible,
   Parent,
   Size,
   Style,
-  updateDraggable,
-  updateFill,
-  updateHeight,
-  updateLocalMatrix,
-  updateSelectable,
-  updateStroke,
-  updateStrokeWidth,
-  updateWidth,
-  updateWorldMatrix,
+  setDraggable,
+  setFill,
+  setHeight,
+  setLocalMatrix,
+  setSelectable,
+  setStroke,
+  setStrokeWidth,
+  setVisible,
+  setWidth,
+  setWorldMatrix,
   Visibility,
   WorldMatrix,
 } from '../ecs/components';
@@ -122,11 +122,11 @@ export class SelectionManager {
 
       this.tempBoundingRect = this.canvas.world.addEntity();
 
-      updateFill(this.tempBoundingRect, SELECTION_BOX_FILL_COLOR);
-      updateStrokeWidth(this.tempBoundingRect, 1.5);
-      updateStroke(this.tempBoundingRect, SELECTION_BOX_BORDER_COLOR);
-      markVisible(this.tempBoundingRect, true);
-      updateSelectable(this.tempBoundingRect, false);
+      setFill(this.tempBoundingRect, SELECTION_BOX_FILL_COLOR);
+      setStrokeWidth(this.tempBoundingRect, 1.5);
+      setStroke(this.tempBoundingRect, SELECTION_BOX_BORDER_COLOR);
+      setVisible(this.tempBoundingRect, true);
+      setSelectable(this.tempBoundingRect, false);
 
       world.addComponent(LocalMatrix, this.tempBoundingRect);
       world.addComponent(Size, this.tempBoundingRect);
@@ -141,10 +141,10 @@ export class SelectionManager {
     this.selectedEntities = entities;
 
     const bounds = createBoundingBoxOfchildren(entities);
-    updateLocalMatrix(this.tempBoundingRect, bounds.localMatrix);
-    updateWorldMatrix(this.tempBoundingRect, bounds.localMatrix);
-    updateWidth(this.tempBoundingRect, bounds.width);
-    updateHeight(this.tempBoundingRect, bounds.height);
+    setLocalMatrix(this.tempBoundingRect, bounds.localMatrix);
+    setWorldMatrix(this.tempBoundingRect, bounds.localMatrix);
+    setWidth(this.tempBoundingRect, bounds.width);
+    setHeight(this.tempBoundingRect, bounds.height);
 
     markDirty(this.tempBoundingRect);
 
@@ -201,20 +201,20 @@ export class SelectionManager {
     const world = this.canvas.world;
     const newGroup = world.addEntity();
 
-    updateLocalMatrix(newGroup, [0, 0, 0, 0, 0, 0, 0, 0, 1]);
-    updateWorldMatrix(newGroup, [0, 0, 0, 0, 0, 0, 0, 0, 1]);
+    setLocalMatrix(newGroup, [0, 0, 0, 0, 0, 0, 0, 0, 1]);
+    setWorldMatrix(newGroup, [0, 0, 0, 0, 0, 0, 0, 0, 1]);
 
-    updateWidth(newGroup, 0);
-    updateHeight(newGroup, 0);
+    setWidth(newGroup, 0);
+    setHeight(newGroup, 0);
 
     //Transparent
-    updateFill(newGroup, SELECTION_BOX_FILL_COLOR);
-    updateStrokeWidth(newGroup, 1.5);
-    updateStroke(newGroup, SELECTION_BOX_BORDER_COLOR);
+    setFill(newGroup, SELECTION_BOX_FILL_COLOR);
+    setStrokeWidth(newGroup, 1.5);
+    setStroke(newGroup, SELECTION_BOX_BORDER_COLOR);
 
-    updateDraggable(newGroup, true);
-    updateSelectable(newGroup, false);
-    markVisible(newGroup, true);
+    setDraggable(newGroup, true);
+    setSelectable(newGroup, false);
+    setVisible(newGroup, true);
 
     world.addComponent(LocalMatrix, newGroup);
     world.addComponent(Size, newGroup);

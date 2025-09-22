@@ -1,7 +1,7 @@
 import type { Camera } from '../../Camera.class';
 import type { Canvas } from '../../Canvas.class';
 import { Events } from '../../events';
-import { getDraggable, getWorldMatrix, markDirty, updateSelectable, updateWorldMatrix } from '../components';
+import { getDraggable, getWorldMatrix, markDirty, setSelectable, setWorldMatrix } from '../components';
 
 export class InteractiveSystem {
   private camera: Camera;
@@ -41,7 +41,7 @@ export class InteractiveSystem {
       return;
     }
 
-    updateSelectable(eid, true);
+    setSelectable(eid, true);
     this.selectedEntities.push(eid);
     this.canvas.requestRender();
 
@@ -86,7 +86,7 @@ export class InteractiveSystem {
     worldMatrix[6] = worldX - this.dragOffset.x;
     worldMatrix[7] = worldY - this.dragOffset.y;
 
-    updateWorldMatrix(this.draggedObject, worldMatrix);
+    setWorldMatrix(this.draggedObject, worldMatrix);
   }
 
   private getWorldPosition(screenX: number, screenY: number): { x: number; y: number } {
@@ -96,7 +96,7 @@ export class InteractiveSystem {
 
   private deselectAll(): void {
     this.selectedEntities.forEach((selectedEntity) => {
-      updateSelectable(selectedEntity, false);
+      setSelectable(selectedEntity, false);
     });
 
     this.selectedEntities = [];

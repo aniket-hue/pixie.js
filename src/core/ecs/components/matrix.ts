@@ -33,7 +33,7 @@ export const Bounds = defineComponent({
   maxY: 'f32',
 });
 
-export function updateBounds(eid: number) {
+export function setBounds(eid: number) {
   const matrix = getWorldMatrix(eid);
   const size = { width: getWidth(eid), height: getHeight(eid) };
 
@@ -56,7 +56,7 @@ export function getBounds(eid: number) {
   };
 }
 
-export function updateLocalMatrix(eid: number, matrix: number[]) {
+export function setLocalMatrix(eid: number, matrix: number[]) {
   LocalMatrix.m00[eid] = matrix[0];
   LocalMatrix.m01[eid] = matrix[1];
   LocalMatrix.m02[eid] = matrix[2];
@@ -68,7 +68,7 @@ export function updateLocalMatrix(eid: number, matrix: number[]) {
   LocalMatrix.m22[eid] = matrix[8];
 }
 
-export function updateWorldMatrix(eid: number, matrix: number[]) {
+export function setWorldMatrix(eid: number, matrix: number[]) {
   WorldMatrix.m00[eid] = matrix[0];
   WorldMatrix.m01[eid] = matrix[1];
   WorldMatrix.m02[eid] = matrix[2];

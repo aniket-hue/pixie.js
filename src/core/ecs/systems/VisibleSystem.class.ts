@@ -1,9 +1,9 @@
-import { getChildren, getParent, isVisible, markVisible } from '../components/';
+import { getChildren, getParent, isVisible, setVisible } from '../components/';
 
 export class VisibleSystem {
   _updateChildren(eid: number, visible: boolean) {
     for (const child of getChildren(eid) ?? []) {
-      markVisible(child, visible);
+      setVisible(child, visible);
 
       if (getChildren(child).length > 0) {
         this._updateChildren(child, visible);
@@ -17,7 +17,7 @@ export class VisibleSystem {
       const children = getChildren(eid);
 
       if (parent && isVisible(eid)) {
-        markVisible(parent, true);
+        setVisible(parent, true);
       }
 
       if (children.length > 0) {

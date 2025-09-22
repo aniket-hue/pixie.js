@@ -1,29 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import { Canvas } from './core/Canvas.class';
-import {
-  Bounds,
-  Interaction,
-  LocalMatrix,
-  markDirty,
-  markVisible,
-  Parent,
-  Size,
-  Style,
-  updateDraggable,
-  updateFill,
-  updateHeight,
-  updateLocalMatrix,
-  updateSelectable,
-  updateStroke,
-  updateStrokeWidth,
-  updateWidth,
-  updateWorldMatrix,
-  Visibility,
-  WorldMatrix,
-} from './core/ecs/components';
 import { Events } from './core/events';
-import { m3 } from './core/math';
+import { createRectangle } from './core/factory';
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -73,42 +52,21 @@ function App() {
           const width = Math.random() * 100 + 10;
           const height = Math.random() * 100 + 10;
 
-          const rect = world.addEntity();
-
-          world.addComponent(LocalMatrix, rect);
-          world.addComponent(Size, rect);
-          world.addComponent(Interaction, rect);
-          world.addComponent(Visibility, rect);
-          world.addComponent(Bounds, rect);
-          world.addComponent(Style, rect);
-          world.addComponent(Parent, rect);
-          world.addComponent(WorldMatrix, rect);
-
-          const matrix = m3.compose({
-            tx: x,
-            ty: y,
-            sx: scaleX,
-            sy: scaleY,
-            r: angle,
+          const rect = createRectangle({
+            x,
+            y,
+            width,
+            height,
+            fill,
+            stroke,
+            strokeWidth,
+            scaleX,
+            scaleY,
+            angle,
           });
 
-          updateLocalMatrix(rect, matrix);
-          updateWorldMatrix(rect, matrix);
-
-          updateWidth(rect, width);
-          updateHeight(rect, height);
-
-          updateStroke(rect, stroke);
-          updateFill(rect, fill);
-          updateStrokeWidth(rect, strokeWidth);
-
-          updateDraggable(rect, true);
-          updateSelectable(rect, true);
-
-          markVisible(rect, true);
-
-          markDirty(rect);
-          shapes.push(rect);
+          const rectEid = world.addEntityFactory(rect);
+          shapes.push(rectEid);
         }
       }
 
