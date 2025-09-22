@@ -5,11 +5,11 @@ export const Size = defineComponent({
   height: 'f32',
 });
 
-export const updateWidth = (eid: number, width: number) => {
+export const setWidth = (eid: number, width: number) => {
   Size.width[eid] = width;
 };
 
-export const updateHeight = (eid: number, height: number) => {
+export const setHeight = (eid: number, height: number) => {
   Size.height[eid] = height;
 };
 

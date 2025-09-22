@@ -9,6 +9,13 @@ export class World {
     this.components = new Map();
   }
 
+  addEntityFactory(factory: (world: World) => number) {
+    const eid = factory(this);
+    this.entities.add(eid);
+
+    return eid;
+  }
+
   addEntity() {
     const eid = this.nextEntity++;
     this.entities.add(eid);

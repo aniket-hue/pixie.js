@@ -6,11 +6,11 @@ export const Interaction = defineComponent({
   selected: 'f32',
 });
 
-export const updateDraggable = (eid: number, draggable: boolean) => {
+export const setDraggable = (eid: number, draggable: boolean) => {
   Interaction.draggable[eid] = draggable;
 };
 
-export const updateSelectable = (eid: number, selectable: boolean) => {
+export const setSelectable = (eid: number, selectable: boolean) => {
   Interaction.selectable[eid] = selectable;
 };
 
@@ -22,7 +22,7 @@ export const getSelectable = (eid: number) => {
   return Interaction.selectable[eid];
 };
 
-export const updateSelected = (eid: number, selected: boolean) => {
+export const setSelected = (eid: number, selected: boolean) => {
   Interaction.selected[eid] = selected;
 };
 

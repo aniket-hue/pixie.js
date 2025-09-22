@@ -1,7 +1,5 @@
 import type { Canvas } from '../../Canvas.class';
-import { getSelectable } from '../components';
-import { updateBounds } from '../components/matrix';
-
+import { setBounds } from '../components/matrix';
 export class BoundsSystem {
   private canvas: Canvas;
   private boundsMapForTree: Map<number, { id: number; minX: number; minY: number; maxX: number; maxY: number }>;
@@ -31,7 +29,7 @@ export class BoundsSystem {
       this.canvas.tree.remove(oldBounds);
     }
 
-    const bounds = updateBounds(eid);
+    const bounds = setBounds(eid);
     const newBounds = { id: eid, ...bounds };
 
     this.boundsMapForTree.set(eid, newBounds);

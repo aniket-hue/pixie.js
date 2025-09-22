@@ -1,5 +1,5 @@
 import { m3 } from '../../math';
-import { getChildren, getLocalMatrix, getWorldMatrix, updateWorldMatrix } from '../components';
+import { getChildren, getLocalMatrix, getWorldMatrix, setWorldMatrix } from '../components';
 
 export class ChildrenSystem {
   private _updateChildren(parentId: number) {
@@ -11,7 +11,7 @@ export class ChildrenSystem {
 
       const newWorldMatrix = m3.multiply(parentMatrix, localMatrix);
 
-      updateWorldMatrix(child, newWorldMatrix);
+      setWorldMatrix(child, newWorldMatrix);
 
       if (getChildren(child).length > 0) {
         this._updateChildren(child);

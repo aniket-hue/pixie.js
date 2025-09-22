@@ -7,10 +7,10 @@ import {
   getWidth,
   getWorldMatrix,
   markDirty,
-  updateHeight,
-  updateLocalMatrix,
-  updateWidth,
-  updateWorldMatrix,
+  setHeight,
+  setLocalMatrix,
+  setWidth,
+  setWorldMatrix,
 } from '../components';
 
 export class ParentSystem {
@@ -28,11 +28,11 @@ export class ParentSystem {
       return;
     }
 
-    updateLocalMatrix(parentId, localMatrix);
-    updateWorldMatrix(parentId, localMatrix);
+    setLocalMatrix(parentId, localMatrix);
+    setWorldMatrix(parentId, localMatrix);
 
-    updateWidth(parentId, width);
-    updateHeight(parentId, height);
+    setWidth(parentId, width);
+    setHeight(parentId, height);
 
     markDirty(parentId);
     const inverseLocalMatrix = m3.inverse(localMatrix);
@@ -41,7 +41,7 @@ export class ParentSystem {
       const childWorldMatrix = getWorldMatrix(child);
 
       const matrix = m3.multiply(inverseLocalMatrix, childWorldMatrix);
-      updateLocalMatrix(child, matrix);
+      setLocalMatrix(child, matrix);
 
       markDirty(child);
     }
