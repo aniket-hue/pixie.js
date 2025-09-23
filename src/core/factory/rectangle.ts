@@ -1,12 +1,7 @@
 import { BLACK_COLOR } from '../app/colors';
 import {
-  Bounds,
-  Interaction,
   LocalMatrix,
   markDirty,
-  Parent,
-  Size,
-  Style,
   setDraggable,
   setFill,
   setHeight,
@@ -16,12 +11,13 @@ import {
   setStrokeWidth,
   setWidth,
   setWorldMatrix,
-  Visibility,
   WorldMatrix,
 } from '../ecs/components';
 import { setVisible } from '../ecs/components/visible';
 import type { World } from '../ecs/World.class';
 import { m3 } from '../math/matrix';
+import { createBaseEntity } from './base';
+import type { RectangleProps } from './types';
 
 export function createRectangle({
   x,
@@ -37,33 +33,9 @@ export function createRectangle({
   angle = 0,
   draggable = true,
   selectable = true,
-}: {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-} & Partial<{
-  fill: number;
-  stroke: number;
-  strokeWidth: number;
-  scaleX: number;
-  scaleY: number;
-  angle: number;
-  visible: boolean;
-  draggable: boolean;
-  selectable: boolean;
-}>) {
+}: RectangleProps) {
   return (world: World) => {
-    const rect = world.addEntity();
-
-    world.addComponent(LocalMatrix, rect);
-    world.addComponent(Size, rect);
-    world.addComponent(Interaction, rect);
-    world.addComponent(Visibility, rect);
-    world.addComponent(Bounds, rect);
-    world.addComponent(Style, rect);
-    world.addComponent(Parent, rect);
-    world.addComponent(WorldMatrix, rect);
+    const rect = createBaseEntity(world);
 
     const matrix = m3.compose({
       tx: x,

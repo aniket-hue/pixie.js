@@ -1,3 +1,4 @@
+export { Bounds, getBounds, setBounds } from './bounds';
 export { addChild, Children, clearChildren, getChildren, removeChild } from './children';
 export { clearAllDirty, clearDirty, isDirty, markDirty } from './dirty';
 export {
@@ -11,12 +12,9 @@ export {
 } from './interaction';
 export { defineComponent } from './lib';
 export {
-  Bounds,
-  getBounds,
   getLocalMatrix,
   getWorldMatrix,
   LocalMatrix,
-  setBounds,
   setLocalMatrix,
   setWorldMatrix,
   WorldMatrix,
