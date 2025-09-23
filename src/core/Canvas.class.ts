@@ -205,12 +205,15 @@ export class Canvas {
     return allIntersecting.at(-1) ?? null;
   }
 
-  findEntitiesInBoundingBox(boundingBox: { minX: number; minY: number; maxX: number; maxY: number }): number[] {
+  findEntitiesInBoundingBox(boundingBox: { minX: number; minY: number; maxX: number; maxY: number }, filter?: (eid: number) => boolean): number[] {
     const allIntersecting = [];
 
-    const intersecting = this.tree.search(boundingBox);
+    const intersecting = this.tree
+      .search(boundingBox)
+      .map((item) => item.id)
+      .filter((item) => (filter ? filter(item) : true));
 
-    allIntersecting.push(...intersecting.map((item) => item.id));
+    allIntersecting.push(...intersecting);
 
     return allIntersecting;
   }

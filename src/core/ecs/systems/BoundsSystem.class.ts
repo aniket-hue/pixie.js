@@ -1,5 +1,6 @@
 import type { Canvas } from '../../Canvas.class';
-import { setBounds } from '../components/matrix';
+import { setBounds } from '../components';
+
 export class BoundsSystem {
   private canvas: Canvas;
   private boundsMapForTree: Map<number, { id: number; minX: number; minY: number; maxX: number; maxY: number }>;
