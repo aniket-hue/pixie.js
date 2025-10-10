@@ -10,8 +10,8 @@ function App() {
   const [cameraInfo, setCameraInfo] = useState({ zoom: 1 });
 
   const handleReset = useCallback(() => {
-    if (webglCanvasRef.current) {
-      webglCanvasRef.current?.setZoom(1);
+    if (webglCanvasRef.current?.camera) {
+      webglCanvasRef.current.camera.zoom = 1;
     }
   }, []);
 
@@ -29,7 +29,7 @@ function App() {
 
       const shapes: number[] = [];
       const spacing = 200;
-      const nums = 4;
+      const nums = 2;
 
       for (let i = -nums / 2; i < nums / 2; i++) {
         for (let j = -nums / 2; j < nums / 2; j++) {

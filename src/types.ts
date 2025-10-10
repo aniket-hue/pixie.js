@@ -3,6 +3,13 @@ export interface Point {
   y: number;
 }
 
+export interface BoundingBox {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
 export interface Camera {
   x: number;
   y: number;

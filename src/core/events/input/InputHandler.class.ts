@@ -18,6 +18,8 @@ export class InputHandler {
     this.canvasElement.addEventListener('mousemove', this.handleMouseMove.bind(this));
     this.canvasElement.addEventListener('mousedown', this.handleMouseDown.bind(this));
     this.canvasElement.addEventListener('mouseup', this.handleMouseUp.bind(this));
+    document.addEventListener('keydown', this.handleKeyDown.bind(this));
+    document.addEventListener('keyup', this.handleKeyUp.bind(this));
 
     // Prevent context menu
     this.canvasElement.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -59,12 +61,23 @@ export class InputHandler {
     this.canvas.fire(Events.MOUSE_UP, event);
   }
 
+  private handleKeyDown(event: KeyboardEvent) {
+    this.canvas.fire(Events.KEY_DOWN, event);
+  }
+
+  private handleKeyUp(event: KeyboardEvent) {
+    this.canvas.fire(Events.KEY_UP, event);
+  }
+
   // Cleanup event listeners
   destroy() {
-    this.canvasElement.removeEventListener('wheel', this.handleWheel);
     this.canvasElement.removeEventListener('contextmenu', (e) => e.preventDefault());
+
+    this.canvasElement.removeEventListener('wheel', this.handleWheel);
     this.canvasElement.removeEventListener('mousemove', this.handleMouseMove);
     this.canvasElement.removeEventListener('mousedown', this.handleMouseDown);
     this.canvasElement.removeEventListener('mouseup', this.handleMouseUp);
+    this.canvasElement.removeEventListener('keydown', this.handleKeyDown);
+    this.canvasElement.removeEventListener('keyup', this.handleKeyUp);
   }
 }
