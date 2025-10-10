@@ -1,7 +1,7 @@
 import type { Camera } from '../../Camera.class';
 import type { Canvas } from '../../Canvas.class';
 import { Events } from '../../events';
-import { getDraggable, getWorldMatrix, markDirty, setSelectable, setWorldMatrix } from '../components';
+import { getDraggable, getWorldMatrix, markDirty, setWorldMatrix } from '../components';
 
 export class InteractiveSystem {
   private camera: Camera;
@@ -10,7 +10,6 @@ export class InteractiveSystem {
   private draggedObject: number | null = null;
   private isDragging = false;
   private dragOffset = { x: 0, y: 0 };
-  private selectedEntities: number[] = [];
 
   constructor(context: Canvas) {
     this.canvas = context;
@@ -30,20 +29,12 @@ export class InteractiveSystem {
   }
 
   private onMouseDown(event: MouseEvent): void {
-    const worldPos = this.getWorldPosition(event.offsetX, event.offsetY);
-    const eid = this.canvas.findObjectAtPoint(worldPos.x, worldPos.y);
+    const worldPos = this.camera.screenToWorld(event.offsetX, event.offsetY);
+    const eid = this.canvas.picker.pick({ point: worldPos })?.[0] ?? null;
 
-    this.deselectAll();
-
-    if (eid === null) {
-      this.canvas.requestRender();
-
+    if (!eid) {
       return;
     }
-
-    setSelectable(eid, true);
-    this.selectedEntities.push(eid);
-    this.canvas.requestRender();
 
     const isDraggable = getDraggable(eid);
 
@@ -61,7 +52,7 @@ export class InteractiveSystem {
   }
 
   private onMouseMove(event: MouseEvent): void {
-    const worldPos = this.getWorldPosition(event.offsetX, event.offsetY);
+    const worldPos = this.camera.screenToWorld(event.offsetX, event.offsetY);
 
     if (this.isDragging && this.draggedObject !== null) {
       this.handleDrag(worldPos.x, worldPos.y);
@@ -87,19 +78,6 @@ export class InteractiveSystem {
     worldMatrix[7] = worldY - this.dragOffset.y;
 
     setWorldMatrix(this.draggedObject, worldMatrix);
-  }
-
-  private getWorldPosition(screenX: number, screenY: number): { x: number; y: number } {
-    const y = this.canvas.height - screenY;
-    return this.camera.screenToWorld(screenX, y);
-  }
-
-  private deselectAll(): void {
-    this.selectedEntities.forEach((selectedEntity) => {
-      setSelectable(selectedEntity, false);
-    });
-
-    this.selectedEntities = [];
   }
 
   public destroy(): void {

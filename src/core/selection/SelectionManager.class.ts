@@ -1,32 +1,58 @@
-import { SELECTION_BOX_BORDER_COLOR, SELECTION_BOX_FILL_COLOR } from '../app/colors';
+import type { Point } from '../../types';
 import type { Camera } from '../Camera.class';
 import type { Canvas } from '../Canvas.class';
-import { getSelectable, markDirty, setHeight, setLocalMatrix, setWidth, setWorldMatrix } from '../ecs/components';
 import { clearChildren } from '../ecs/components/children';
 import { Events } from '../events';
-import { createRectangle } from '../factory';
+import { PRIMARY_MODIFIER_KEY } from '../events/input/constants';
 import { createSelectionGroup } from '../factory/selectionGroup';
-import { m3 } from '../math/matrix';
-import { createBoundingBoxOfchildren } from '../utils/createBoundingBoxOfchildren';
-import { getBoundingBoxFrom2Points } from '../utils/getBoundingBoxFrom2Points';
+import { AddSelection } from './AddSelection.class';
+import { ClickSelection } from './ClickSelection.class';
+import { MarqueeSelection } from './MarqueeSelection.class';
+import { SelectionState } from './SelectionState.class';
+import { ToggleSelection } from './ToggleSelection.class';
+
+export type SelectionManagerState = {
+  enabled: boolean;
+  startTime: number;
+  startPoint: Point;
+  currentPoint: Point;
+} | null;
+
+export type Selections = {
+  marquee: typeof MarqueeSelection;
+  click: typeof ClickSelection;
+  add: typeof AddSelection;
+  toggle: typeof ToggleSelection;
+};
+
+const DRAG_THRESHOLD = 2;
 
 export class SelectionManager {
   private camera: Camera;
   private canvas: Canvas;
 
-  private selectedEntities: number[] = [];
-
-  private isDragging = false;
-  private dragStart: { x: number; y: number } | null = null;
-
   private group: number | null = null;
 
+  private selectionStrategy: MarqueeSelection | ClickSelection | AddSelection | ToggleSelection;
+  private selections: Selections = {
+    marquee: MarqueeSelection,
+    click: ClickSelection,
+    add: AddSelection,
+    toggle: ToggleSelection,
+  };
+
+  private state: SelectionManagerState = null;
+  private stopSelection = false;
+
+  selectionState: SelectionState;
   selectionBox: number[] | null = null;
-  tempBoundingRect: number | null = null;
 
   constructor(context: Canvas) {
     this.canvas = context;
     this.camera = context.camera;
+
+    this.selectionState = new SelectionState();
+    this.selectionStrategy = new this.selections.click(this.canvas, this.selectionState);
 
     this.initListeners();
   }
@@ -35,130 +61,128 @@ export class SelectionManager {
     this.onMouseMove = this.onMouseMove.bind(this);
     this.onMouseDown = this.onMouseDown.bind(this);
     this.onMouseUp = this.onMouseUp.bind(this);
+    this.onKeyDown = this.onKeyDown.bind(this);
+    this.onKeyUp = this.onKeyUp.bind(this);
 
     this.canvas.on(Events.MOUSE_MOVE, this.onMouseMove);
     this.canvas.on(Events.MOUSE_DOWN, this.onMouseDown);
     this.canvas.on(Events.MOUSE_UP, this.onMouseUp);
+    this.canvas.on(Events.KEY_DOWN, this.onKeyDown);
+    this.canvas.on(Events.KEY_UP, this.onKeyUp);
+  }
+
+  private onKeyDown(event: KeyboardEvent): void {
+    if (this.selectionStrategy instanceof MarqueeSelection) {
+      return;
+    }
+
+    if (event.shiftKey) {
+      this.selectionStrategy = new this.selections.add(this.canvas, this.selectionState);
+    } else if (event[PRIMARY_MODIFIER_KEY]) {
+      this.selectionStrategy = new this.selections.toggle(this.canvas, this.selectionState);
+    } else {
+      this.selectionStrategy = new this.selections.click(this.canvas, this.selectionState);
+    }
+  }
+
+  private onKeyUp(event: KeyboardEvent): void {
+    if (this.selectionStrategy instanceof MarqueeSelection) {
+      return;
+    }
+
+    if (!event.shiftKey && !event[PRIMARY_MODIFIER_KEY] && !event.altKey) {
+      this.selectionStrategy = new this.selections.click(this.canvas, this.selectionState);
+    }
   }
 
   private onMouseDown(event: MouseEvent): void {
-    const worldPos = this.getWorldPosition(event.offsetX, event.offsetY);
-    const eid = this.canvas.findObjectAtPoint(worldPos.x, worldPos.y);
+    const worldPos = this.camera.screenToWorld(event.offsetX, event.offsetY);
 
-    if (eid !== null) {
+    this.stopSelection = false;
+
+    if (this.group && this.canvas.picker.pick({ point: worldPos })?.includes(this.group)) {
+      this.stopSelection = true;
       return;
     }
 
-    if (this.group) {
-      clearChildren(this.group);
+    this.state = {
+      enabled: true,
+      startTime: Date.now(),
+      startPoint: worldPos,
+      currentPoint: { x: 0, y: 0 },
+    };
 
-      this.selectedEntities = [];
-      this.canvas.world.removeEntity(this.group);
-
-      this.group = null;
+    if (this.selectionStrategy) {
+      this.selectionStrategy.start(this.state.startPoint);
     }
-
-    this.isDragging = true;
-    this.dragStart = { x: worldPos.x, y: worldPos.y };
-
-    this.selectionBox = m3.compose({
-      tx: worldPos.x,
-      ty: worldPos.y,
-      sx: 1,
-      sy: 1,
-      r: 0,
-    });
-
-    this.canvas.requestRender();
   }
 
   private onMouseMove(event: MouseEvent): void {
-    if (!this.isDragging || this.dragStart === null) {
+    if (!this.state || this.stopSelection) {
       return;
     }
 
-    const currentPos = this.getWorldPosition(event.offsetX, event.offsetY);
-    const boundingBox = getBoundingBoxFrom2Points(this.dragStart, currentPos);
+    const dx = event.x - this.state.startPoint.x;
+    const dy = event.y - this.state.startPoint.y;
 
-    this.selectionBox = m3.compose({
-      tx: boundingBox.centerX,
-      ty: boundingBox.centerY,
-      sx: boundingBox.width,
-      sy: boundingBox.height,
-      r: 0,
-    });
+    this.state.currentPoint = this.camera.screenToWorld(event.offsetX, event.offsetY);
 
-    if (!this.tempBoundingRect) {
-      const tempRectFactory = createRectangle({
-        x: boundingBox.centerX,
-        y: boundingBox.centerY,
-        width: boundingBox.width,
-        height: boundingBox.height,
-        fill: SELECTION_BOX_FILL_COLOR,
-        stroke: SELECTION_BOX_BORDER_COLOR,
-        strokeWidth: 1.5,
-        selectable: false,
-        draggable: false,
-      });
-
-      this.tempBoundingRect = this.canvas.world.addEntityFactory(tempRectFactory);
+    if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
+      if (this.selectionStrategy instanceof MarqueeSelection) {
+        this.selectionStrategy.update(this.state.currentPoint);
+        this.selectionBox = this.selectionStrategy.marquee;
+      } else {
+        this.selectionStrategy = new this.selections.marquee(this.canvas, this.selectionState);
+        this.selectionStrategy.start(this.state.startPoint);
+      }
     }
-
-    const entities = this.canvas.findEntitiesInBoundingBox(
-      { minX: boundingBox.minX, minY: boundingBox.minY, maxX: boundingBox.maxX, maxY: boundingBox.maxY },
-      getSelectable,
-    );
-    const bounds = createBoundingBoxOfchildren(entities);
-
-    setLocalMatrix(this.tempBoundingRect, bounds.localMatrix);
-    setWorldMatrix(this.tempBoundingRect, bounds.localMatrix);
-    setWidth(this.tempBoundingRect, bounds.width);
-    setHeight(this.tempBoundingRect, bounds.height);
-    markDirty(this.tempBoundingRect);
-
-    this.selectedEntities = entities;
-
-    this.canvas.requestRender();
   }
 
   private onMouseUp(): void {
-    this.isDragging = false;
-    this.selectionBox = null;
+    const state = this.state;
 
-    if (this.tempBoundingRect) {
-      this.canvas.world.removeEntity(this.tempBoundingRect);
-      this.tempBoundingRect = null;
+    if (!state || !this.selectionStrategy || this.stopSelection) {
+      return;
     }
 
-    if (this.selectedEntities.length > 0) {
-      this.createGroupFromSelection();
-    }
+    const entities = this.selectionStrategy.finish();
+    let shouldFireRemoveEvent = false;
 
-    this.canvas.requestRender();
-  }
-
-  private createGroupFromSelection(): void {
     if (this.group) {
       clearChildren(this.group);
       this.canvas.world.removeEntity(this.group);
+      shouldFireRemoveEvent = true;
     }
 
-    const groupFactory = createSelectionGroup({ children: this.selectedEntities });
-    this.group = this.canvas.world.addEntityFactory(groupFactory);
+    if (entities?.length) {
+      shouldFireRemoveEvent = false;
+      this.group = this.canvas.world.addEntityFactory(createSelectionGroup({ children: entities }));
+    }
 
-    // Reset selection state
-    this.selectedEntities = [];
-    this.dragStart = null;
-  }
+    if (shouldFireRemoveEvent) {
+      this.canvas.fire(Events.SELECTION_GROUP_REMOVED, {
+        group: this.group,
+      });
+    } else {
+      this.canvas.fire(Events.SELECTION_GROUP_ADDED, {
+        group: this.group,
+      });
+    }
 
-  private getWorldPosition(screenX: number, screenY: number): { x: number; y: number } {
-    const y = this.canvas.height - screenY;
-    return this.camera.screenToWorld(screenX, y);
+    this.state = null;
+    this.selectionBox = null;
+    this.canvas.requestRender();
+
+    if (this.selectionStrategy instanceof MarqueeSelection) {
+      this.selectionStrategy = new this.selections.click(this.canvas, this.selectionState);
+    }
   }
 
   public destroy(): void {
     this.canvas.off(Events.MOUSE_MOVE, this.onMouseMove);
     this.canvas.off(Events.MOUSE_DOWN, this.onMouseDown);
     this.canvas.off(Events.MOUSE_UP, this.onMouseUp);
+    this.canvas.off(Events.KEY_DOWN, this.onKeyDown);
+    this.canvas.off(Events.KEY_UP, this.onKeyUp);
   }
 }

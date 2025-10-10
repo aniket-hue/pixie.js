@@ -7,25 +7,25 @@ export const Interaction = defineComponent({
 });
 
 export const setDraggable = (eid: number, draggable: boolean) => {
-  Interaction.draggable[eid] = draggable;
+  Interaction.draggable[eid] = draggable ? 0 : 1;
 };
 
 export const setSelectable = (eid: number, selectable: boolean) => {
-  Interaction.selectable[eid] = selectable;
+  Interaction.selectable[eid] = selectable ? 0 : 1;
 };
 
 export const getDraggable = (eid: number) => {
-  return Interaction.draggable[eid];
+  return Interaction.draggable[eid] === 0;
 };
 
 export const getSelectable = (eid: number) => {
-  return Interaction.selectable[eid];
+  return Interaction.selectable[eid] === 0;
 };
 
 export const setSelected = (eid: number, selected: boolean) => {
-  Interaction.selected[eid] = selected;
+  Interaction.selected[eid] = selected ? 0 : 1;
 };
 
 export const getSelected = (eid: number) => {
-  return Interaction.selected[eid];
+  return Interaction.selected[eid] === 0;
 };

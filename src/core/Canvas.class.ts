@@ -1,6 +1,6 @@
 import RBush from 'rbush';
 import { Camera } from './Camera.class';
-import { clearAllDirty, getHeight, getWidth, getWorldMatrix, isDirty, isVisible } from './ecs/components';
+import { clearAllDirty, isDirty } from './ecs/components';
 import { BoundsSystem } from './ecs/systems/BoundsSystem.class';
 import { ChildrenSystem } from './ecs/systems/ChildrenSystem.class';
 import { InteractiveSystem } from './ecs/systems/InteractiveSystem.class';
@@ -9,13 +9,13 @@ import { VisibleSystem } from './ecs/systems/VisibleSystem.class';
 import { World } from './ecs/World.class';
 import { EventEmitter, type EventKeys } from './events';
 import { InputHandler } from './events/input/InputHandler.class';
-import { m3 } from './math/matrix';
 import { OverlayRenderer } from './OverlayRenderer.class';
 import { SceneRenderer } from './SceneRenderer.class';
 import { SelectionManager } from './selection/SelectionManager.class';
 import { GlCore } from './webgl/GlCore.class';
 
 import './app/colors';
+import { Picking } from './webgl/Picking.class';
 
 /**
  * Simple wrapper around HTMLCanvasElement that provides a clean API
@@ -40,14 +40,7 @@ export class Canvas {
 
   world: World;
   camera: Camera;
-
-  tree: RBush<{
-    id: number;
-    minX: number;
-    minY: number;
-    maxX: number;
-    maxY: number;
-  }>;
+  picker: Picking;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvasElement = canvas;
@@ -56,6 +49,7 @@ export class Canvas {
     this.events = new EventEmitter();
     this.world = new World();
     this.camera = new Camera(this);
+    this.picker = new Picking(this);
     this.inputHandler = new InputHandler(this);
 
     this.selectionManager = new SelectionManager(this);
@@ -68,8 +62,6 @@ export class Canvas {
 
     this.sceneRenderer = new SceneRenderer(this);
     this.overlayRenderer = new OverlayRenderer(this);
-
-    this.tree = new RBush();
 
     this.resize();
   }
@@ -163,59 +155,8 @@ export class Canvas {
     this.events.emit(event, ...args);
   }
 
-  worldToScreen(x: number, y: number): { x: number; y: number } {
-    return this.camera.worldToScreen(x, y);
-  }
-
-  screenToWorld(x: number, y: number): { x: number; y: number } {
-    return this.camera.screenToWorld(x, y);
-  }
-
-  setZoom(zoom: number): void {
-    this.camera.zoom = zoom;
-  }
-
   getGlCore() {
     return this.glCore;
-  }
-
-  findObjectAtPoint(worldX: number, worldY: number): number | null {
-    function containsPoint(eid: number, worldX: number, worldY: number) {
-      const worldMatrix = getWorldMatrix(eid);
-      const inMatrix = m3.inverse(worldMatrix);
-      const localPoint = m3.transformPoint(inMatrix, worldX, worldY);
-
-      const w = getWidth(eid);
-      const h = getHeight(eid);
-
-      const halfWidth = w * 0.5;
-      const halfHeight = h * 0.5;
-
-      return localPoint.x >= -halfWidth && localPoint.x <= halfWidth && localPoint.y >= -halfHeight && localPoint.y <= halfHeight;
-    }
-
-    const allIntersecting = [];
-
-    for (const eid of this.world.getEntities()) {
-      if (isVisible(eid) && containsPoint(eid, worldX, worldY)) {
-        allIntersecting.push(eid);
-      }
-    }
-
-    return allIntersecting.at(-1) ?? null;
-  }
-
-  findEntitiesInBoundingBox(boundingBox: { minX: number; minY: number; maxX: number; maxY: number }, filter?: (eid: number) => boolean): number[] {
-    const allIntersecting = [];
-
-    const intersecting = this.tree
-      .search(boundingBox)
-      .map((item) => item.id)
-      .filter((item) => (filter ? filter(item) : true));
-
-    allIntersecting.push(...intersecting);
-
-    return allIntersecting;
   }
 
   destroy(): void {

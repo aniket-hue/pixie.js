@@ -225,7 +225,7 @@ export class SceneRenderer {
       this.instanceStrokeWidthData[i] = getStrokeWidth(eid);
 
       // Selected
-      this.instanceSelectedData[i] = getSelected(eid) ? 1.0 : 0.0;
+      this.instanceSelectedData[i] = getSelected(eid) ? 0.0 : 1.0;
     }
 
     // Update buffers with instance data

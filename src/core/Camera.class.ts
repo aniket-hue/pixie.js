@@ -2,11 +2,6 @@ import type { Canvas } from './Canvas.class';
 import { Events } from './events';
 import { m3 } from './math';
 
-export interface Point {
-  x: number;
-  y: number;
-}
-
 const DEFAULT_CAMERA_CONFIG = {
   zoom: 1,
   x: 0,
@@ -110,8 +105,9 @@ export class Camera {
   }
 
   screenToWorld(screenX: number, screenY: number) {
+    const y = this.context.height - screenY;
     const inverseMatrix = m3.inverse(this.viewportTransformMatrix);
-    return m3.transformPoint(inverseMatrix, screenX, screenY);
+    return m3.transformPoint(inverseMatrix, screenX, y);
   }
 
   worldToScreen(x: number, y: number) {
