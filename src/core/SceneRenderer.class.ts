@@ -1,8 +1,9 @@
 import type { Camera } from './Camera.class';
 import type { Canvas } from './Canvas.class';
-import { getFill, getHeight, getStroke, getStrokeWidth, getWidth, getWorldMatrix, isVisible } from './ecs/components';
+import { getFill, getHeight, getStroke, getStrokeWidth, getTexture, getWidth, getWorldMatrix, hasTexture, isVisible } from './ecs/components';
 import type { World } from './ecs/World.class';
 import { argbToRgba } from './lib/color';
+import { TextureManager } from './utils/TextureManager.class';
 import type { GlCore } from './webgl/GlCore.class';
 
 export class SceneRenderer {
@@ -19,6 +20,7 @@ export class SceneRenderer {
   private instanceFillColorBuffer: WebGLBuffer | null = null;
   private instanceStrokeColorBuffer: WebGLBuffer | null = null;
   private instanceStrokeWidthBuffer: WebGLBuffer | null = null;
+  private instanceHasTextureBuffer: WebGLBuffer | null = null;
 
   private maxInstances = 20_000;
   private instanceMatrixData: Float32Array;
@@ -26,6 +28,7 @@ export class SceneRenderer {
   private instanceFillColorData: Float32Array;
   private instanceStrokeColorData: Float32Array;
   private instanceStrokeWidthData: Float32Array;
+  private instanceHasTextureData: Float32Array;
 
   private positionLocation: number | null = null;
 
@@ -35,13 +38,16 @@ export class SceneRenderer {
   private instanceFillColorLocation: number | null = null;
   private instanceStrokeColorLocation: number | null = null;
   private instanceStrokeWidthLocation: number | null = null;
-  private instanceSelectedLocation: number | null = null;
+  private instanceHasTextureLocation: number | null = null;
 
   private camera: Camera;
+  private textureManager: TextureManager;
 
   constructor(context: Canvas) {
     this.gl = context.getGlCore();
     this.camera = context.camera;
+    this.textureManager = TextureManager.getInstance();
+    this.textureManager.setContext(this.gl.ctx);
 
     this.rectangleVertices = new Float32Array([-0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5]);
 
@@ -52,6 +58,7 @@ export class SceneRenderer {
     this.instanceFillColorData = new Float32Array(this.maxInstances * 4); // r, g, b, a
     this.instanceStrokeColorData = new Float32Array(this.maxInstances * 4); // r, g, b, a
     this.instanceStrokeWidthData = new Float32Array(this.maxInstances); // stroke width
+    this.instanceHasTextureData = new Float32Array(this.maxInstances); // has texture flag
 
     this.initBuffers();
     this.initAttributeLocations();
@@ -89,6 +96,10 @@ export class SceneRenderer {
     this.instanceStrokeWidthBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceStrokeWidthBuffer);
     gl.bufferData(gl.ctx.ARRAY_BUFFER, this.instanceStrokeWidthData, gl.ctx.DYNAMIC_DRAW);
+
+    this.instanceHasTextureBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceHasTextureBuffer);
+    gl.bufferData(gl.ctx.ARRAY_BUFFER, this.instanceHasTextureData, gl.ctx.DYNAMIC_DRAW);
   }
 
   private initAttributeLocations() {
@@ -101,6 +112,7 @@ export class SceneRenderer {
     this.instanceFillColorLocation = gl.getAttribLocation('basic2DProgram', 'a_instance_fill_color');
     this.instanceStrokeColorLocation = gl.getAttribLocation('basic2DProgram', 'a_instance_stroke_color');
     this.instanceStrokeWidthLocation = gl.getAttribLocation('basic2DProgram', 'a_instance_stroke_width');
+    this.instanceHasTextureLocation = gl.getAttribLocation('basic2DProgram', 'a_instance_has_texture');
   }
 
   private updateViewportAndResolution() {
@@ -168,19 +180,26 @@ export class SceneRenderer {
       gl.vertexAttribPointer(this.instanceStrokeWidthLocation, 1, gl.ctx.FLOAT, false, 0, 0);
       gl.vertexAttribDivisor(this.instanceStrokeWidthLocation, 1);
     }
+
+    if (typeof this.instanceHasTextureLocation === 'number' && this.instanceHasTextureBuffer) {
+      gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceHasTextureBuffer);
+      gl.enableVertexAttribArray(this.instanceHasTextureLocation);
+      gl.vertexAttribPointer(this.instanceHasTextureLocation, 1, gl.ctx.FLOAT, false, 0, 0);
+      gl.vertexAttribDivisor(this.instanceHasTextureLocation, 1);
+    }
   }
 
-  private updateRectangles(rectangles: number[]) {
+  private updateEntities(entities: number[]) {
     const gl = this.gl;
-    const instanceCount = Math.min(rectangles.length, this.maxInstances);
+    const instanceCount = Math.min(entities.length, this.maxInstances);
 
     if (instanceCount === 0) return;
 
-    // Pack instance data into arrays - FAST! No expensive matrix decomposition
+    // Pack instance data into arrays
     for (let i = 0; i < instanceCount; i++) {
-      const eid = rectangles[i];
+      const eid = entities[i];
 
-      // Copy transformation matrix directly (9 floats) - MUCH faster than decomposition!
+      // Copy transformation matrix directly
       const matrixOffset = i * 9;
       const worldMatrix = getWorldMatrix(eid);
 
@@ -209,7 +228,8 @@ export class SceneRenderer {
       // Stroke width
       this.instanceStrokeWidthData[i] = getStrokeWidth(eid);
 
-      // Selected
+      // Has texture flag
+      this.instanceHasTextureData[i] = hasTexture(eid) ? 1.0 : 0.0;
     }
 
     // Update buffers with instance data
@@ -238,27 +258,59 @@ export class SceneRenderer {
       gl.ctx.bufferSubData(gl.ctx.ARRAY_BUFFER, 0, this.instanceStrokeWidthData.subarray(0, instanceCount));
     }
 
+    if (this.instanceHasTextureBuffer) {
+      gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceHasTextureBuffer);
+      gl.ctx.bufferSubData(gl.ctx.ARRAY_BUFFER, 0, this.instanceHasTextureData.subarray(0, instanceCount));
+    }
+
     this.setupInstancedAttributes();
 
+    // Draw all instances in this batch
     gl.drawArraysInstanced(gl.ctx.TRIANGLES, 0, 6, instanceCount);
   }
 
   render(world: World) {
     this.updateViewportAndResolution();
 
-    const rectangles = [];
+    const entities = [];
 
     for (const eid of world.getEntities()) {
       if (!isVisible(eid)) {
         continue;
       }
-
-      rectangles.push(eid);
+      entities.push(eid);
     }
 
-    // ---- Instanced Rectangles ----
-    if (rectangles.length > 0) {
-      this.updateRectangles(rectangles);
+    // Group entities by texture
+    const textureGroups = new Map<WebGLTexture | null, number[]>();
+
+    for (const eid of entities) {
+      if (hasTexture(eid)) {
+        const textureData = getTexture(eid)?.texture;
+        if (!textureData) continue;
+
+        if (!textureGroups.has(textureData)) {
+          textureGroups.set(textureData, []);
+        }
+        textureGroups.get(textureData)!.push(eid);
+      } else {
+        if (!textureGroups.has(null)) {
+          textureGroups.set(null, []);
+        }
+        textureGroups.get(null)!.push(eid);
+      }
+    }
+
+    // Render each group
+    for (const [texture, groupEntities] of textureGroups) {
+      if (texture) {
+        // Bind the texture for this group
+        this.gl.ctx.activeTexture(this.gl.ctx.TEXTURE0);
+        this.gl.ctx.bindTexture(this.gl.ctx.TEXTURE_2D, texture);
+        this.gl.setUniform1i('basic2DProgram', 'u_texture', 0); // Always use texture unit 0
+      }
+
+      this.updateEntities(groupEntities);
     }
   }
 }

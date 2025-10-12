@@ -8,6 +8,9 @@ in vec4 v_fill_color;
 in vec4 v_stroke_color;
 in float v_stroke_width;
 in vec2 v_scale;
+in float v_has_texture;
+
+uniform sampler2D u_texture;
 
 out vec4 outColor;
 
@@ -26,9 +29,18 @@ void main() {
     
     bool inStroke = inStrokeHorizontal || inStrokeVertical;
     
-    if (inStroke) {
+    if (inStroke && v_stroke_width > 0.0) {
+        // Show stroke color
         outColor = v_stroke_color;
     } else {
-        outColor = v_fill_color;
+        // Check if this instance has a texture
+        if (v_has_texture > 0.5) {
+            // Sample the texture
+            vec4 textureColor = texture(u_texture, v_texCoord);
+            outColor = textureColor;
+        } else {
+            // Regular rectangle - use fill color
+            outColor = v_fill_color;
+        }
     }
 }

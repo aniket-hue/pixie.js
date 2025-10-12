@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import { Canvas } from './core/Canvas.class';
 import { Events } from './core/events';
-import { createRectangle } from './core/factory';
+import { createImage, createRectangle } from './core/factory';
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -28,8 +28,14 @@ function App() {
       (window as any).cx = canvas;
 
       const shapes: number[] = [];
-      const spacing = 200;
-      const nums = 4;
+      const spacing = 500;
+      const nums = 10;
+
+      const imageUrls = Array.from({ length: nums * nums }).map((_, i) => {
+        return `https://picsum.photos/${400}/${400}?random=${i + 7}`;
+      });
+
+      let imgIdx = 0;
 
       for (let i = -nums / 2; i < nums / 2; i++) {
         for (let j = -nums / 2; j < nums / 2; j++) {
@@ -39,34 +45,24 @@ function App() {
           const x = col * spacing + Math.random();
           const y = row * spacing + Math.random();
 
-          const angle = Math.random() * 2 * Math.PI;
-          const scaleX = Math.random() * 2 + 0.5;
-          const scaleY = Math.random() * 2 + 0.5;
-
-          // Random hex
-          // 0x000000 - 0xffffff
-          const fill = 0x00000 + Math.floor(Math.random() * 16777215);
-          const stroke = 0x000000 + Math.floor(Math.random() * 16777215);
-          const strokeWidth = Math.random() * 2 + 0.5;
-
-          const width = Math.random() * 100 + 10;
-          const height = Math.random() * 100 + 10;
-
-          const rect = createRectangle({
-            x,
-            y,
-            width,
-            height,
-            fill,
-            stroke,
-            strokeWidth,
-            scaleX,
-            scaleY,
-            angle,
+          const imageFactory = createImage({
+            x: x,
+            y: y,
+            url: imageUrls[imgIdx++],
+            scaleX: 1,
+            scaleY: 1,
+            angle: Math.random() * 0.5 - 0.25, // Small random rotation
           });
 
-          const rectEid = world.addEntityFactory(rect);
-          shapes.push(rectEid);
+          // Since createImage is async, we need to handle it properly
+          imageFactory(world)
+            .then((imageEid) => {
+              shapes.push(imageEid);
+              canvas.requestRender();
+            })
+            .catch((error) => {
+              console.error('Failed to create image:', error);
+            });
         }
       }
 
