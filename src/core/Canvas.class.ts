@@ -42,6 +42,11 @@ export class Canvas {
   camera: Camera;
   picker: Picking;
 
+  // Expose textureManager for debugging
+  get textureManager() {
+    return this.sceneRenderer.textureManager;
+  }
+
   constructor(canvas: HTMLCanvasElement) {
     this.canvasElement = canvas;
 

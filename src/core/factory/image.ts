@@ -54,19 +54,16 @@ export function createImage({
     try {
       const textureData = await textureManager.loadTexture(url);
 
-      // Use actual image dimensions if width/height not specified
       const actualWidth = width ?? textureData.width;
       const actualHeight = height ?? textureData.height;
 
       setWidth(image, actualWidth);
       setHeight(image, actualHeight);
       setTexture(image, textureData);
-    } catch (error) {
-      console.error('Failed to load image texture:', error);
-      // Set default dimensions if texture loading fails
+    } catch {
       setWidth(image, width ?? 100);
       setHeight(image, height ?? 100);
-      // Set a placeholder texture data
+
       setTexture(image, {
         texture: null,
         image: null,
@@ -74,6 +71,11 @@ export function createImage({
         width: width ?? 100,
         height: height ?? 100,
         loaded: false,
+        uvX: 0,
+        uvY: 0,
+        uvWidth: 1,
+        uvHeight: 1,
+        bin: 0,
       });
     }
 

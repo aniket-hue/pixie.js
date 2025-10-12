@@ -8,6 +8,7 @@ in vec4 a_instance_fill_color;
 in vec4 a_instance_stroke_color;
 in float a_instance_stroke_width;
 in float a_instance_has_texture;
+in vec4 a_instance_uv; // uvX, uvY, uvWidth, uvHeight
 
 uniform vec2 u_resolution;
 uniform mat3 u_viewport_transform_matrix;
@@ -23,7 +24,8 @@ out vec2 v_scale;
 out float v_has_texture;
 
 void main() {
-    vec2 scaledPosition = a_position * a_instance_size;
+    vec2 sizeWithStroke = a_instance_size + vec2(a_instance_stroke_width * 2.0);
+    vec2 scaledPosition = a_position * sizeWithStroke;
     vec2 position = (u_viewport_transform_matrix * a_instance_matrix * vec3(scaledPosition, 1.0)).xy;
     
     vec2 scaleX = (u_viewport_transform_matrix * a_instance_matrix * vec3(1.0, 0.0, 0.0)).xy;
@@ -36,14 +38,23 @@ void main() {
    
     gl_Position = vec4(clipSpace, 0.0, 1.0);
     
-    // Use proper texture coordinates for images, regular coordinates for rectangles
+    // Calculate texture coordinates based on whether entity has texture and UV data
     if (a_instance_has_texture > 0.5) {
-        v_texCoord = vec2(a_position.x + 0.5, 1.0 - (a_position.y + 0.5));
+        // Use UV coordinates from atlas
+        vec2 normalizedPos = a_position + 0.5; // Convert from [-0.5, 0.5] to [0, 1]
+        normalizedPos.y = 1.0 - normalizedPos.y; // Flip Y for texture coordinates
+        
+        // Map to the UV region in the atlas
+        v_texCoord = vec2(
+            a_instance_uv.x + normalizedPos.x * a_instance_uv.z,
+            a_instance_uv.y + normalizedPos.y * a_instance_uv.w
+        );
     } else {
+        // Regular coordinates for rectangles
         v_texCoord = a_position + 0.5;
     }
     
-    v_size = a_instance_size;
+    v_size = sizeWithStroke;
     v_zoom_level = u_zoom_level;
     v_fill_color = a_instance_fill_color;
     v_stroke_color = a_instance_stroke_color;
