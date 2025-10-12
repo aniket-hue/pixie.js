@@ -30,7 +30,7 @@ export class ClickSelection {
 
   finish() {
     if (!this.point) {
-      return this.selectionState.selectedEntities;
+      return [];
     }
 
     const entities = this.picker.pick({ point: this.point, filter: getSelectable });

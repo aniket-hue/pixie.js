@@ -112,8 +112,6 @@ export class MarqueeSelection {
     setWidth(boundingRect, width);
     setHeight(boundingRect, height);
     markDirty(boundingRect);
-
-    this.canvas.requestRender();
   }
 
   finish() {
@@ -130,8 +128,6 @@ export class MarqueeSelection {
       this.canvas.world.removeEntity(this.boundingRect);
       this.boundingRect = null;
     }
-
-    this.canvas.requestRender();
 
     if (entities?.length) {
       this.selectionState.addToSelection(...entities);

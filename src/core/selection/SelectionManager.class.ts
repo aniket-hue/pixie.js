@@ -131,6 +131,7 @@ export class SelectionManager {
       if (this.selectionStrategy instanceof MarqueeSelection) {
         this.selectionStrategy.update(this.state.currentPoint);
         this.selectionBox = this.selectionStrategy.marquee;
+        this.canvas.requestRender();
       } else {
         this.selectionStrategy = new this.selections.marquee(this.canvas, this.selectionState);
         this.selectionStrategy.start(this.state.startPoint);
