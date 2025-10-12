@@ -9,7 +9,6 @@ import { AddSelection } from './AddSelection.class';
 import { ClickSelection } from './ClickSelection.class';
 import { MarqueeSelection } from './MarqueeSelection.class';
 import { SelectionState } from './SelectionState.class';
-import { ToggleSelection } from './ToggleSelection.class';
 
 export type SelectionManagerState = {
   enabled: boolean;
@@ -22,7 +21,6 @@ export type Selections = {
   marquee: typeof MarqueeSelection;
   click: typeof ClickSelection;
   add: typeof AddSelection;
-  toggle: typeof ToggleSelection;
 };
 
 const DRAG_THRESHOLD = 2;
@@ -33,12 +31,11 @@ export class SelectionManager {
 
   private group: number | null = null;
 
-  private selectionStrategy: MarqueeSelection | ClickSelection | AddSelection | ToggleSelection;
+  private selectionStrategy: MarqueeSelection | ClickSelection | AddSelection;
   private selections: Selections = {
     marquee: MarqueeSelection,
     click: ClickSelection,
     add: AddSelection,
-    toggle: ToggleSelection,
   };
 
   private state: SelectionManagerState = null;
@@ -78,8 +75,6 @@ export class SelectionManager {
 
     if (event.shiftKey) {
       this.selectionStrategy = new this.selections.add(this.canvas, this.selectionState);
-    } else if (event[PRIMARY_MODIFIER_KEY]) {
-      this.selectionStrategy = new this.selections.toggle(this.canvas, this.selectionState);
     } else {
       this.selectionStrategy = new this.selections.click(this.canvas, this.selectionState);
     }
@@ -135,8 +130,20 @@ export class SelectionManager {
       } else {
         this.selectionStrategy = new this.selections.marquee(this.canvas, this.selectionState);
         this.selectionStrategy.start(this.state.startPoint);
+        this.removeGroup();
+        this.canvas.requestRender();
       }
     }
+  }
+
+  private removeGroup(): void {
+    if (!this.group) {
+      return;
+    }
+
+    clearChildren(this.group);
+    this.canvas.world.removeEntity(this.group);
+    this.group = null;
   }
 
   private onMouseUp(): void {
@@ -149,11 +156,7 @@ export class SelectionManager {
     const entities = this.selectionStrategy.finish();
     let shouldFireRemoveEvent = false;
 
-    if (this.group) {
-      clearChildren(this.group);
-      this.canvas.world.removeEntity(this.group);
-      shouldFireRemoveEvent = true;
-    }
+    this.removeGroup();
 
     if (entities?.length) {
       shouldFireRemoveEvent = false;

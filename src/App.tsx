@@ -29,7 +29,7 @@ function App() {
 
       const shapes: number[] = [];
       const spacing = 200;
-      const nums = 2;
+      const nums = 4;
 
       for (let i = -nums / 2; i < nums / 2; i++) {
         for (let j = -nums / 2; j < nums / 2; j++) {
@@ -46,7 +46,7 @@ function App() {
           // Random hex
           // 0x000000 - 0xffffff
           const fill = 0x00000 + Math.floor(Math.random() * 16777215);
-          const stroke = 0xff0000 + Math.floor(Math.random() * 16777215);
+          const stroke = 0x000000 + Math.floor(Math.random() * 16777215);
           const strokeWidth = Math.random() * 2 + 0.5;
 
           const width = Math.random() * 100 + 10;

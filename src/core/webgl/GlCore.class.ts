@@ -1,4 +1,3 @@
-import { m3 } from '../math';
 import fss from './shaders/fss.frag?raw';
 import o_fss from './shaders/o_fss.frag?raw';
 import o_vss from './shaders/o_vss.vert?raw';
