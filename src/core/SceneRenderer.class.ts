@@ -1,6 +1,6 @@
 import type { Camera } from './Camera.class';
 import type { Canvas } from './Canvas.class';
-import { getFill, getHeight, getSelected, getStroke, getStrokeWidth, getWidth, getWorldMatrix, isVisible } from './ecs/components';
+import { getFill, getHeight, getStroke, getStrokeWidth, getWidth, getWorldMatrix, isVisible } from './ecs/components';
 import type { World } from './ecs/World.class';
 import { argbToRgba } from './lib/color';
 import type { GlCore } from './webgl/GlCore.class';
@@ -19,7 +19,6 @@ export class SceneRenderer {
   private instanceFillColorBuffer: WebGLBuffer | null = null;
   private instanceStrokeColorBuffer: WebGLBuffer | null = null;
   private instanceStrokeWidthBuffer: WebGLBuffer | null = null;
-  private instanceSelectedBuffer: WebGLBuffer | null = null;
 
   private maxInstances = 20_000;
   private instanceMatrixData: Float32Array;
@@ -27,7 +26,6 @@ export class SceneRenderer {
   private instanceFillColorData: Float32Array;
   private instanceStrokeColorData: Float32Array;
   private instanceStrokeWidthData: Float32Array;
-  private instanceSelectedData: Float32Array;
 
   private positionLocation: number | null = null;
 
@@ -54,7 +52,6 @@ export class SceneRenderer {
     this.instanceFillColorData = new Float32Array(this.maxInstances * 4); // r, g, b, a
     this.instanceStrokeColorData = new Float32Array(this.maxInstances * 4); // r, g, b, a
     this.instanceStrokeWidthData = new Float32Array(this.maxInstances); // stroke width
-    this.instanceSelectedData = new Float32Array(this.maxInstances); // selected flag
 
     this.initBuffers();
     this.initAttributeLocations();
@@ -92,10 +89,6 @@ export class SceneRenderer {
     this.instanceStrokeWidthBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceStrokeWidthBuffer);
     gl.bufferData(gl.ctx.ARRAY_BUFFER, this.instanceStrokeWidthData, gl.ctx.DYNAMIC_DRAW);
-
-    this.instanceSelectedBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceSelectedBuffer);
-    gl.bufferData(gl.ctx.ARRAY_BUFFER, this.instanceSelectedData, gl.ctx.DYNAMIC_DRAW);
   }
 
   private initAttributeLocations() {
@@ -108,7 +101,6 @@ export class SceneRenderer {
     this.instanceFillColorLocation = gl.getAttribLocation('basic2DProgram', 'a_instance_fill_color');
     this.instanceStrokeColorLocation = gl.getAttribLocation('basic2DProgram', 'a_instance_stroke_color');
     this.instanceStrokeWidthLocation = gl.getAttribLocation('basic2DProgram', 'a_instance_stroke_width');
-    this.instanceSelectedLocation = gl.getAttribLocation('basic2DProgram', 'a_instance_selected');
   }
 
   private updateViewportAndResolution() {
@@ -176,13 +168,6 @@ export class SceneRenderer {
       gl.vertexAttribPointer(this.instanceStrokeWidthLocation, 1, gl.ctx.FLOAT, false, 0, 0);
       gl.vertexAttribDivisor(this.instanceStrokeWidthLocation, 1);
     }
-
-    if (typeof this.instanceSelectedLocation === 'number' && this.instanceSelectedBuffer) {
-      gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceSelectedBuffer);
-      gl.enableVertexAttribArray(this.instanceSelectedLocation);
-      gl.vertexAttribPointer(this.instanceSelectedLocation, 1, gl.ctx.FLOAT, false, 0, 0);
-      gl.vertexAttribDivisor(this.instanceSelectedLocation, 1);
-    }
   }
 
   private updateRectangles(rectangles: number[]) {
@@ -225,7 +210,6 @@ export class SceneRenderer {
       this.instanceStrokeWidthData[i] = getStrokeWidth(eid);
 
       // Selected
-      this.instanceSelectedData[i] = getSelected(eid) ? 0.0 : 1.0;
     }
 
     // Update buffers with instance data
@@ -252,11 +236,6 @@ export class SceneRenderer {
     if (this.instanceStrokeWidthBuffer) {
       gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceStrokeWidthBuffer);
       gl.ctx.bufferSubData(gl.ctx.ARRAY_BUFFER, 0, this.instanceStrokeWidthData.subarray(0, instanceCount));
-    }
-
-    if (this.instanceSelectedBuffer) {
-      gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceSelectedBuffer);
-      gl.ctx.bufferSubData(gl.ctx.ARRAY_BUFFER, 0, this.instanceSelectedData.subarray(0, instanceCount));
     }
 
     this.setupInstancedAttributes();
