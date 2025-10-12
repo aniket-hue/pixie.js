@@ -21,6 +21,7 @@ export class SceneRenderer {
   private instanceStrokeColorBuffer: WebGLBuffer | null = null;
   private instanceStrokeWidthBuffer: WebGLBuffer | null = null;
   private instanceHasTextureBuffer: WebGLBuffer | null = null;
+  private instanceUVBuffer: WebGLBuffer | null = null;
 
   private maxInstances = 20_000;
   private instanceMatrixData: Float32Array;
@@ -29,6 +30,7 @@ export class SceneRenderer {
   private instanceStrokeColorData: Float32Array;
   private instanceStrokeWidthData: Float32Array;
   private instanceHasTextureData: Float32Array;
+  private instanceUVData: Float32Array;
 
   private positionLocation: number | null = null;
 
@@ -39,9 +41,10 @@ export class SceneRenderer {
   private instanceStrokeColorLocation: number | null = null;
   private instanceStrokeWidthLocation: number | null = null;
   private instanceHasTextureLocation: number | null = null;
+  private instanceUVLocation: number | null = null;
 
   private camera: Camera;
-  private textureManager: TextureManager;
+  public textureManager: TextureManager;
 
   constructor(context: Canvas) {
     this.gl = context.getGlCore();
@@ -59,6 +62,7 @@ export class SceneRenderer {
     this.instanceStrokeColorData = new Float32Array(this.maxInstances * 4); // r, g, b, a
     this.instanceStrokeWidthData = new Float32Array(this.maxInstances); // stroke width
     this.instanceHasTextureData = new Float32Array(this.maxInstances); // has texture flag
+    this.instanceUVData = new Float32Array(this.maxInstances * 4); // uvX, uvY, uvWidth, uvHeight
 
     this.initBuffers();
     this.initAttributeLocations();
@@ -100,6 +104,10 @@ export class SceneRenderer {
     this.instanceHasTextureBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceHasTextureBuffer);
     gl.bufferData(gl.ctx.ARRAY_BUFFER, this.instanceHasTextureData, gl.ctx.DYNAMIC_DRAW);
+
+    this.instanceUVBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceUVBuffer);
+    gl.bufferData(gl.ctx.ARRAY_BUFFER, this.instanceUVData, gl.ctx.DYNAMIC_DRAW);
   }
 
   private initAttributeLocations() {
@@ -113,6 +121,7 @@ export class SceneRenderer {
     this.instanceStrokeColorLocation = gl.getAttribLocation('basic2DProgram', 'a_instance_stroke_color');
     this.instanceStrokeWidthLocation = gl.getAttribLocation('basic2DProgram', 'a_instance_stroke_width');
     this.instanceHasTextureLocation = gl.getAttribLocation('basic2DProgram', 'a_instance_has_texture');
+    this.instanceUVLocation = gl.getAttribLocation('basic2DProgram', 'a_instance_uv');
   }
 
   private updateViewportAndResolution() {
@@ -187,6 +196,13 @@ export class SceneRenderer {
       gl.vertexAttribPointer(this.instanceHasTextureLocation, 1, gl.ctx.FLOAT, false, 0, 0);
       gl.vertexAttribDivisor(this.instanceHasTextureLocation, 1);
     }
+
+    if (typeof this.instanceUVLocation === 'number' && this.instanceUVBuffer) {
+      gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceUVBuffer);
+      gl.enableVertexAttribArray(this.instanceUVLocation);
+      gl.vertexAttribPointer(this.instanceUVLocation, 4, gl.ctx.FLOAT, false, 0, 0);
+      gl.vertexAttribDivisor(this.instanceUVLocation, 1);
+    }
   }
 
   private updateEntities(entities: number[]) {
@@ -228,8 +244,25 @@ export class SceneRenderer {
       // Stroke width
       this.instanceStrokeWidthData[i] = getStrokeWidth(eid);
 
-      // Has texture flag
-      this.instanceHasTextureData[i] = hasTexture(eid) ? 1.0 : 0.0;
+      // Has texture flag and UV coordinates
+      const entityHasTexture = hasTexture(eid);
+      this.instanceHasTextureData[i] = entityHasTexture ? 1.0 : 0.0;
+
+      if (entityHasTexture) {
+        const textureData = getTexture(eid)!;
+
+        // Set UV coordinates from texture data
+        this.instanceUVData[i * 4] = textureData.uvX;
+        this.instanceUVData[i * 4 + 1] = textureData.uvY;
+        this.instanceUVData[i * 4 + 2] = textureData.uvWidth;
+        this.instanceUVData[i * 4 + 3] = textureData.uvHeight;
+      } else {
+        // Default UV coordinates for non-textured entities
+        this.instanceUVData[i * 4] = 0.0;
+        this.instanceUVData[i * 4 + 1] = 0.0;
+        this.instanceUVData[i * 4 + 2] = 1.0;
+        this.instanceUVData[i * 4 + 3] = 1.0;
+      }
     }
 
     // Update buffers with instance data
@@ -263,54 +296,66 @@ export class SceneRenderer {
       gl.ctx.bufferSubData(gl.ctx.ARRAY_BUFFER, 0, this.instanceHasTextureData.subarray(0, instanceCount));
     }
 
+    if (this.instanceUVBuffer) {
+      gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceUVBuffer);
+      gl.ctx.bufferSubData(gl.ctx.ARRAY_BUFFER, 0, this.instanceUVData.subarray(0, instanceCount * 4));
+    }
+
     this.setupInstancedAttributes();
 
-    // Draw all instances in this batch
     gl.drawArraysInstanced(gl.ctx.TRIANGLES, 0, 6, instanceCount);
   }
 
   render(world: World) {
     this.updateViewportAndResolution();
 
-    const entities = [];
+    const nonTexturedEntities = [];
+    const texturedEntities = [];
 
     for (const eid of world.getEntities()) {
       if (!isVisible(eid)) {
         continue;
       }
-      entities.push(eid);
-    }
 
-    // Group entities by texture
-    const textureGroups = new Map<WebGLTexture | null, number[]>();
-
-    for (const eid of entities) {
       if (hasTexture(eid)) {
-        const textureData = getTexture(eid)?.texture;
-        if (!textureData) continue;
-
-        if (!textureGroups.has(textureData)) {
-          textureGroups.set(textureData, []);
-        }
-        textureGroups.get(textureData)!.push(eid);
+        texturedEntities.push(eid);
       } else {
-        if (!textureGroups.has(null)) {
-          textureGroups.set(null, []);
-        }
-        textureGroups.get(null)!.push(eid);
+        nonTexturedEntities.push(eid);
       }
     }
 
-    // Render each group
-    for (const [texture, groupEntities] of textureGroups) {
-      if (texture) {
-        // Bind the texture for this group
+    if (nonTexturedEntities.length === 0 && texturedEntities.length === 0) {
+      return;
+    }
+
+    this.updateEntities(nonTexturedEntities);
+
+    const groupTexturedEntities = texturedEntities.reduce(
+      (acc, eid) => {
+        const textureData = getTexture(eid)!;
+        const bin = textureData.bin;
+
+        if (!acc[bin]) {
+          acc[bin] = [];
+        }
+
+        acc[bin].push(eid);
+
+        return acc;
+      },
+      {} as Record<number, number[]>,
+    );
+
+    for (const bin in groupTexturedEntities) {
+      const atlasTexture = this.textureManager.atlas?.getTexture(+bin);
+
+      if (atlasTexture) {
         this.gl.ctx.activeTexture(this.gl.ctx.TEXTURE0);
-        this.gl.ctx.bindTexture(this.gl.ctx.TEXTURE_2D, texture);
-        this.gl.setUniform1i('basic2DProgram', 'u_texture', 0); // Always use texture unit 0
+        this.gl.ctx.bindTexture(this.gl.ctx.TEXTURE_2D, atlasTexture);
+        this.gl.setUniform1i('basic2DProgram', 'u_texture', 0);
       }
 
-      this.updateEntities(groupEntities);
+      this.updateEntities(groupTexturedEntities[bin]);
     }
   }
 }

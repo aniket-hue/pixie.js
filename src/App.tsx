@@ -28,11 +28,11 @@ function App() {
       (window as any).cx = canvas;
 
       const shapes: number[] = [];
-      const spacing = 500;
+      const spacing = 420;
       const nums = 10;
 
       const imageUrls = Array.from({ length: nums * nums }).map((_, i) => {
-        return `https://picsum.photos/${400}/${400}?random=${i + 7}`;
+        return `https://picsum.photos/${400}/${400}?random=${i}`;
       });
 
       let imgIdx = 0;
@@ -51,7 +51,7 @@ function App() {
             url: imageUrls[imgIdx++],
             scaleX: 1,
             scaleY: 1,
-            angle: Math.random() * 0.5 - 0.25, // Small random rotation
+            angle: 0, // Small random rotation
           });
 
           // Since createImage is async, we need to handle it properly

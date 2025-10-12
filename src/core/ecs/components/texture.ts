@@ -5,6 +5,13 @@ export interface TextureData {
   width: number;
   height: number;
   loaded: boolean;
+
+  // UV coordinates for texture atlas
+  uvX: number;
+  uvY: number;
+  uvWidth: number;
+  uvHeight: number;
+  bin: number;
 }
 
 // Use a Map to store texture data since it's complex objects
