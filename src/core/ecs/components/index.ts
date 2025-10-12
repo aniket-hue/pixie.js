@@ -22,4 +22,5 @@ export {
 export { getParent, Parent, updateParent } from './parent';
 export { getHeight, getWidth, Size, setHeight, setWidth } from './size';
 export { getFill, getStroke, getStrokeWidth, Style, setFill, setStroke, setStrokeWidth } from './style';
+export { getTexture, hasTexture, removeTexture, setTexture, type TextureData } from './texture';
 export { isVisible, setVisible, Visibility } from './visible';
