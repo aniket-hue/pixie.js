@@ -28,11 +28,12 @@ function App() {
       (window as any).cx = canvas;
 
       const shapes: number[] = [];
-      const spacing = 420;
+      const imageSize = 400;
+      const spacing = imageSize + 20;
       const nums = 10;
 
       const imageUrls = Array.from({ length: nums * nums }).map((_, i) => {
-        return `https://picsum.photos/${400}/${400}?random=${i}`;
+        return `https://picsum.photos/${imageSize}/${imageSize}?random=${i}`;
       });
 
       let imgIdx = 0;

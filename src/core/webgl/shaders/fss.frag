@@ -17,19 +17,31 @@ out vec4 outColor;
 void main() {
     vec2 pixelCoord = v_texCoord * v_size;
     
-    vec2 adjustedStrokeWidth = vec2(v_stroke_width) / v_scale;
-    
+    // Calculate distances to each edge in world units
     float distLeft = pixelCoord.x;
     float distRight = v_size.x - pixelCoord.x;
     float distBottom = pixelCoord.y;
     float distTop = v_size.y - pixelCoord.y;
     
-    bool inStrokeHorizontal = (distLeft < adjustedStrokeWidth.x || distRight < adjustedStrokeWidth.x);
-    bool inStrokeVertical = (distBottom < adjustedStrokeWidth.y || distTop < adjustedStrokeWidth.y);
+    // Find minimum distance to any edge (in world units)
+    float minDist = min(min(distLeft, distRight), min(distBottom, distTop));
     
-    bool inStroke = inStrokeHorizontal || inStrokeVertical;
+    // Calculate stroke width accounting for scale
+    // v_scale represents pixels per world unit after transformation
+    // We want stroke to scale with zoom but maintain minimum 1 pixel visibility
+    float avgScale = (v_scale.x + v_scale.y) * 0.5;
     
-    if (inStroke && v_stroke_width > 0.0) {
+    // Convert stroke width to world units that will render as at least 1 pixel
+    // If scaled stroke would be < 1 pixel, use 1 pixel equivalent in world units
+    float strokeWidthInPixels = v_stroke_width * avgScale;
+    float effectiveStrokeWidth = strokeWidthInPixels < 1.0 
+        ? 1.0 / avgScale  // Use 1 pixel equivalent in world units
+        : v_stroke_width; // Use original stroke width
+    
+    // Check if we're within stroke width of any edge
+    bool inStroke = minDist < effectiveStrokeWidth && v_stroke_width > 0.0;
+    
+    if (inStroke) {
         // Show stroke color
         outColor = v_stroke_color;
     } else {

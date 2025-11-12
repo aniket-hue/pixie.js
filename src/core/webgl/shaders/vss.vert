@@ -30,7 +30,7 @@ void main() {
     
     vec2 scaleX = (u_viewport_transform_matrix * a_instance_matrix * vec3(1.0, 0.0, 0.0)).xy;
     vec2 scaleY = (u_viewport_transform_matrix * a_instance_matrix * vec3(0.0, 1.0, 0.0)).xy;
-    v_scale = vec2(length(scaleX), length(scaleY)) / u_zoom_level;
+    v_scale = vec2(length(scaleX), length(scaleY));
     
     vec2 zeroToOne = position / u_resolution;
     vec2 zeroToTwo = zeroToOne * 2.0;

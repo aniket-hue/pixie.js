@@ -34,7 +34,7 @@ export function createSelectionGroup({ children }: { children: number[] }) {
     setHeight(newGroup, 0);
 
     setFill(newGroup, SELECTION_BOX_FILL_COLOR);
-    setStrokeWidth(newGroup, 8);
+    setStrokeWidth(newGroup, 24);
     setStroke(newGroup, SELECTION_BOX_BORDER_COLOR);
 
     setDraggable(newGroup, true);
