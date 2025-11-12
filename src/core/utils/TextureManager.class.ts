@@ -5,7 +5,7 @@ export class TextureManager {
   private static instance: TextureManager;
   private textures = new Map<string, TextureData>();
   private gl: WebGL2RenderingContext | null = null;
-  public atlas: TextureAtlas;
+  private atlas: TextureAtlas | null = null;
 
   private constructor() {}
 
@@ -17,53 +17,94 @@ export class TextureManager {
     return TextureManager.instance;
   }
 
-  setContext(gl: WebGL2RenderingContext): void {
+  initialize(gl: WebGL2RenderingContext): void {
+    if (this.gl === gl && this.atlas) {
+      return;
+    }
+
     this.gl = gl;
     this.atlas = new TextureAtlas(gl);
   }
 
+  private ensureInitialized(): void {
+    if (!this.gl || !this.atlas) {
+      throw new Error('TextureManager must be initialized with WebGL context before use');
+    }
+  }
+
   async loadTexture(url: string): Promise<TextureData> {
-    return new Promise((resolve, reject) => {
-      requestIdleCallback(async () => {
-        const existingTexture = this.textures.get(url);
+    this.ensureInitialized();
 
-        if (existingTexture?.loaded) {
-          return existingTexture;
-        }
+    // Check if texture is already loaded
+    const existingTexture = this.textures.get(url);
+    if (existingTexture?.loaded) {
+      return existingTexture;
+    }
 
-        try {
-          const image = new Image();
-          image.crossOrigin = 'anonymous';
+    try {
+      // Load image
+      const image = await this.loadImage(url);
 
-          const loadPromise = new Promise<HTMLImageElement>((resolve, reject) => {
-            image.onload = () => resolve(image);
-            image.onerror = reject;
-          });
+      // Add to atlas (atlas is guaranteed to exist after ensureInitialized)
+      if (!this.atlas) {
+        throw new Error('Atlas not initialized');
+      }
+      const atlasEntry = this.atlas.addImage(url, image);
 
-          image.src = url;
-          const loadedImage = await loadPromise;
+      // Create texture data
+      const textureData: TextureData = {
+        ...atlasEntry,
+        image,
+        loaded: true,
+        texture: atlasEntry.texture,
+        url,
+      };
 
-          const atlasEntry = this.atlas.addImage(url, loadedImage);
-
-          this.textures.set(url, {
-            ...atlasEntry,
-            image: loadedImage,
-            loaded: true,
-            texture: atlasEntry.texture,
-            url,
-          });
-
-          resolve(this.textures.get(url)!);
-        } catch (error) {
-          this.textures.delete(url);
-          reject(new Error(`Failed to load texture from ${url}: ${error}`));
-        }
+      this.textures.set(url, textureData);
+      return textureData;
+    } catch (error) {
+      // Store failed state to prevent retry loops
+      this.textures.set(url, {
+        texture: null,
+        image: null,
+        url,
+        width: 0,
+        height: 0,
+        loaded: false,
+        uvX: 0,
+        uvY: 0,
+        uvWidth: 1,
+        uvHeight: 1,
+        bin: 0,
       });
+      throw new Error(`Failed to load texture from ${url}: ${error}`);
+    }
+  }
+
+  private loadImage(url: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.crossOrigin = 'anonymous';
+
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+
+      image.src = url;
     });
   }
 
   getTexture(url: string): TextureData | undefined {
     return this.textures.get(url);
+  }
+
+  getAtlasTexture(bin: number): WebGLTexture | null {
+    this.ensureInitialized();
+
+    if (!this.atlas) {
+      return null;
+    }
+
+    return this.atlas.getTexture(bin);
   }
 
   deleteTexture(url: string): void {
@@ -74,6 +115,12 @@ export class TextureManager {
     this.textures.delete(url);
   }
 
+  flushAtlasUpdates(): void {
+    if (this.atlas) {
+      this.atlas.flushUpdates();
+    }
+  }
+
   cleanup(): void {
     if (this.atlas) {
       this.atlas.cleanup();
@@ -81,5 +128,6 @@ export class TextureManager {
     }
 
     this.textures.clear();
+    this.gl = null;
   }
 }

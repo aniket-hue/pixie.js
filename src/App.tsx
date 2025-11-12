@@ -28,9 +28,9 @@ function App() {
       (window as any).cx = canvas;
 
       const shapes: number[] = [];
-      const imageSize = 400;
+      const imageSize = 100;
       const spacing = imageSize + 20;
-      const nums = 10;
+      const nums = 20;
 
       const imageUrls = Array.from({ length: nums * nums }).map((_, i) => {
         return `https://picsum.photos/${imageSize}/${imageSize}?random=${i}`;

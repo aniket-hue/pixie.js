@@ -50,7 +50,7 @@ export class SceneRenderer {
     this.gl = context.getGlCore();
     this.camera = context.camera;
     this.textureManager = TextureManager.getInstance();
-    this.textureManager.setContext(this.gl.ctx);
+    this.textureManager.initialize(this.gl.ctx);
 
     this.rectangleVertices = new Float32Array([-0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5]);
 
@@ -346,8 +346,11 @@ export class SceneRenderer {
       {} as Record<number, number[]>,
     );
 
+    // Flush any pending atlas updates before rendering
+    this.textureManager.flushAtlasUpdates();
+
     for (const bin in groupTexturedEntities) {
-      const atlasTexture = this.textureManager.atlas?.getTexture(+bin);
+      const atlasTexture = this.textureManager.getAtlasTexture(+bin);
 
       if (atlasTexture) {
         this.gl.ctx.activeTexture(this.gl.ctx.TEXTURE0);
