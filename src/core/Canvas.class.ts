@@ -74,6 +74,8 @@ export class Canvas {
     assert(this.topCanvas !== null, 'Top canvas not initialized');
 
     this.overlayRenderer = new OverlayRenderer(this, this.topCanvas);
+
+    console.log(this.camera.screenToWorld(0, 0));
   }
 
   initTopCanvas(): HTMLCanvasElement {
