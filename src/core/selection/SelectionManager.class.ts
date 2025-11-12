@@ -46,6 +46,10 @@ export class SelectionManager {
     current?: Point;
   } | null = null;
 
+  get activeGroup(): number | null {
+    return this.group;
+  }
+
   constructor(context: Canvas) {
     this.canvas = context;
     this.camera = context.camera;

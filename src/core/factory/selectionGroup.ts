@@ -33,10 +33,10 @@ export function createSelectionGroup({ children }: { children: number[] }) {
     setWidth(newGroup, 0);
     setHeight(newGroup, 0);
 
-    setFill(newGroup, SELECTION_BOX_FILL_COLOR);
-    setStrokeWidth(newGroup, 6);
-    setStroke(newGroup, SELECTION_BOX_BORDER_COLOR);
-
+    /**
+     * We're not going to add styles components because we're not going to
+     * render them on the scene canvas.
+     */
     setDraggable(newGroup, true);
     setSelectable(newGroup, false);
     setVisible(newGroup, true);

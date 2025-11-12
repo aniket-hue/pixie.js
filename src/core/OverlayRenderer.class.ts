@@ -1,7 +1,10 @@
 import type { Point } from '../types';
+import { SELECTION_BOX_BORDER_COLOR } from './app/colors';
 import type { Camera } from './Camera.class';
 import type { Canvas } from './Canvas.class';
+import { getHeight, getWidth, getWorldMatrix } from './ecs/components';
 import type { World } from './ecs/World.class';
+import { m3 } from './math';
 import type { SelectionManager } from './selection/SelectionManager.class';
 
 export class OverlayRenderer {
@@ -106,11 +109,60 @@ export class OverlayRenderer {
     ctx.stroke();
   }
 
+  private drawSelectionGroup(groupId: number) {
+    const ctx = this.topCtx;
+
+    const worldMatrix = getWorldMatrix(groupId);
+    const width = getWidth(groupId);
+    const height = getHeight(groupId);
+
+    const strokeColor = SELECTION_BOX_BORDER_COLOR;
+    const strokeWidth = 4;
+
+    const localCorners = [
+      { x: -width / 2, y: -height / 2 },
+      { x: width / 2, y: -height / 2 },
+      { x: width / 2, y: height / 2 },
+      { x: -width / 2, y: height / 2 },
+    ];
+
+    const worldCorners = localCorners.map((corner) => m3.transformPoint(worldMatrix, corner.x, corner.y));
+
+    const canvasHeight = this.topCanvas.height;
+
+    const screenCorners = worldCorners.map((worldCorner) => {
+      const screen = this.camera.worldToScreen(worldCorner.x, worldCorner.y);
+      return {
+        x: screen.x,
+        y: canvasHeight - screen.y,
+      };
+    });
+
+    // Draw border/stroke
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = strokeWidth;
+    ctx.beginPath();
+    ctx.moveTo(screenCorners[0].x, screenCorners[0].y);
+    ctx.lineTo(screenCorners[1].x, screenCorners[1].y);
+    ctx.lineTo(screenCorners[2].x, screenCorners[2].y);
+    ctx.lineTo(screenCorners[3].x, screenCorners[3].y);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.setLineDash([]); // Reset line dash
+  }
+
   render(_world: World) {
     this.clear();
 
+    // Draw selection box (during marquee selection)
     if (this.selectionManager.selectionBox !== null) {
       this.drawSelectionBox(this.selectionManager.selectionBox);
+    }
+
+    // Draw selection group strokes (after selection is complete)
+    const activeGroup = this.selectionManager.activeGroup;
+    if (activeGroup !== null) {
+      this.drawSelectionGroup(activeGroup);
     }
   }
 }
