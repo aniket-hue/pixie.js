@@ -83,8 +83,8 @@ export class Canvas {
     topCanvas.style.position = 'absolute';
     topCanvas.style.top = '0';
     topCanvas.style.left = '0';
-    topCanvas.style.width = '100%';
-    topCanvas.style.height = '100%';
+    topCanvas.style.width = `${this.canvasElement.width}px`;
+    topCanvas.style.height = `${this.canvasElement.height}px`;
     topCanvas.style.bottom = '0';
     topCanvas.style.zIndex = '1000';
     topCanvas.style.pointerEvents = 'none';
