@@ -95,7 +95,7 @@ export class SelectionManager {
   private onMouseDown(event: MouseEvent): void {
     const x = event.clientX;
     const y = event.clientY;
-    const worldPos = this.camera.screenToWorld(x, y);
+    const worldPos = this.camera.screenToWorld(event.offsetX, event.offsetY);
 
     this.stopSelection = false;
 
@@ -132,7 +132,7 @@ export class SelectionManager {
     const dy = y - this.selectionBox.start.y;
 
     if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
-      const currentPoint = this.camera.screenToWorld(x, y);
+      const currentPoint = this.camera.screenToWorld(event.offsetX, event.offsetY);
 
       if (this.selectionStrategy instanceof MarqueeSelection) {
         this.selectionStrategy.update(currentPoint);

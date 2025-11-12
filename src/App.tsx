@@ -30,7 +30,7 @@ function App() {
       const shapes: number[] = [];
       const imageSize = 100;
       const spacing = imageSize + 20;
-      const nums = 20;
+      const nums = 4;
 
       const imageUrls = Array.from({ length: nums * nums }).map((_, i) => {
         return `https://picsum.photos/${imageSize}/${imageSize}?random=${i}`;
@@ -43,8 +43,8 @@ function App() {
           const col = i;
           const row = j;
 
-          const x = col * spacing + Math.random();
-          const y = row * spacing + Math.random();
+          const x = col * spacing;
+          const y = row * spacing;
 
           const imageFactory = createImage({
             x: x,
