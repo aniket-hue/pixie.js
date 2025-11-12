@@ -77,7 +77,7 @@ function App() {
       <div
         style={{
           padding: '12px',
-          background: 'rgba(0,0,0,0.8)',
+          background: 'rgba(0, 0, 0, 0.8)',
           color: 'white',
           display: 'flex',
           alignItems: 'center',

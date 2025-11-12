@@ -78,23 +78,23 @@ export class Canvas {
     console.log(this.camera.screenToWorld(0, 0));
   }
 
-  initTopCanvas(): HTMLCanvasElement {
+  initTopCanvas(): void {
     const topCanvas = document.createElement('canvas');
     topCanvas.width = this.canvasElement.width;
     topCanvas.height = this.canvasElement.height;
+
+    const rect = this.canvasElement.getBoundingClientRect();
     topCanvas.style.position = 'absolute';
-    topCanvas.style.top = '0';
-    topCanvas.style.left = '0';
-    topCanvas.style.width = `${this.canvasElement.width}px`;
-    topCanvas.style.height = `${this.canvasElement.height}px`;
-    topCanvas.style.bottom = '0';
+
+    topCanvas.style.width = `${rect.width}px`;
+    topCanvas.style.height = `${rect.height}px`;
+    topCanvas.style.top = `${rect.top}px`;
+    topCanvas.style.left = `${rect.left}px`;
+
     topCanvas.style.zIndex = '1000';
     topCanvas.style.pointerEvents = 'none';
-
     this.canvasElement.parentElement?.insertBefore(topCanvas, this.canvasElement);
-
     this.topCanvas = topCanvas;
-    return topCanvas;
   }
 
   requestRender() {
