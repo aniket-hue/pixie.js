@@ -1,7 +1,7 @@
+import type { Point } from '../types';
 import type { Camera } from './Camera.class';
 import type { Canvas } from './Canvas.class';
 import type { World } from './ecs/World.class';
-import { m3 } from './math';
 import type { SelectionManager } from './selection/SelectionManager.class';
 
 export class OverlayRenderer {
@@ -9,10 +9,8 @@ export class OverlayRenderer {
   private topCtx: CanvasRenderingContext2D;
   private selectionManager: SelectionManager;
   private camera: Camera;
-  private canvas: Canvas;
 
   constructor(context: Canvas, topCanvas: HTMLCanvasElement) {
-    this.canvas = context;
     this.topCanvas = topCanvas;
     const ctx = topCanvas.getContext('2d');
     if (!ctx) {
@@ -27,27 +25,62 @@ export class OverlayRenderer {
     this.topCtx.clearRect(0, 0, this.topCanvas.width, this.topCanvas.height);
   }
 
-  private drawSelectionBox(selectionMatrix: number[]) {
+  private getSelectionBoxBounds(startPos: Point, currentPos: Point | undefined) {
+    if (!startPos || !currentPos) {
+      return null;
+    }
+
+    const final: { sx: number; dx: number; sy: number; dy: number } = {
+      sx: 0,
+      dx: 0,
+      sy: 0,
+      dy: 0,
+    };
+
+    if (startPos.x < currentPos.x) {
+      final.sx = startPos.x;
+      final.dx = currentPos.x;
+    } else {
+      final.sx = currentPos.x;
+      final.dx = startPos.x;
+    }
+
+    if (startPos.y < currentPos.y) {
+      final.sy = startPos.y;
+      final.dy = currentPos.y;
+    } else {
+      final.sy = currentPos.y;
+      final.dy = startPos.y;
+    }
+
+    return final;
+  }
+
+  private drawSelectionBox(selectionBox: { start: Point; current?: Point }) {
     const ctx = this.topCtx;
 
-    // Define the four corners of the selection box in local space (-0.5 to 0.5)
-    const corners = [
-      { x: -0.5, y: -0.5 }, // top-left
-      { x: 0.5, y: -0.5 }, // top-right
-      { x: 0.5, y: 0.5 }, // bottom-right
-      { x: -0.5, y: 0.5 }, // bottom-left
+    if (!selectionBox.current) {
+      return; // Don't draw if there's no current point
+    }
+
+    // Calculate bounding box in world coordinates
+    const bounds = this.getSelectionBoxBounds(selectionBox.start, selectionBox.current);
+    if (!bounds) {
+      return;
+    }
+
+    // Calculate the four corners in world space
+    const worldCorners = [
+      { x: bounds.sx, y: bounds.sy }, // top-left
+      { x: bounds.dx, y: bounds.sy }, // top-right
+      { x: bounds.dx, y: bounds.dy }, // bottom-right
+      { x: bounds.sx, y: bounds.dy }, // bottom-left
     ];
 
-    // Transform corners from local space to world space using selection matrix
-    const worldCorners = corners.map((corner) => m3.transformPoint(selectionMatrix, corner.x, corner.y));
-
-    // Transform world corners to screen coordinates using camera viewport transform
-    const screenCorners = worldCorners.map((corner) => {
-      const screen = m3.transformPoint(this.camera.viewportTransformMatrix, corner.x, corner.y);
-      // Convert to canvas coordinates (flip Y axis)
+    const screenCorners = worldCorners.map((worldCorner) => {
       return {
-        x: screen.x,
-        y: this.canvas.height - screen.y,
+        x: worldCorner.x,
+        y: worldCorner.y,
       };
     });
 

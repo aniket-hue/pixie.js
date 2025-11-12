@@ -5,6 +5,7 @@ import { clearChildren } from '../ecs/components/children';
 import { Events } from '../events';
 import { PRIMARY_MODIFIER_KEY } from '../events/input/constants';
 import { createSelectionGroup } from '../factory/selectionGroup';
+import { assert } from '../lib/assert';
 import { AddSelection } from './AddSelection.class';
 import { ClickSelection } from './ClickSelection.class';
 import { MarqueeSelection } from './MarqueeSelection.class';
@@ -13,8 +14,6 @@ import { SelectionState } from './SelectionState.class';
 export type SelectionManagerState = {
   enabled: boolean;
   startTime: number;
-  startPoint: Point;
-  currentPoint: Point;
 } | null;
 
 export type Selections = {
@@ -42,7 +41,10 @@ export class SelectionManager {
   private stopSelection = false;
 
   selectionState: SelectionState;
-  selectionBox: number[] | null = null;
+  selectionBox: {
+    start: Point;
+    current?: Point;
+  } | null = null;
 
   constructor(context: Canvas) {
     this.canvas = context;
@@ -91,7 +93,9 @@ export class SelectionManager {
   }
 
   private onMouseDown(event: MouseEvent): void {
-    const worldPos = this.camera.screenToWorld(event.offsetX, event.offsetY);
+    const x = event.clientX;
+    const y = event.clientY;
+    const worldPos = this.camera.screenToWorld(x, y);
 
     this.stopSelection = false;
 
@@ -103,12 +107,14 @@ export class SelectionManager {
     this.state = {
       enabled: true,
       startTime: Date.now(),
-      startPoint: worldPos,
-      currentPoint: { x: 0, y: 0 },
+    };
+
+    this.selectionBox = {
+      start: { x, y },
     };
 
     if (this.selectionStrategy) {
-      this.selectionStrategy.start(this.state.startPoint);
+      this.selectionStrategy.start(worldPos);
     }
   }
 
@@ -117,22 +123,31 @@ export class SelectionManager {
       return;
     }
 
-    const dx = event.x - this.state.startPoint.x;
-    const dy = event.y - this.state.startPoint.y;
+    const x = event.clientX;
+    const y = event.clientY;
 
-    this.state.currentPoint = this.camera.screenToWorld(event.offsetX, event.offsetY);
+    assert(this.selectionBox !== null, 'Selection box is not set');
+
+    const dx = x - this.selectionBox.start.x;
+    const dy = y - this.selectionBox.start.y;
 
     if (Math.hypot(dx, dy) >= DRAG_THRESHOLD) {
+      const currentPoint = this.camera.screenToWorld(x, y);
+
       if (this.selectionStrategy instanceof MarqueeSelection) {
-        this.selectionStrategy.update(this.state.currentPoint);
-        this.selectionBox = this.selectionStrategy.marquee;
-        this.canvas.requestRender();
+        this.selectionStrategy.update(currentPoint);
+
+        this.selectionBox = {
+          start: this.selectionBox.start,
+          current: { x, y },
+        };
       } else {
         this.selectionStrategy = new this.selections.marquee(this.canvas, this.selectionState);
-        this.selectionStrategy.start(this.state.startPoint);
+        this.selectionStrategy.start(currentPoint);
         this.removeGroup();
-        this.canvas.requestRender();
       }
+
+      this.canvas.requestRender();
     }
   }
 
