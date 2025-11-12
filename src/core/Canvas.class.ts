@@ -1,4 +1,3 @@
-import RBush from 'rbush';
 import { Camera } from './Camera.class';
 import { clearAllDirty, isDirty } from './ecs/components';
 import { BoundsSystem } from './ecs/systems/BoundsSystem.class';
@@ -15,6 +14,7 @@ import { SelectionManager } from './selection/SelectionManager.class';
 import { GlCore } from './webgl/GlCore.class';
 
 import './app/colors';
+import { assert } from './lib/assert';
 import { Picking } from './webgl/Picking.class';
 
 /**
@@ -35,6 +35,7 @@ export class Canvas {
 
   private sceneRenderer: SceneRenderer;
   private overlayRenderer: OverlayRenderer;
+  private topCanvas: HTMLCanvasElement | null = null;
 
   selectionManager: SelectionManager;
 
@@ -66,9 +67,32 @@ export class Canvas {
     this.boundsSystem = new BoundsSystem(this);
 
     this.sceneRenderer = new SceneRenderer(this);
-    this.overlayRenderer = new OverlayRenderer(this);
 
     this.resize();
+    this.initTopCanvas();
+
+    assert(this.topCanvas !== null, 'Top canvas not initialized');
+
+    this.overlayRenderer = new OverlayRenderer(this, this.topCanvas);
+  }
+
+  initTopCanvas(): HTMLCanvasElement {
+    const topCanvas = document.createElement('canvas');
+    topCanvas.width = this.canvasElement.width;
+    topCanvas.height = this.canvasElement.height;
+    topCanvas.style.position = 'absolute';
+    topCanvas.style.top = '0';
+    topCanvas.style.left = '0';
+    topCanvas.style.width = '100%';
+    topCanvas.style.height = '100%';
+    topCanvas.style.bottom = '0';
+    topCanvas.style.zIndex = '1000';
+    topCanvas.style.pointerEvents = 'none';
+
+    this.canvasElement.parentElement?.insertBefore(topCanvas, this.canvasElement);
+
+    this.topCanvas = topCanvas;
+    return topCanvas;
   }
 
   requestRender() {
@@ -144,6 +168,11 @@ export class Canvas {
 
     canvas.width = displayWidth;
     canvas.height = displayHeight;
+
+    if (this.topCanvas) {
+      this.topCanvas.width = displayWidth;
+      this.topCanvas.height = displayHeight;
+    }
 
     this.getCtx()?.viewport(0, 0, canvas.width, canvas.height);
   }

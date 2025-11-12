@@ -1,78 +1,83 @@
 import type { Camera } from './Camera.class';
 import type { Canvas } from './Canvas.class';
 import type { World } from './ecs/World.class';
+import { m3 } from './math';
 import type { SelectionManager } from './selection/SelectionManager.class';
-import type { GlCore } from './webgl/GlCore.class';
 
 export class OverlayRenderer {
-  private gl: GlCore;
+  private topCanvas: HTMLCanvasElement;
+  private topCtx: CanvasRenderingContext2D;
   private selectionManager: SelectionManager;
   private camera: Camera;
+  private canvas: Canvas;
 
-  private selectionBoxVertices: Float32Array;
-  private selectionBoxBuffer: WebGLBuffer | null = null;
-  private selectionBoxPositionLocation: number | null = null;
-
-  constructor(context: Canvas) {
-    this.gl = context.getGlCore();
+  constructor(context: Canvas, topCanvas: HTMLCanvasElement) {
+    this.canvas = context;
+    this.topCanvas = topCanvas;
+    const ctx = topCanvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Failed to get 2D context from top canvas');
+    }
+    this.topCtx = ctx;
     this.selectionManager = context.selectionManager;
     this.camera = context.camera;
-
-    this.selectionBoxVertices = new Float32Array([-0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, -0.5]);
-
-    this.initBuffers();
-    this.initAttributeLocations();
   }
 
-  private initBuffers() {
-    const gl = this.gl;
-    this.selectionBoxBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.selectionBoxBuffer);
-    gl.bufferData(gl.ctx.ARRAY_BUFFER, this.selectionBoxVertices, gl.ctx.STATIC_DRAW);
+  private clear() {
+    this.topCtx.clearRect(0, 0, this.topCanvas.width, this.topCanvas.height);
   }
 
-  private initAttributeLocations() {
-    const gl = this.gl;
-    this.selectionBoxPositionLocation = gl.getAttribLocation('overlayProgram', 'a_position');
-  }
+  private drawSelectionBox(selectionMatrix: number[]) {
+    const ctx = this.topCtx;
 
-  private setupOverlayRenderingContext() {
-    const gl = this.gl;
-    gl.useProgram(gl._overlayProgram);
-    gl.enable(gl.ctx.BLEND);
-    gl.blendFunc(gl.ctx.SRC_ALPHA, gl.ctx.ONE_MINUS_SRC_ALPHA);
-    gl.ctx.viewport(0, 0, gl.width, gl.height);
-  }
+    // Define the four corners of the selection box in local space (-0.5 to 0.5)
+    const corners = [
+      { x: -0.5, y: -0.5 }, // top-left
+      { x: 0.5, y: -0.5 }, // top-right
+      { x: 0.5, y: 0.5 }, // bottom-right
+      { x: -0.5, y: 0.5 }, // bottom-left
+    ];
 
-  drawSelectionBox(selectionMatrix: number[]) {
-    const gl = this.gl;
-    const buffer = this.selectionBoxBuffer;
-    const positionLocation = this.selectionBoxPositionLocation;
+    // Transform corners from local space to world space using selection matrix
+    const worldCorners = corners.map((corner) => m3.transformPoint(selectionMatrix, corner.x, corner.y));
 
-    if (positionLocation === null || positionLocation === -1 || !buffer) {
-      return;
-    }
+    // Transform world corners to screen coordinates using camera viewport transform
+    const screenCorners = worldCorners.map((corner) => {
+      const screen = m3.transformPoint(this.camera.viewportTransformMatrix, corner.x, corner.y);
+      // Convert to canvas coordinates (flip Y axis)
+      return {
+        x: screen.x,
+        y: this.canvas.height - screen.y,
+      };
+    });
 
-    gl.setUniformMatrix3fv('overlayProgram', 'u_viewport_transform_matrix', this.camera.viewportTransformMatrix);
-    gl.setUniformMatrix3fv('overlayProgram', 'u_object_transform_matrix', selectionMatrix);
-    gl.setUniform2f('overlayProgram', 'u_resolution', [gl.width, gl.height]);
-    gl.setUniform4f('overlayProgram', 'u_color', [0.2, 0.6, 1.0, 0.3]);
+    // Draw filled rectangle
+    ctx.fillStyle = 'rgba(142, 193, 244, 0.11)';
+    ctx.beginPath();
+    ctx.moveTo(screenCorners[0].x, screenCorners[0].y);
+    ctx.lineTo(screenCorners[1].x, screenCorners[1].y);
+    ctx.lineTo(screenCorners[2].x, screenCorners[2].y);
+    ctx.lineTo(screenCorners[3].x, screenCorners[3].y);
+    ctx.closePath();
+    ctx.fill();
 
-    gl.bindBuffer(gl.ctx.ARRAY_BUFFER, buffer);
-    gl.enableVertexAttribArray(positionLocation);
-    gl.vertexAttribPointer(positionLocation, 2, gl.ctx.FLOAT, false, 0, 0);
-
-    gl.drawArrays(gl.ctx.LINE_STRIP, 0, 5);
-    gl.disableVertexAttribArray(positionLocation);
+    // Draw border
+    ctx.strokeStyle = 'rgba(51, 153, 255, 0.8)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(screenCorners[0].x, screenCorners[0].y);
+    ctx.lineTo(screenCorners[1].x, screenCorners[1].y);
+    ctx.lineTo(screenCorners[2].x, screenCorners[2].y);
+    ctx.lineTo(screenCorners[3].x, screenCorners[3].y);
+    ctx.closePath();
+    ctx.stroke();
   }
 
   render(_world: World) {
-    this.setupOverlayRenderingContext();
+    this.clear();
 
     if (this.selectionManager.selectionBox !== null) {
       this.drawSelectionBox(this.selectionManager.selectionBox);
     }
-
-    this.gl.useProgram(this.gl._basic2DProgram);
   }
 }

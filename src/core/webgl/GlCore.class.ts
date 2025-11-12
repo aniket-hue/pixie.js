@@ -1,14 +1,11 @@
 import fss from './shaders/fss.frag?raw';
-import o_fss from './shaders/o_fss.frag?raw';
-import o_vss from './shaders/o_vss.vert?raw';
 import vss from './shaders/vss.vert?raw';
 
-type Programs = 'basic2DProgram' | 'overlayProgram';
+type Programs = 'basic2DProgram';
 
 export class GlCore {
   ctx: WebGL2RenderingContext;
   _basic2DProgram: WebGLProgram;
-  _overlayProgram: WebGLProgram;
 
   constructor(canvasElement: HTMLCanvasElement) {
     const gl = canvasElement.getContext('webgl2');
@@ -25,11 +22,7 @@ export class GlCore {
     const vertexShader = this.createShader(this.ctx.VERTEX_SHADER, vss);
     const fragmentShader = this.createShader(this.ctx.FRAGMENT_SHADER, fss);
 
-    const overlayVertexShader = this.createShader(this.ctx.VERTEX_SHADER, o_vss);
-    const overlayFragmentShader = this.createShader(this.ctx.FRAGMENT_SHADER, o_fss);
-
     this._basic2DProgram = this.createProgram(vertexShader, fragmentShader);
-    this._overlayProgram = this.createProgram(overlayVertexShader, overlayFragmentShader);
 
     this.useProgram(this._basic2DProgram);
   }
@@ -38,8 +31,6 @@ export class GlCore {
     switch (program) {
       case 'basic2DProgram':
         return this._basic2DProgram;
-      case 'overlayProgram':
-        return this._overlayProgram;
       default:
         throw new Error(`Program ${program} not found`);
     }
