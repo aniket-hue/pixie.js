@@ -15,12 +15,7 @@ import './app/colors';
 import { assert } from './lib/assert';
 import { Picking } from './webgl/Picking.class';
 
-/**
- * Simple wrapper around HTMLCanvasElement that provides a clean API
- * and delegates complex graphics operations to GraphicsEngine
- */
 export class Canvas {
-  private canvasElement: HTMLCanvasElement;
   private events: EventEmitter;
   private glCore: GlCore;
   private inputHandler: InputHandler;
@@ -32,6 +27,7 @@ export class Canvas {
   private sceneRenderer: SceneRenderer;
   private overlayRenderer: OverlayRenderer;
   topCanvas: HTMLCanvasElement | null = null;
+  canvasElement: HTMLCanvasElement;
 
   selectionManager: SelectionManager;
 
