@@ -1,9 +1,7 @@
 import { Camera } from './Camera.class';
 import { clearAllDirty, isDirty } from './ecs/components';
 import { BoundsSystem } from './ecs/systems/BoundsSystem.class';
-import { ChildrenSystem } from './ecs/systems/ChildrenSystem.class';
 import { InteractiveSystem } from './ecs/systems/InteractiveSystem.class';
-import { ParentSystem } from './ecs/systems/ParentSystem.class';
 import { VisibleSystem } from './ecs/systems/VisibleSystem.class';
 import { World } from './ecs/World.class';
 import { EventEmitter, type EventKeys } from './events';
@@ -28,14 +26,12 @@ export class Canvas {
   private inputHandler: InputHandler;
 
   private interactiveSystem: InteractiveSystem;
-  private parentSystem: ParentSystem;
-  private childrenSystem: ChildrenSystem;
   private visibleSystem: VisibleSystem;
   private boundsSystem: BoundsSystem;
 
   private sceneRenderer: SceneRenderer;
   private overlayRenderer: OverlayRenderer;
-  private topCanvas: HTMLCanvasElement | null = null;
+  topCanvas: HTMLCanvasElement | null = null;
 
   selectionManager: SelectionManager;
 
@@ -61,8 +57,6 @@ export class Canvas {
     this.selectionManager = new SelectionManager(this);
 
     this.interactiveSystem = new InteractiveSystem(this);
-    this.parentSystem = new ParentSystem();
-    this.childrenSystem = new ChildrenSystem();
     this.visibleSystem = new VisibleSystem();
     this.boundsSystem = new BoundsSystem(this);
 
@@ -73,9 +67,7 @@ export class Canvas {
 
     assert(this.topCanvas !== null, 'Top canvas not initialized');
 
-    this.overlayRenderer = new OverlayRenderer(this, this.topCanvas);
-
-    console.log(this.camera.screenToWorld(0, 0));
+    this.overlayRenderer = new OverlayRenderer(this);
   }
 
   initTopCanvas(): void {
@@ -111,8 +103,6 @@ export class Canvas {
       }
 
       this.visibleSystem.update(dirtyEntities);
-      this.parentSystem.update(dirtyEntities);
-      this.childrenSystem.update(dirtyEntities);
       this.boundsSystem.update(dirtyEntities);
 
       this.sceneRenderer.render(this.world);
@@ -136,6 +126,10 @@ export class Canvas {
 
   get element(): HTMLCanvasElement {
     return this.canvasElement;
+  }
+
+  getActiveGroup(): number | null {
+    return this.selectionManager.activeGroup;
   }
 
   removeEntity(eid: number) {

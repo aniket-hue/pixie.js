@@ -1,3 +1,5 @@
+import type { Point } from '../../types';
+
 export const identityMatrix = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 
 function multiply(a: number[], b: number[]): number[] {
@@ -100,7 +102,7 @@ export const m3 = {
     ];
   },
 
-  transformPoint: (matrix: number[], x: number, y: number): { x: number; y: number } => {
+  transformPoint: (matrix: number[], x: number, y: number): Point => {
     return {
       x: matrix[0] * x + matrix[3] * y + matrix[6],
       y: matrix[1] * x + matrix[4] * y + matrix[7],

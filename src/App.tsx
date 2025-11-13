@@ -30,7 +30,7 @@ function App() {
       const shapes: number[] = [];
       const imageSize = 100;
       const spacing = imageSize + 20;
-      const nums = 4;
+      const nums = 15;
 
       const imageUrls = Array.from({ length: nums * nums }).map((_, i) => {
         return `https://picsum.photos/${imageSize}/${imageSize}?random=${i}`;

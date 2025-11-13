@@ -1,4 +1,4 @@
-import { SELECTION_BOX_BORDER_COLOR, SELECTION_BOX_FILL_COLOR } from '../app/colors';
+import { convertHelper, SELECTION_BOX_FILL_COLOR } from '../app/colors';
 import {
   addChild,
   Bounds,
@@ -13,8 +13,6 @@ import {
   setHeight,
   setLocalMatrix,
   setSelectable,
-  setStroke,
-  setStrokeWidth,
   setVisible,
   setWidth,
   setWorldMatrix,
@@ -41,6 +39,8 @@ export function createSelectionGroup({ children }: { children: number[] }) {
     setSelectable(newGroup, false);
     setVisible(newGroup, true);
 
+    setFill(newGroup, convertHelper(SELECTION_BOX_FILL_COLOR));
+
     world.addComponent(LocalMatrix, newGroup);
     world.addComponent(Size, newGroup);
     world.addComponent(Interaction, newGroup);
@@ -54,7 +54,6 @@ export function createSelectionGroup({ children }: { children: number[] }) {
 
     children.forEach((entity) => {
       addChild(newGroup, entity);
-      markDirty(entity);
     });
 
     return newGroup;
