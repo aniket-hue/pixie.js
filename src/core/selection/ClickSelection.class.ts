@@ -41,6 +41,8 @@ export class ClickSelection {
       this.selectionState.clearSelection();
     }
 
+    this.point = null;
+
     return this.selectionState.selectedEntities;
   }
 }

@@ -2,7 +2,6 @@ import type { Point } from '../../types';
 import type { Camera } from '../Camera.class';
 import type { Canvas } from '../Canvas.class';
 import { addChild, clearChildren, getChildren, removeChild } from '../ecs/components/children';
-import { markDirty } from '../ecs/components/dirty';
 import { Events } from '../events';
 import { PRIMARY_MODIFIER_KEY } from '../events/input/constants';
 import { createSelectionGroup } from '../factory/selectionGroup';
@@ -104,6 +103,11 @@ export class SelectionManager {
 
     this.stopSelection = false;
 
+    if (this.canvas.modeManager.isInteracting()) {
+      this.stopSelection = true;
+      return;
+    }
+
     if (this.group && this.canvas.picker.pick({ point: worldPos })?.includes(this.group)) {
       this.stopSelection = true;
       return;
@@ -124,6 +128,10 @@ export class SelectionManager {
   }
 
   private onMouseMove(event: MouseEvent): void {
+    if (this.canvas.modeManager.isInteracting()) {
+      return;
+    }
+
     if (!this.state || this.stopSelection) {
       return;
     }
@@ -209,6 +217,8 @@ export class SelectionManager {
         id: this.group,
       });
     }
+
+    this.canvas.requestRender();
 
     this.state = null;
     this.selectionBox = null;
