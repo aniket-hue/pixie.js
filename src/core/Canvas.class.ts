@@ -89,26 +89,30 @@ export class Canvas {
     this.topCanvas = topCanvas;
   }
 
-  requestRender() {
-    requestAnimationFrame(() => {
-      this.glCore.clear();
+  requestRender(): Promise<void> {
+    return new Promise((resolve) => {
+      requestAnimationFrame(() => {
+        this.glCore.clear();
 
-      const dirtyEntities = [];
-      const allEntities = this.world.getEntities();
+        const dirtyEntities = [];
+        const allEntities = this.world.getEntities();
 
-      for (const eid of allEntities) {
-        if (isDirty(eid)) {
-          dirtyEntities.push(eid);
+        for (const eid of allEntities) {
+          if (isDirty(eid)) {
+            dirtyEntities.push(eid);
+          }
         }
-      }
 
-      this.visibleSystem.update(dirtyEntities);
-      this.boundsSystem.update(dirtyEntities);
+        this.visibleSystem.update(dirtyEntities);
+        this.boundsSystem.update(dirtyEntities);
 
-      this.sceneRenderer.render(this.world);
-      this.overlayRenderer.render(this.world);
+        this.sceneRenderer.render(this.world);
+        this.overlayRenderer.render(this.world);
 
-      clearAllDirty();
+        clearAllDirty();
+
+        resolve();
+      });
     });
   }
 

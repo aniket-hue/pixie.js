@@ -198,8 +198,6 @@ export class SelectionManager {
             addChild(group, entity);
           });
 
-          markDirty(group);
-
           this.canvas.fire(Events.SELECTION_GROUP_UPDATED, {
             id: this.group,
           });

@@ -77,6 +77,8 @@ export class OverlayRenderer {
       br: screenCorners[2],
       bl: screenCorners[3],
     };
+
+    this.canvas.requestRender();
   }
 
   private onSelectionGroupAdded(event: { id: number }): void {
@@ -97,6 +99,8 @@ export class OverlayRenderer {
   private onSelectionGroupRemoved(event: { id: number }): void {
     this.activeGroupCorners = null;
     this.activeGroup = null;
+
+    this.canvas.requestRender();
   }
 
   private onMouseMove(event: MouseEvent): void {

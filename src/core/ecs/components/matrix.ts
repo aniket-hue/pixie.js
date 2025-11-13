@@ -2,6 +2,7 @@ import { m3 } from '../../math';
 import { getChildren } from './children';
 import { markDirty } from './dirty';
 import { defineComponent } from './lib';
+import { getParent } from './parent';
 
 export const LocalMatrix = defineComponent({
   m00: 'f32',
@@ -27,28 +28,23 @@ export const WorldMatrix = defineComponent({
   m22: 'f32',
 });
 
-function updateLocalMatrix(eid: number) {
-  const children = getChildren(eid);
-
-  const worldMatrix = getWorldMatrix(eid);
-  const localMatrix = getLocalMatrix(eid);
-
-  const inverseLocalMatrix = m3.inverse(localMatrix);
-
-  for (const child of children) {
-    const childWorldMatrix = getWorldMatrix(child);
-
-    const newLocalMatrix = m3.multiply(inverseLocalMatrix, childWorldMatrix);
-    const newWorldMatrix = m3.multiply(worldMatrix, newLocalMatrix);
-
-    setLocalMatrix(child, newLocalMatrix);
-    setWorldMatrix(child, newWorldMatrix);
-
-    markDirty(child);
-  }
+/**
+ * Direct set functions - no propagation (for internal use)
+ * Use these when you want to set matrices without triggering child updates
+ */
+export function setWorldMatrixDirect(eid: number, matrix: number[]): void {
+  WorldMatrix.m00[eid] = matrix[0];
+  WorldMatrix.m01[eid] = matrix[1];
+  WorldMatrix.m02[eid] = matrix[2];
+  WorldMatrix.m10[eid] = matrix[3];
+  WorldMatrix.m11[eid] = matrix[4];
+  WorldMatrix.m12[eid] = matrix[5];
+  WorldMatrix.m20[eid] = matrix[6];
+  WorldMatrix.m21[eid] = matrix[7];
+  WorldMatrix.m22[eid] = matrix[8];
 }
 
-export function setLocalMatrix(eid: number, matrix: number[]) {
+export function setLocalMatrixDirect(eid: number, matrix: number[]): void {
   LocalMatrix.m00[eid] = matrix[0];
   LocalMatrix.m01[eid] = matrix[1];
   LocalMatrix.m02[eid] = matrix[2];
@@ -60,18 +56,64 @@ export function setLocalMatrix(eid: number, matrix: number[]) {
   LocalMatrix.m22[eid] = matrix[8];
 }
 
-export function setWorldMatrix(eid: number, matrix: number[]) {
-  WorldMatrix.m00[eid] = matrix[0];
-  WorldMatrix.m01[eid] = matrix[1];
-  WorldMatrix.m02[eid] = matrix[2];
-  WorldMatrix.m10[eid] = matrix[3];
-  WorldMatrix.m11[eid] = matrix[4];
-  WorldMatrix.m12[eid] = matrix[5];
-  WorldMatrix.m20[eid] = matrix[6];
-  WorldMatrix.m21[eid] = matrix[7];
-  WorldMatrix.m22[eid] = matrix[8];
+function updateChildMatrices(eid: number) {
+  const children = getChildren(eid);
 
-  updateLocalMatrix(eid);
+  if (!children.length) {
+    return;
+  }
+
+  const worldMatrix = getWorldMatrix(eid);
+
+  for (const child of children) {
+    const childLocalMatrix = getLocalMatrix(child);
+    const newChildWorldMatrix = m3.multiply(worldMatrix, childLocalMatrix);
+
+    setWorldMatrixDirect(child, newChildWorldMatrix);
+    markDirty(child);
+
+    updateChildMatrices(child);
+  }
+}
+
+/**
+ * Public API: Set local matrix with propagation
+ * Updates world matrix based on parent, then propagates to children
+ */
+export function setLocalMatrix(eid: number, matrix: number[]) {
+  setLocalMatrixDirect(eid, matrix);
+
+  const parent = getParent(eid);
+  if (parent) {
+    const parentWorldMatrix = getWorldMatrix(parent);
+    const newWorldMatrix = m3.multiply(parentWorldMatrix, matrix);
+    setWorldMatrixDirect(eid, newWorldMatrix);
+  } else {
+    setWorldMatrixDirect(eid, matrix);
+  }
+
+  updateChildMatrices(eid);
+}
+
+/**
+ * Public API: Set world matrix with propagation
+ * If entity has parent, converts world to local, then propagates to children
+ */
+export function setWorldMatrix(eid: number, matrix: number[]) {
+  const parent = getParent(eid);
+
+  if (parent) {
+    const parentWorldMatrix = getWorldMatrix(parent);
+    const inverseParentWorld = m3.inverse(parentWorldMatrix);
+    const newLocalMatrix = m3.multiply(inverseParentWorld, matrix);
+    setLocalMatrixDirect(eid, newLocalMatrix);
+  } else {
+    setLocalMatrixDirect(eid, matrix);
+  }
+
+  setWorldMatrixDirect(eid, matrix);
+
+  updateChildMatrices(eid);
 }
 
 export function getWorldMatrix(eid: number) {

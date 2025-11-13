@@ -16,7 +16,9 @@ export {
   getWorldMatrix,
   LocalMatrix,
   setLocalMatrix,
+  setLocalMatrixDirect,
   setWorldMatrix,
+  setWorldMatrixDirect,
   WorldMatrix,
 } from './matrix';
 export { getParent, Parent, updateParent } from './parent';

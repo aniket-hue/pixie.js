@@ -4,7 +4,6 @@ import {
   setDraggable,
   setFill,
   setHeight,
-  setLocalMatrix,
   setSelectable,
   setStroke,
   setStrokeWidth,
@@ -46,7 +45,7 @@ export function createImage({
       r: angle,
     });
 
-    setLocalMatrix(image, matrix);
+    // setWorldMatrix will automatically set local matrix for root entities
     setWorldMatrix(image, matrix);
 
     // Load texture

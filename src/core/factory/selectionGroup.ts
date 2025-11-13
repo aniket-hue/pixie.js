@@ -11,11 +11,11 @@ import {
   setDraggable,
   setFill,
   setHeight,
-  setLocalMatrix,
+  setLocalMatrixDirect,
   setSelectable,
   setVisible,
   setWidth,
-  setWorldMatrix,
+  setWorldMatrixDirect,
   Visibility,
   WorldMatrix,
 } from '../ecs/components';
@@ -25,8 +25,9 @@ export function createSelectionGroup({ children }: { children: number[] }) {
   return (world: World) => {
     const newGroup = world.addEntity();
 
-    setLocalMatrix(newGroup, [0, 0, 0, 0, 0, 0, 0, 0, 1]);
-    setWorldMatrix(newGroup, [0, 0, 0, 0, 0, 0, 0, 0, 1]);
+    const identity = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+    setLocalMatrixDirect(newGroup, identity);
+    setWorldMatrixDirect(newGroup, identity);
 
     setWidth(newGroup, 0);
     setHeight(newGroup, 0);
