@@ -1,27 +1,145 @@
 import type { Point } from '../types';
 import { SELECTION_BOX_BORDER_COLOR } from './app/colors';
-import type { Camera } from './Camera.class';
 import type { Canvas } from './Canvas.class';
-import { getHeight, getWidth, getWorldMatrix } from './ecs/components';
 import type { World } from './ecs/World.class';
-import { m3 } from './math';
+import { Events } from './events';
+import { assert } from './lib/assert';
 import type { SelectionManager } from './selection/SelectionManager.class';
+import { getPointsOfRectangleSquare } from './utils/getPointsOfRectangleSquare';
 
 export class OverlayRenderer {
   private topCanvas: HTMLCanvasElement;
   private topCtx: CanvasRenderingContext2D;
   private selectionManager: SelectionManager;
-  private camera: Camera;
+  private canvas: Canvas;
+  private hoveredControl: {
+    tl: boolean;
+    tr: boolean;
+    br: boolean;
+    bl: boolean;
+  } = {
+    tl: false,
+    tr: false,
+    br: false,
+    bl: false,
+  };
 
-  constructor(context: Canvas, topCanvas: HTMLCanvasElement) {
-    this.topCanvas = topCanvas;
-    const ctx = topCanvas.getContext('2d');
+  private activeGroup: number | null = null;
+  private activeGroupBounds: { sx: number; dx: number; sy: number; dy: number } | null = null;
+  private activeGroupCorners: {
+    tl: Point;
+    tr: Point;
+    br: Point;
+    bl: Point;
+  } | null = null;
+
+  constructor(context: Canvas) {
+    this.canvas = context;
+
+    assert(context.topCanvas !== null, 'Top canvas not initialized');
+
+    this.topCanvas = context.topCanvas;
+
+    const ctx = this.topCanvas.getContext('2d');
     if (!ctx) {
       throw new Error('Failed to get 2D context from top canvas');
     }
     this.topCtx = ctx;
     this.selectionManager = context.selectionManager;
-    this.camera = context.camera;
+    this.initListeners();
+  }
+
+  private initListeners(): void {
+    this.onMouseMove = this.onMouseMove.bind(this);
+    this.onMouseDown = this.onMouseDown.bind(this);
+    this.onMouseUp = this.onMouseUp.bind(this);
+
+    this.onSelectionGroupUpdated = this.onSelectionGroupUpdated.bind(this);
+    this.onSelectionGroupAdded = this.onSelectionGroupAdded.bind(this);
+    this.onSelectionGroupRemoved = this.onSelectionGroupRemoved.bind(this);
+
+    this.canvas.on(Events.SELECTION_GROUP_UPDATED, this.onSelectionGroupUpdated);
+    this.canvas.on(Events.OBJECT_MODIFIED, this.onSelectionGroupUpdated);
+    this.canvas.on(Events.SELECTION_GROUP_ADDED, this.onSelectionGroupAdded);
+    this.canvas.on(Events.SELECTION_GROUP_REMOVED, this.onSelectionGroupRemoved);
+
+    // this.canvas.on(Events.MOUSE_MOVE, this.onMouseMove);
+    // this.canvas.on(Events.MOUSE_DOWN, this.onMouseDown);
+    // this.canvas.on(Events.MOUSE_UP, this.onMouseUp);
+  }
+
+  private onSelectionGroupUpdated(event: { id: number }): void {
+    const { screenCorners } = getPointsOfRectangleSquare(this.canvas, event.id, true);
+
+    this.activeGroupCorners = {
+      tl: screenCorners[0],
+      tr: screenCorners[1],
+      br: screenCorners[2],
+      bl: screenCorners[3],
+    };
+  }
+
+  private onSelectionGroupAdded(event: { id: number }): void {
+    this.activeGroup = event.id;
+
+    const { screenCorners } = getPointsOfRectangleSquare(this.canvas, event.id, true);
+
+    this.activeGroupCorners = {
+      tl: screenCorners[0],
+      tr: screenCorners[1],
+      br: screenCorners[2],
+      bl: screenCorners[3],
+    };
+
+    this.canvas.requestRender();
+  }
+
+  private onSelectionGroupRemoved(event: { id: number }): void {
+    this.activeGroupCorners = null;
+    this.activeGroup = null;
+  }
+
+  private onMouseMove(event: MouseEvent): void {
+    if (this.canvas.getActiveGroup()) {
+      return;
+    }
+
+    const activeSelectionBox = this.canvas.getActiveGroup();
+
+    if (activeSelectionBox === null) {
+      return;
+    }
+
+    const { screenCorners } = getPointsOfRectangleSquare(this.canvas, activeSelectionBox, true);
+    const tl = screenCorners[0];
+    const tr = screenCorners[1];
+    const br = screenCorners[2];
+    const bl = screenCorners[3];
+
+    const pointerPoint = { x: event.offsetX, y: event.offsetY };
+
+    function isInside(corner: Point) {
+      return pointerPoint.x >= corner.x && pointerPoint.x <= corner.x && pointerPoint.y >= corner.y && pointerPoint.y <= corner.y;
+    }
+
+    this.hoveredControl.tl = isInside(tl);
+    this.hoveredControl.tr = isInside(tr);
+    this.hoveredControl.br = isInside(br);
+    this.hoveredControl.bl = isInside(bl);
+  }
+
+  private onMouseDown(event: MouseEvent): void {
+    console.log('mouse down', event);
+  }
+
+  private onMouseUp(event: MouseEvent): void {
+    console.log('mouse up', event);
+  }
+
+  public destroy(): void {
+    this.canvas.off(Events.MOUSE_MOVE, this.onMouseMove);
+    this.canvas.off(Events.MOUSE_DOWN, this.onMouseDown);
+    this.canvas.off(Events.MOUSE_UP, this.onMouseUp);
   }
 
   private clear() {
@@ -63,31 +181,22 @@ export class OverlayRenderer {
     const ctx = this.topCtx;
 
     if (!selectionBox.current) {
-      return; // Don't draw if there's no current point
+      return;
     }
 
-    // Calculate bounding box in world coordinates
     const bounds = this.getSelectionBoxBounds(selectionBox.start, selectionBox.current);
+
     if (!bounds) {
       return;
     }
 
-    // Calculate the four corners in world space
-    const worldCorners = [
-      { x: bounds.sx, y: bounds.sy }, // top-left
-      { x: bounds.dx, y: bounds.sy }, // top-right
-      { x: bounds.dx, y: bounds.dy }, // bottom-right
-      { x: bounds.sx, y: bounds.dy }, // bottom-left
+    const screenCorners = [
+      { x: bounds.sx, y: bounds.sy },
+      { x: bounds.dx, y: bounds.sy },
+      { x: bounds.dx, y: bounds.dy },
+      { x: bounds.sx, y: bounds.dy },
     ];
 
-    const screenCorners = worldCorners.map((worldCorner) => {
-      return {
-        x: worldCorner.x,
-        y: worldCorner.y,
-      };
-    });
-
-    // Draw filled rectangle
     ctx.fillStyle = 'rgba(142, 193, 244, 0.11)';
     ctx.beginPath();
     ctx.moveTo(screenCorners[0].x, screenCorners[0].y);
@@ -97,7 +206,6 @@ export class OverlayRenderer {
     ctx.closePath();
     ctx.fill();
 
-    // Draw border
     ctx.strokeStyle = 'rgba(51, 153, 255, 0.8)';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
@@ -109,58 +217,57 @@ export class OverlayRenderer {
     ctx.stroke();
   }
 
+  private drawControls(pointerPoints: Point[]) {
+    const ctx = this.topCtx;
+
+    pointerPoints.forEach((pointerPoint) => {
+      ctx.save();
+      ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+      ctx.beginPath();
+      ctx.arc(pointerPoint.x, pointerPoint.y, 5, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.restore();
+    });
+  }
+
   private drawSelectionGroup(groupId: number) {
     const ctx = this.topCtx;
 
-    const worldMatrix = getWorldMatrix(groupId);
-    const width = getWidth(groupId);
-    const height = getHeight(groupId);
+    const { screenCorners } = getPointsOfRectangleSquare(this.canvas, groupId, true);
+
+    const bounds = this.activeGroupCorners;
+
+    assert(bounds !== null, 'Bounds not initialized');
 
     const strokeColor = SELECTION_BOX_BORDER_COLOR;
     const strokeWidth = 4;
 
-    const localCorners = [
-      { x: -width / 2, y: -height / 2 },
-      { x: width / 2, y: -height / 2 },
-      { x: width / 2, y: height / 2 },
-      { x: -width / 2, y: height / 2 },
-    ];
-
-    const worldCorners = localCorners.map((corner) => m3.transformPoint(worldMatrix, corner.x, corner.y));
-
-    const canvasHeight = this.topCanvas.height;
-
-    const screenCorners = worldCorners.map((worldCorner) => {
-      const screen = this.camera.worldToScreen(worldCorner.x, worldCorner.y);
-      return {
-        x: screen.x,
-        y: canvasHeight - screen.y,
-      };
-    });
-
-    // Draw border/stroke
     ctx.strokeStyle = strokeColor;
     ctx.lineWidth = strokeWidth;
     ctx.beginPath();
-    ctx.moveTo(screenCorners[0].x, screenCorners[0].y);
-    ctx.lineTo(screenCorners[1].x, screenCorners[1].y);
-    ctx.lineTo(screenCorners[2].x, screenCorners[2].y);
-    ctx.lineTo(screenCorners[3].x, screenCorners[3].y);
+    ctx.moveTo(bounds.tl.x, bounds.tl.y);
+    ctx.lineTo(bounds.tr.x, bounds.tr.y);
+    ctx.lineTo(bounds.br.x, bounds.br.y);
+    ctx.lineTo(bounds.bl.x, bounds.bl.y);
     ctx.closePath();
     ctx.stroke();
-    ctx.setLineDash([]); // Reset line dash
+    ctx.setLineDash([]);
+
+    this.drawControls(screenCorners);
   }
 
   render(_world: World) {
     this.clear();
 
-    // Draw selection box (during marquee selection)
-    if (this.selectionManager.selectionBox !== null) {
-      this.drawSelectionBox(this.selectionManager.selectionBox);
+    const activeSelectionBox = this.selectionManager.selectionBox;
+    const activeGroup = this.canvas.getActiveGroup();
+
+    if (activeSelectionBox !== null) {
+      assert(Boolean(activeGroup) === false, 'Selection box initialized');
+
+      this.drawSelectionBox(activeSelectionBox);
     }
 
-    // Draw selection group strokes (after selection is complete)
-    const activeGroup = this.selectionManager.activeGroup;
     if (activeGroup !== null) {
       this.drawSelectionGroup(activeGroup);
     }

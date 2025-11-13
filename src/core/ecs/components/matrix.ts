@@ -1,3 +1,6 @@
+import { m3 } from '../../math';
+import { getChildren } from './children';
+import { markDirty } from './dirty';
 import { defineComponent } from './lib';
 
 export const LocalMatrix = defineComponent({
@@ -24,6 +27,27 @@ export const WorldMatrix = defineComponent({
   m22: 'f32',
 });
 
+function updateLocalMatrix(eid: number) {
+  const children = getChildren(eid);
+
+  const worldMatrix = getWorldMatrix(eid);
+  const localMatrix = getLocalMatrix(eid);
+
+  const inverseLocalMatrix = m3.inverse(localMatrix);
+
+  for (const child of children) {
+    const childWorldMatrix = getWorldMatrix(child);
+
+    const newLocalMatrix = m3.multiply(inverseLocalMatrix, childWorldMatrix);
+    const newWorldMatrix = m3.multiply(worldMatrix, newLocalMatrix);
+
+    setLocalMatrix(child, newLocalMatrix);
+    setWorldMatrix(child, newWorldMatrix);
+
+    markDirty(child);
+  }
+}
+
 export function setLocalMatrix(eid: number, matrix: number[]) {
   LocalMatrix.m00[eid] = matrix[0];
   LocalMatrix.m01[eid] = matrix[1];
@@ -46,6 +70,8 @@ export function setWorldMatrix(eid: number, matrix: number[]) {
   WorldMatrix.m20[eid] = matrix[6];
   WorldMatrix.m21[eid] = matrix[7];
   WorldMatrix.m22[eid] = matrix[8];
+
+  updateLocalMatrix(eid);
 }
 
 export function getWorldMatrix(eid: number) {

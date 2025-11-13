@@ -1,6 +1,10 @@
+import { m3 } from '../../math';
+import { createBoundingBoxOfchildren } from '../../utils/createBoundingBoxOfchildren';
 import { markDirty } from './dirty';
 import { defineComponent } from './lib';
+import { getWorldMatrix, setLocalMatrix, setWorldMatrix } from './matrix';
 import { clearParent, updateParent } from './parent';
+import { setHeight, setWidth } from './size';
 
 let _ptr = 0;
 
@@ -10,17 +14,14 @@ export const Children = defineComponent({
   buffer: 'u32',
 });
 
-export function addChild(parent: number, child: number) {
-  if (Children.count[parent] === 0) {
-    Children.offset[parent] = _ptr;
-  }
+function updateChildrenCoords(parentId: number) {
+  const children = getChildren(parentId);
+  const { width, height, localMatrix: parentMatrix } = createBoundingBoxOfchildren(children);
 
-  const idx = Children.offset[parent] + Children.count[parent];
-  Children.buffer[idx] = child;
-  Children.count[parent]++;
-  _ptr++;
-
-  updateParent(child, parent);
+  setLocalMatrix(parentId, parentMatrix);
+  setWorldMatrix(parentId, parentMatrix);
+  setWidth(parentId, width);
+  setHeight(parentId, height);
 }
 
 export function getChildren(parent: number): number[] {
@@ -35,6 +36,21 @@ export function getChildren(parent: number): number[] {
   }
 
   return result;
+}
+
+export function addChild(parent: number, child: number) {
+  if (Children.count[parent] === 0) {
+    Children.offset[parent] = _ptr;
+  }
+
+  const idx = Children.offset[parent] + Children.count[parent];
+  Children.buffer[idx] = child;
+  Children.count[parent]++;
+  _ptr++;
+
+  updateParent(child, parent);
+  updateChildrenCoords(parent);
+  markDirty(child);
 }
 
 export function removeChild(parent: number, child: number) {

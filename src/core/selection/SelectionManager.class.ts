@@ -1,7 +1,8 @@
 import type { Point } from '../../types';
 import type { Camera } from '../Camera.class';
 import type { Canvas } from '../Canvas.class';
-import { clearChildren } from '../ecs/components/children';
+import { addChild, clearChildren, getChildren, removeChild } from '../ecs/components/children';
+import { markDirty } from '../ecs/components/dirty';
 import { Events } from '../events';
 import { PRIMARY_MODIFIER_KEY } from '../events/input/constants';
 import { createSelectionGroup } from '../factory/selectionGroup';
@@ -173,28 +174,46 @@ export class SelectionManager {
     }
 
     const entities = this.selectionStrategy.finish();
-    let shouldFireRemoveEvent = false;
-
-    this.removeGroup();
 
     if (entities?.length) {
-      shouldFireRemoveEvent = false;
-      this.group = this.canvas.world.addEntityFactory(createSelectionGroup({ children: entities }));
-    }
+      if (!this.group) {
+        this.group = this.canvas.world.addEntityFactory(createSelectionGroup({ children: entities }));
 
-    if (shouldFireRemoveEvent) {
-      this.canvas.fire(Events.SELECTION_GROUP_REMOVED, {
-        group: this.group,
-      });
+        this.canvas.fire(Events.SELECTION_GROUP_ADDED, {
+          id: this.group,
+        });
+      } else {
+        const group = this.group;
+
+        const oldChildren = getChildren(group);
+        const removedEntities = oldChildren.filter((entity) => !entities.includes(entity));
+        const addedEntities = entities.filter((entity) => !oldChildren.includes(entity));
+
+        if (removedEntities.length || addedEntities.length) {
+          removedEntities.forEach((entity) => {
+            removeChild(group, entity);
+          });
+
+          addedEntities.forEach((entity) => {
+            addChild(group, entity);
+          });
+
+          markDirty(group);
+
+          this.canvas.fire(Events.SELECTION_GROUP_UPDATED, {
+            id: this.group,
+          });
+        }
+      }
     } else {
-      this.canvas.fire(Events.SELECTION_GROUP_ADDED, {
-        group: this.group,
+      this.removeGroup();
+      this.canvas.fire(Events.SELECTION_GROUP_REMOVED, {
+        id: this.group,
       });
     }
 
     this.state = null;
     this.selectionBox = null;
-    this.canvas.requestRender();
 
     if (this.selectionStrategy instanceof MarqueeSelection) {
       this.selectionStrategy = new this.selections.click(this.canvas, this.selectionState);

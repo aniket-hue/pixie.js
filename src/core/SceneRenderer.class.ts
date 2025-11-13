@@ -1,19 +1,6 @@
 import type { Camera } from './Camera.class';
 import type { Canvas } from './Canvas.class';
-import {
-  getChildren,
-  getDraggable,
-  getFill,
-  getHeight,
-  getSelectable,
-  getStroke,
-  getStrokeWidth,
-  getTexture,
-  getWidth,
-  getWorldMatrix,
-  hasTexture,
-  isVisible,
-} from './ecs/components';
+import { getFill, getHeight, getStroke, getStrokeWidth, getTexture, getWidth, getWorldMatrix, hasTexture, isVisible } from './ecs/components';
 import type { World } from './ecs/World.class';
 import { argbToRgba } from './lib/color';
 import { TextureManager } from './utils/TextureManager.class';
@@ -58,8 +45,10 @@ export class SceneRenderer {
 
   private camera: Camera;
   public textureManager: TextureManager;
+  private canvas: Canvas;
 
   constructor(context: Canvas) {
+    this.canvas = context;
     this.gl = context.getGlCore();
     this.camera = context.camera;
     this.textureManager = TextureManager.getInstance();
@@ -319,14 +308,6 @@ export class SceneRenderer {
     gl.drawArraysInstanced(gl.ctx.TRIANGLES, 0, 6, instanceCount);
   }
 
-  private isSelectionGroup(eid: number): boolean {
-    const hasChildren = getChildren(eid).length > 0;
-    const isDraggable = getDraggable(eid);
-    const isSelectable = getSelectable(eid);
-
-    return hasChildren && isDraggable && !isSelectable;
-  }
-
   render(world: World) {
     this.updateViewportAndResolution();
 
@@ -338,7 +319,7 @@ export class SceneRenderer {
         continue;
       }
 
-      if (this.isSelectionGroup(eid)) {
+      if (this.canvas.getActiveGroup() === eid) {
         continue;
       }
 

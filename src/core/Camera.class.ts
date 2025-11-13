@@ -1,3 +1,4 @@
+import type { Point } from '../types';
 import type { Canvas } from './Canvas.class';
 import { Events } from './events';
 import { m3 } from './math';
@@ -104,18 +105,18 @@ export class Camera {
     this.context.requestRender();
   }
 
-  screenToWorld(screenX: number, screenY: number) {
+  screenToWorld(screenX: number, screenY: number): Point {
     const y = this.context.height - screenY;
     const inverseMatrix = m3.inverse(this.viewportTransformMatrix);
     return m3.transformPoint(inverseMatrix, screenX, y);
   }
 
-  worldToScreen(x: number, y: number) {
+  worldToScreen(x: number, y: number): Point {
     const point = m3.transformPoint(this.viewportTransformMatrix, x, y);
 
     return {
       x: point.x,
-      y: point.y,
+      y: this.context.height - point.y,
     };
   }
 }
