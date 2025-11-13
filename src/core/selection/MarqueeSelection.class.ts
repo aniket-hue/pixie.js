@@ -1,10 +1,7 @@
 import type { BoundingBox, Point } from '../../types';
-import { SELECTION_BOX_BORDER_COLOR, SELECTION_BOX_FILL_COLOR } from '../app/colors';
 import type { Canvas } from '../Canvas.class';
-import { getSelectable, markDirty, setHeight, setLocalMatrix, setWidth, setWorldMatrix } from '../ecs/components';
-import { createRectangle } from '../factory/rectangle';
+import { getSelectable } from '../ecs/components';
 import { m3 } from '../math';
-import { createBoundingBoxOfchildren } from '../utils/createBoundingBoxOfchildren';
 import { getBoundingBoxFrom2Points } from '../utils/getBoundingBoxFrom2Points';
 import type { Picking } from '../webgl/Picking.class';
 import type { SelectionState } from './SelectionState.class';
@@ -16,7 +13,6 @@ export class MarqueeSelection {
   private canvas: Canvas;
   private picker: Picking;
   private startPoint: Point | null = null;
-  private boundingRect: number | null = null;
   private selectionState: SelectionState;
   constructor(canvas: Canvas, selectionState: SelectionState) {
     this.picker = canvas.picker;
@@ -82,36 +78,6 @@ export class MarqueeSelection {
 
       return;
     }
-
-    let boundingRect = this.boundingRect;
-
-    if (!boundingRect) {
-      this.boundingRect = this.canvas.world.addEntityFactory(
-        createRectangle({
-          x: point.x,
-          y: point.y,
-          width: 0,
-          height: 0,
-          fill: SELECTION_BOX_FILL_COLOR,
-          stroke: SELECTION_BOX_BORDER_COLOR,
-          strokeWidth: 1.5,
-          selectable: false,
-          draggable: false,
-        }),
-      );
-
-      boundingRect = this.boundingRect;
-
-      return;
-    }
-
-    const { localMatrix, width, height } = createBoundingBoxOfchildren(entities);
-
-    setLocalMatrix(boundingRect, localMatrix);
-    setWorldMatrix(boundingRect, localMatrix);
-    setWidth(boundingRect, width);
-    setHeight(boundingRect, height);
-    markDirty(boundingRect);
   }
 
   finish() {
@@ -124,11 +90,6 @@ export class MarqueeSelection {
       filter: getSelectable,
     });
 
-    if (this.boundingRect) {
-      this.canvas.world.removeEntity(this.boundingRect);
-      this.boundingRect = null;
-    }
-
     if (entities?.length) {
       this.selectionState.addToSelection(...entities);
     } else {
@@ -139,11 +100,6 @@ export class MarqueeSelection {
   }
 
   cleanup() {
-    if (this.boundingRect) {
-      this.canvas.world.removeEntity(this.boundingRect);
-      this.boundingRect = null;
-    }
-
     this.canvas.requestRender();
   }
 }

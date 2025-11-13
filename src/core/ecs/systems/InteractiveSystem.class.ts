@@ -1,7 +1,7 @@
 import type { Camera } from '../../Camera.class';
 import type { Canvas } from '../../Canvas.class';
 import { Events } from '../../events';
-import { getDraggable, getLocalMatrix, getWorldMatrix, markDirty, setLocalMatrix, setWorldMatrix } from '../components';
+import { getDraggable, getWorldMatrix, markDirty, setWorldMatrix } from '../components';
 
 export class InteractiveSystem {
   private camera: Camera;
@@ -75,16 +75,11 @@ export class InteractiveSystem {
     }
 
     const worldMatrix = getWorldMatrix(this.draggedObject);
-    const localMatrix = getLocalMatrix(this.draggedObject);
+    const newWorldMatrix = [...worldMatrix];
+    newWorldMatrix[6] = worldX - this.dragOffset.x;
+    newWorldMatrix[7] = worldY - this.dragOffset.y;
 
-    localMatrix[6] = worldX - this.dragOffset.x;
-    localMatrix[7] = worldY - this.dragOffset.y;
-
-    worldMatrix[6] = worldX - this.dragOffset.x;
-    worldMatrix[7] = worldY - this.dragOffset.y;
-
-    setWorldMatrix(this.draggedObject, worldMatrix);
-    setLocalMatrix(this.draggedObject, localMatrix);
+    setWorldMatrix(this.draggedObject, newWorldMatrix);
 
     this.canvas.fire(Events.OBJECT_MODIFIED, { id: this.draggedObject });
   }

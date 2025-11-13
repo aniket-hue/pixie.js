@@ -1,21 +1,10 @@
-import { BLACK_COLOR } from "../app/colors";
-import {
-  markDirty,
-  setDraggable,
-  setFill,
-  setHeight,
-  setLocalMatrix,
-  setSelectable,
-  setStroke,
-  setStrokeWidth,
-  setWidth,
-  setWorldMatrix,
-} from "../ecs/components";
-import { setVisible } from "../ecs/components/visible";
-import type { World } from "../ecs/World.class";
-import { m3 } from "../math/matrix";
-import { createBaseEntity } from "./base";
-import type { RectangleProps } from "./types";
+import { BLACK_COLOR } from '../app/colors';
+import { markDirty, setDraggable, setFill, setHeight, setSelectable, setStroke, setStrokeWidth, setWidth, setWorldMatrix } from '../ecs/components';
+import { setVisible } from '../ecs/components/visible';
+import type { World } from '../ecs/World.class';
+import { m3 } from '../math/matrix';
+import { createBaseEntity } from './base';
+import type { RectangleProps } from './types';
 
 export function createRectangle({
   x,
@@ -43,7 +32,6 @@ export function createRectangle({
       r: angle,
     });
 
-    setLocalMatrix(rect, matrix);
     setWorldMatrix(rect, matrix);
 
     setWidth(rect, width);
