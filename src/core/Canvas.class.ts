@@ -1,11 +1,12 @@
 import { Camera } from './Camera.class';
+import { TransformControls } from './controls/TransformControls.class';
 import { clearAllDirty, isDirty } from './ecs/components';
 import { BoundsSystem } from './ecs/systems/BoundsSystem.class';
-import { InteractiveSystem } from './ecs/systems/InteractiveSystem.class';
 import { VisibleSystem } from './ecs/systems/VisibleSystem.class';
 import { World } from './ecs/World.class';
 import { EventEmitter, type EventKeys } from './events';
 import { InputHandler } from './events/input/InputHandler.class';
+import { InteractionModeManager } from './mode/InteractionModeManager.class';
 import { OverlayRenderer } from './OverlayRenderer.class';
 import { SceneRenderer } from './SceneRenderer.class';
 import { SelectionManager } from './selection/SelectionManager.class';
@@ -20,12 +21,13 @@ export class Canvas {
   private glCore: GlCore;
   private inputHandler: InputHandler;
 
-  private interactiveSystem: InteractiveSystem;
   private visibleSystem: VisibleSystem;
   private boundsSystem: BoundsSystem;
 
   private sceneRenderer: SceneRenderer;
-  private overlayRenderer: OverlayRenderer;
+  public overlayRenderer: OverlayRenderer;
+  public transformControls: TransformControls | null = null;
+  public modeManager: InteractionModeManager;
   topCanvas: HTMLCanvasElement | null = null;
   canvasElement: HTMLCanvasElement;
 
@@ -49,13 +51,11 @@ export class Canvas {
     this.camera = new Camera(this);
     this.picker = new Picking(this);
     this.inputHandler = new InputHandler(this);
-
+    this.modeManager = new InteractionModeManager();
     this.selectionManager = new SelectionManager(this);
-
-    this.interactiveSystem = new InteractiveSystem(this);
+    this.transformControls = new TransformControls(this, this.modeManager);
     this.visibleSystem = new VisibleSystem();
     this.boundsSystem = new BoundsSystem(this);
-
     this.sceneRenderer = new SceneRenderer(this);
 
     this.resize();
@@ -192,6 +192,8 @@ export class Canvas {
   destroy(): void {
     this.events.destroy();
     this.inputHandler.destroy();
-    this.interactiveSystem.destroy();
+    if (this.transformControls) {
+      this.transformControls.destroy();
+    }
   }
 }

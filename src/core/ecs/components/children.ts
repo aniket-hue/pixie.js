@@ -41,11 +41,11 @@ function updateChildrenCoords(parentId: number) {
   const children = getChildren(parentId);
 
   if (!children.length) {
-    const identity = m3.identity();
-    setLocalMatrixDirect(parentId, identity);
-    setWorldMatrixDirect(parentId, identity);
-    setWidth(parentId, 0);
-    setHeight(parentId, 0);
+    // const identity = m3.identity();
+    // setLocalMatrixDirect(parentId, identity);
+    // setWorldMatrixDirect(parentId, identity);
+    // setWidth(parentId, 0);
+    // setHeight(parentId, 0);
     return;
   }
 
@@ -79,7 +79,7 @@ export function getChildren(parent: number): number[] {
     result.push(Children.buffer[start + i]);
   }
 
-  return result;
+  return result.filter(Boolean);
 }
 
 export function addChild(parent: number, child: number) {

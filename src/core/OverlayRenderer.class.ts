@@ -2,7 +2,6 @@ import type { Point } from '../types';
 import { SELECTION_BOX_BORDER_COLOR } from './app/colors';
 import type { Canvas } from './Canvas.class';
 import type { World } from './ecs/World.class';
-import { Events } from './events';
 import { assert } from './lib/assert';
 import type { SelectionManager } from './selection/SelectionManager.class';
 import { getPointsOfRectangleSquare } from './utils/getPointsOfRectangleSquare';
@@ -12,31 +11,11 @@ export class OverlayRenderer {
   private topCtx: CanvasRenderingContext2D;
   private selectionManager: SelectionManager;
   private canvas: Canvas;
-  private hoveredControl: {
-    tl: boolean;
-    tr: boolean;
-    br: boolean;
-    bl: boolean;
-  } = {
-    tl: false,
-    tr: false,
-    br: false,
-    bl: false,
-  };
-
-  private activeGroup: number | null = null;
-  private activeGroupCorners: {
-    tl: Point;
-    tr: Point;
-    br: Point;
-    bl: Point;
-  } | null = null;
 
   constructor(context: Canvas) {
-    this.canvas = context;
-
     assert(context.topCanvas !== null, 'Top canvas not initialized');
 
+    this.canvas = context;
     this.topCanvas = context.topCanvas;
 
     const ctx = this.topCanvas.getContext('2d');
@@ -45,131 +24,6 @@ export class OverlayRenderer {
     }
     this.topCtx = ctx;
     this.selectionManager = context.selectionManager;
-    this.initListeners();
-  }
-
-  private initListeners(): void {
-    this.onMouseMove = this.onMouseMove.bind(this);
-    this.onMouseDown = this.onMouseDown.bind(this);
-    this.onMouseUp = this.onMouseUp.bind(this);
-
-    this.onSelectionGroupUpdated = this.onSelectionGroupUpdated.bind(this);
-    this.onSelectionGroupAdded = this.onSelectionGroupAdded.bind(this);
-    this.onSelectionGroupRemoved = this.onSelectionGroupRemoved.bind(this);
-
-    this.canvas.on(Events.SELECTION_GROUP_UPDATED, this.onSelectionGroupUpdated);
-    this.canvas.on(Events.OBJECT_MODIFIED, this.onSelectionGroupUpdated);
-    this.canvas.on(Events.SELECTION_GROUP_ADDED, this.onSelectionGroupAdded);
-    this.canvas.on(Events.SELECTION_GROUP_REMOVED, this.onSelectionGroupRemoved);
-
-    this.canvas.on(Events.MOUSE_MOVE, this.onMouseMove);
-    this.canvas.on(Events.MOUSE_DOWN, this.onMouseDown);
-    this.canvas.on(Events.MOUSE_UP, this.onMouseUp);
-  }
-
-  private onSelectionGroupUpdated(event: { id: number }): void {
-    const { screenCorners } = getPointsOfRectangleSquare(this.canvas, event.id, true);
-
-    this.activeGroupCorners = {
-      tl: screenCorners[0],
-      tr: screenCorners[1],
-      br: screenCorners[2],
-      bl: screenCorners[3],
-    };
-
-    this.canvas.requestRender();
-  }
-
-  private onSelectionGroupAdded(event: { id: number }): void {
-    this.activeGroup = event.id;
-
-    const { screenCorners } = getPointsOfRectangleSquare(this.canvas, event.id, true);
-
-    this.activeGroupCorners = {
-      tl: screenCorners[0],
-      tr: screenCorners[1],
-      br: screenCorners[2],
-      bl: screenCorners[3],
-    };
-
-    this.canvas.requestRender();
-  }
-
-  private onSelectionGroupRemoved(event: { id: number }): void {
-    this.activeGroupCorners = null;
-    this.activeGroup = null;
-
-    this.canvas.requestRender();
-  }
-
-  private onMouseMove(event: MouseEvent): void {
-    if (!this.activeGroup) {
-      return;
-    }
-
-    const activeGroupCorners = this.activeGroupCorners;
-
-    assert(activeGroupCorners !== null, 'Active group corners not initialized');
-
-    const pointerPoint = { x: event.offsetX, y: event.offsetY };
-
-    const isInside = (corner: Point) => {
-      const threshold = 10 * this.canvas.zoom;
-
-      return (
-        pointerPoint.x >= corner.x - threshold &&
-        pointerPoint.x <= corner.x + threshold &&
-        pointerPoint.y >= corner.y - threshold &&
-        pointerPoint.y <= corner.y + threshold
-      );
-    };
-
-    const corners = ['tl', 'tr', 'br', 'bl'] as const;
-    let hoveredCorner: (typeof corners)[number] | undefined;
-
-    corners.forEach((corner) => {
-      const cornerPoint = activeGroupCorners[corner];
-      this.hoveredControl[corner] = isInside(cornerPoint);
-
-      if (this.hoveredControl[corner]) {
-        hoveredCorner = corner;
-      }
-    });
-
-    assert(this.canvas.canvasElement !== null, 'Top canvas not initialized');
-
-    if (hoveredCorner) {
-      switch (hoveredCorner) {
-        case 'tl':
-          this.canvas.canvasElement.style.cursor = 'nw-resize';
-          break;
-        case 'tr':
-          this.canvas.canvasElement.style.cursor = 'ne-resize';
-          break;
-        case 'br':
-          this.canvas.canvasElement.style.cursor = 'se-resize';
-          break;
-        case 'bl':
-          this.canvas.canvasElement.style.cursor = 'sw-resize';
-          break;
-      }
-    } else {
-      this.canvas.canvasElement.style.cursor = 'default';
-    }
-  }
-
-  private onMouseDown(event: MouseEvent): void {
-    console.log('mouse down', event);
-  }
-
-  private onMouseUp(event: MouseEvent): void {
-    console.log('mouse up', event);
-  }
-
-  public destroy(): void {
-    this.canvas.off(Events.MOUSE_MOVE, this.onMouseMove);
-    this.canvas.off(Events.MOUSE_DOWN, this.onMouseDown);
-    this.canvas.off(Events.MOUSE_UP, this.onMouseUp);
   }
 
   private clear() {
@@ -260,12 +114,16 @@ export class OverlayRenderer {
     });
   }
 
-  private drawSelectionGroup() {
+  private drawSelectionGroup(activeGroup: number) {
     const ctx = this.topCtx;
+    const { screenCorners } = getPointsOfRectangleSquare(this.canvas, activeGroup, true);
 
-    const bounds = this.activeGroupCorners;
-
-    assert(bounds !== null, 'Bounds not initialized');
+    const bounds = {
+      tl: screenCorners[0],
+      tr: screenCorners[1],
+      br: screenCorners[2],
+      bl: screenCorners[3],
+    };
 
     const strokeColor = SELECTION_BOX_BORDER_COLOR;
     const strokeWidth = 4;
@@ -288,16 +146,14 @@ export class OverlayRenderer {
     this.clear();
 
     const activeSelectionBox = this.selectionManager.selectionBox;
-    const activeGroup = this.activeGroup;
+    const activeGroup = this.selectionManager.activeGroup;
 
     if (activeSelectionBox !== null) {
-      assert(Boolean(activeGroup) === false, 'Selection box initialized');
-
       this.drawSelectionBox(activeSelectionBox);
     }
 
     if (activeGroup !== null) {
-      this.drawSelectionGroup();
+      this.drawSelectionGroup(activeGroup);
     }
   }
 }
