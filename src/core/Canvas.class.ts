@@ -52,8 +52,8 @@ export class Canvas {
     this.picker = new Picking(this);
     this.inputHandler = new InputHandler(this);
     this.modeManager = new InteractionModeManager();
-    this.selectionManager = new SelectionManager(this);
     this.transformControls = new TransformControls(this, this.modeManager);
+    this.selectionManager = new SelectionManager(this);
     this.visibleSystem = new VisibleSystem();
     this.boundsSystem = new BoundsSystem(this);
     this.sceneRenderer = new SceneRenderer(this);
