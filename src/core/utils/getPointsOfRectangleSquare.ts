@@ -22,6 +22,12 @@ export function getPointsOfRectangleSquare<T extends boolean>(canvas: Canvas, ei
     { x: width / 2, y: height / 2 },
     { x: width / 2, y: -height / 2 },
     { x: -width / 2, y: -height / 2 },
+
+    // Middle
+    { x: 0, y: height / 2 }, // top
+    { x: -width / 2, y: 0 }, // left
+    { x: 0, y: -height / 2 }, // bottom
+    { x: width / 2, y: 0 }, // right
   ];
 
   const worldCorners = localCorners.map((corner) => m3.transformPoint(worldMatrix, corner.x, corner.y));

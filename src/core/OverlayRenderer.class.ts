@@ -123,6 +123,11 @@ export class OverlayRenderer {
       tr: screenCorners[1],
       br: screenCorners[2],
       bl: screenCorners[3],
+
+      mt: screenCorners[4],
+      ml: screenCorners[5],
+      mb: screenCorners[6],
+      mr: screenCorners[7],
     };
 
     const strokeColor = SELECTION_BOX_BORDER_COLOR;
