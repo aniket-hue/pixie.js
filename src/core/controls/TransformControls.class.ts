@@ -6,20 +6,15 @@ import { m3 } from '../math';
 import { InteractionMode, type InteractionModeManager } from '../mode/InteractionModeManager.class';
 import { getPointsOfRectangleSquare } from '../utils/getPointsOfRectangleSquare';
 
-type Corner = 'tl' | 'tr' | 'br' | 'bl';
+type Corner = 'tl' | 'tr' | 'br' | 'bl' | 'mt' | 'ml' | 'mb' | 'mr';
 
-interface GroupCorners {
-  tl: Point;
-  tr: Point;
-  br: Point;
-  bl: Point;
-}
+const pivotMap: Record<Corner, number> = { tl: 0, tr: 1, br: 2, bl: 3, mt: 4, ml: 5, mb: 6, mr: 7 };
 
 export class TransformControls {
   private canvas: Canvas;
   private modeManager: InteractionModeManager;
   private activeGroup: number | null = null;
-  private activeGroupCorners: GroupCorners | null = null;
+  private activeGroupCorners: Point[] | null = null;
 
   private dragState: { entityId: number; offset: Point; startPos: Point } | null = null;
   private scaleState: {
@@ -76,12 +71,7 @@ export class TransformControls {
 
   private updateGroupCorners(groupId: number): void {
     const { screenCorners } = getPointsOfRectangleSquare(this.canvas, groupId, true);
-    this.activeGroupCorners = {
-      tl: screenCorners[0],
-      tr: screenCorners[1],
-      br: screenCorners[2],
-      bl: screenCorners[3],
-    };
+    this.activeGroupCorners = screenCorners;
   }
 
   private handleMouseDown(event: MouseEvent): void {
@@ -146,8 +136,8 @@ export class TransformControls {
     if (!this.activeGroup) return;
 
     const { worldCorners } = getPointsOfRectangleSquare(this.canvas, this.activeGroup, false);
-    const pivotMap: Record<Corner, number> = { tl: 2, tr: 3, br: 0, bl: 1 };
-    const pivot = worldCorners[pivotMap[corner]];
+    const diagonalPivotMap: Record<Corner, number> = { tl: 2, tr: 3, br: 0, bl: 1, mt: 6, ml: 7, mb: 4, mr: 5 };
+    const pivot = worldCorners[diagonalPivotMap[corner]];
 
     const startWorldMatrix = getWorldMatrix(this.activeGroup);
     const inverseStartWorld = m3.inverse(startWorldMatrix);
@@ -179,10 +169,16 @@ export class TransformControls {
     const currentDist = Math.hypot(currentLocal.x - pivotLocal.x, currentLocal.y - pivotLocal.y);
     const scale = startDist > 0 ? currentDist / startDist : 1;
 
+    const shouldScaleKeepAspectRatioSame = ['tl', 'tr', 'br', 'bl'].includes(this.scaleState.corner);
+    const sideToScale = ['mt', 'mb'].includes(this.scaleState.corner) ? 'y' : 'x';
+
+    const scaleX = shouldScaleKeepAspectRatioSame ? scale : sideToScale === 'x' ? scale : 1;
+    const scaleY = shouldScaleKeepAspectRatioSame ? scale : sideToScale === 'y' ? scale : 1;
+
     const newMatrix = m3.multiply(
       startMatrix,
       m3.translate(pivotLocal.x, pivotLocal.y),
-      m3.scale(scale, scale),
+      m3.scale(scaleX, scaleY),
       m3.translate(-pivotLocal.x, -pivotLocal.y),
     );
 
@@ -221,18 +217,16 @@ export class TransformControls {
   }
 
   private getCornerAtPoint(screenPos: Point): Corner | null {
-    if (!this.activeGroupCorners) return null;
+    const activeGroupCorners = this.activeGroupCorners;
 
-    const corners: Array<[Corner, Point]> = [
-      ['tl', this.activeGroupCorners.tl],
-      ['tr', this.activeGroupCorners.tr],
-      ['br', this.activeGroupCorners.br],
-      ['bl', this.activeGroupCorners.bl],
-    ];
+    if (!activeGroupCorners) return null;
+
+    const corners: Array<[Corner, Point]> = Object.entries(pivotMap).map(([corner, index]) => [corner as Corner, activeGroupCorners[index]]);
 
     for (const [key, point] of corners) {
       const dx = Math.abs(screenPos.x - point.x);
       const dy = Math.abs(screenPos.y - point.y);
+
       if (dx <= TransformControls.CORNER_HIT_AREA && dy <= TransformControls.CORNER_HIT_AREA) {
         return key;
       }
@@ -247,6 +241,11 @@ export class TransformControls {
       tr: 'ne-resize',
       br: 'se-resize',
       bl: 'sw-resize',
+
+      mt: 'n-resize',
+      ml: 'w-resize',
+      mb: 's-resize',
+      mr: 'e-resize',
     };
 
     this.setCursor(corner ? cursorMap[corner] : 'default');
@@ -256,14 +255,6 @@ export class TransformControls {
     if (this.canvas.canvasElement) {
       this.canvas.canvasElement.style.cursor = cursor;
     }
-  }
-
-  public getActiveGroupCorners(): GroupCorners | null {
-    return this.activeGroupCorners;
-  }
-
-  public getActiveGroup(): number | null {
-    return this.activeGroup;
   }
 
   public destroy(): void {
