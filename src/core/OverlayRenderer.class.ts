@@ -4,7 +4,7 @@ import type { Canvas } from './Canvas.class';
 import type { World } from './ecs/World.class';
 import { assert } from './lib/assert';
 import type { SelectionManager } from './selection/SelectionManager.class';
-import { getPointsOfRectangleSquare } from './utils/getPointsOfRectangleSquare';
+import { type Corner, getPointsOfRectangleSquare } from './utils/getPointsOfRectangleSquare';
 
 export class OverlayRenderer {
   private topCanvas: HTMLCanvasElement;
@@ -101,10 +101,12 @@ export class OverlayRenderer {
     ctx.stroke();
   }
 
-  private drawControls(bounds: { tl: Point; tr: Point; br: Point; bl: Point }) {
+  private drawControls(bounds: Record<Corner, Point>) {
     const ctx = this.topCtx;
 
-    Object.values(bounds).forEach((pointerPoint) => {
+    const { rotate, center: _, ...rest } = bounds;
+
+    Object.values(rest).forEach((pointerPoint) => {
       ctx.save();
       ctx.fillStyle = 'rgba(255, 255, 255, 1)';
       ctx.beginPath();
@@ -112,23 +114,19 @@ export class OverlayRenderer {
       ctx.fill();
       ctx.restore();
     });
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(rotate.x, rotate.y, 5, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.restore();
   }
 
   private drawSelectionGroup(activeGroup: number) {
     const ctx = this.topCtx;
-    const { screenCorners } = getPointsOfRectangleSquare(this.canvas, activeGroup, true);
-
-    const bounds = {
-      tl: screenCorners[0],
-      tr: screenCorners[1],
-      br: screenCorners[2],
-      bl: screenCorners[3],
-
-      mt: screenCorners[4],
-      ml: screenCorners[5],
-      mb: screenCorners[6],
-      mr: screenCorners[7],
-    };
+    const { screenCorners: bounds } = getPointsOfRectangleSquare(this.canvas, activeGroup, true);
 
     const strokeColor = SELECTION_BOX_BORDER_COLOR;
     const strokeWidth = 4;
