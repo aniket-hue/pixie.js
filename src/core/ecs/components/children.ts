@@ -4,7 +4,7 @@ import { markDirty } from './dirty';
 import { defineComponent } from './lib';
 import { getLocalMatrix, getWorldMatrix, setLocalMatrixDirect, setWorldMatrixDirect } from './matrix';
 import { clearParent, getParent, updateParent } from './parent';
-import { setHeight, setWidth } from './size';
+import { getHeight, getWidth, setHeight, setWidth } from './size';
 
 let _ptr = 0;
 
@@ -41,15 +41,16 @@ function updateChildrenCoords(parentId: number) {
   const children = getChildren(parentId);
 
   if (!children.length) {
-    // const identity = m3.identity();
-    // setLocalMatrixDirect(parentId, identity);
-    // setWorldMatrixDirect(parentId, identity);
-    // setWidth(parentId, 0);
-    // setHeight(parentId, 0);
     return;
   }
 
   const { width, height, localMatrix: parentLocalMatrix } = createBoundingBoxOfchildren(children);
+
+  // if (children.length === 1) {
+  //   width = getWidth(children[0]);
+  //   height = getHeight(children[0]);
+  //   parentLocalMatrix = getLocalMatrix(children[0]);
+  // }
 
   setLocalMatrixDirect(parentId, parentLocalMatrix);
 

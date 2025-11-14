@@ -45,7 +45,7 @@ export const m3 = {
     }
 
     const [matrix, tx, ty] = args;
-    return [matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5], tx, ty, matrix[8]];
+    return multiply(matrix, [1, 0, 0, 0, 1, 0, tx, ty, 1]);
   },
 
   identity: () => {
@@ -57,14 +57,14 @@ export const m3 = {
       const [angleInRadians] = args;
       const c = Math.cos(angleInRadians);
       const s = Math.sin(angleInRadians);
-      return [c, -s, 0, s, c, 0, 0, 0, 1];
+      return [c, s, 0, -s, c, 0, 0, 0, 1];
     }
 
     const [matrix, angleInRadians] = args;
     const c = Math.cos(angleInRadians);
     const s = Math.sin(angleInRadians);
 
-    return [matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5], c, -s, 0, s, c, 0, 0, 0, 1];
+    return multiply(matrix, [c, s, 0, -s, c, 0, 0, 0, 1]);
   },
 
   scale: (...args: [number, number] | [number[], number, number]) => {
@@ -74,7 +74,7 @@ export const m3 = {
     }
 
     const [matrix, sx, sy] = args;
-    return [matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5], sx, 0, 0, 0, sy, 0, 0, 0, 1];
+    return multiply(matrix, [sx, 0, 0, 0, sy, 0, 0, 0, 1]);
   },
 
   multiply: (...args: number[][]) => {
@@ -115,5 +115,16 @@ export const m3 = {
     const translationMatrix = m3.translate(tx, ty);
 
     return m3.multiply(translationMatrix, rotationMatrix, scaleMatrix);
+  },
+
+  decompose: (matrix: number[]): { scaleX: number; scaleY: number; rotation: number; tx: number; ty: number } => {
+    const a = matrix[0];
+    const b = matrix[1];
+    const c = matrix[3];
+    const d = matrix[4];
+    const scaleX = Math.sqrt(a * a + b * b);
+    const scaleY = Math.sqrt(c * c + d * d);
+    const rotation = Math.atan2(b, a);
+    return { scaleX, scaleY, rotation, tx: matrix[6], ty: matrix[7] };
   },
 };

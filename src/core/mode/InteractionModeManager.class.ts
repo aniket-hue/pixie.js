@@ -2,6 +2,7 @@ export const InteractionMode = {
   IDLE: 'IDLE',
   DRAGGING: 'DRAGGING',
   SCALING: 'SCALING',
+  ROTATING: 'ROTATING',
 } as const;
 
 export type InteractionMode = (typeof InteractionMode)[keyof typeof InteractionMode];
@@ -27,6 +28,10 @@ export class InteractionModeManager {
 
   isScaling(): boolean {
     return this.mode === InteractionMode.SCALING;
+  }
+
+  isRotating(): boolean {
+    return this.mode === InteractionMode.ROTATING;
   }
 
   isInteracting(): boolean {
