@@ -1,5 +1,4 @@
 import type { Point } from '../types';
-import { SELECTION_BOX_BORDER_COLOR } from './app/colors';
 import type { Canvas } from './Canvas.class';
 import type { World } from './ecs/World.class';
 import { assert } from './lib/assert';
@@ -81,7 +80,10 @@ export class OverlayRenderer {
       { x: bounds.sx, y: bounds.dy },
     ];
 
-    ctx.fillStyle = 'rgba(142, 193, 244, 0.11)';
+    const fillColor = 'rgba(142, 193, 244, 0.11)';
+    const strokeColor = '#1c398e';
+
+    ctx.fillStyle = fillColor;
     ctx.beginPath();
     ctx.moveTo(screenCorners[0].x, screenCorners[0].y);
     ctx.lineTo(screenCorners[1].x, screenCorners[1].y);
@@ -90,7 +92,7 @@ export class OverlayRenderer {
     ctx.closePath();
     ctx.fill();
 
-    ctx.strokeStyle = 'rgba(51, 153, 255, 0.8)';
+    ctx.strokeStyle = strokeColor;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(screenCorners[0].x, screenCorners[0].y);
@@ -104,32 +106,33 @@ export class OverlayRenderer {
   private drawControls(bounds: Record<Corner, Point>) {
     const ctx = this.topCtx;
 
-    const { rotate, center: _, ...rest } = bounds;
+    const { center: _, ...rest } = bounds;
 
-    Object.values(rest).forEach((pointerPoint) => {
+    // Blue
+    const strokeColor = '#1c398e';
+    const fillColor = 'rgba(255, 255, 255, 1)';
+
+    function drawControl(point: Point) {
       ctx.save();
-      ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+      ctx.fillStyle = fillColor;
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(pointerPoint.x, pointerPoint.y, 5, 0, 2 * Math.PI);
+      ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
       ctx.fill();
+      ctx.stroke();
       ctx.restore();
-    });
+    }
 
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(rotate.x, rotate.y, 5, 0, 2 * Math.PI);
-    ctx.stroke();
-    ctx.restore();
+    Object.values(rest).forEach(drawControl);
   }
 
   private drawSelectionGroup(activeGroup: number) {
     const ctx = this.topCtx;
     const { screenCorners: bounds } = getPointsOfRectangleSquare(this.canvas, activeGroup, true);
 
-    const strokeColor = SELECTION_BOX_BORDER_COLOR;
-    const strokeWidth = 4;
+    const strokeColor = '#1c398e';
+    const strokeWidth = 2;
 
     ctx.strokeStyle = strokeColor;
     ctx.lineWidth = strokeWidth;

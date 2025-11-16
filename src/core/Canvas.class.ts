@@ -4,7 +4,7 @@ import { clearAllDirty, isDirty } from './ecs/components';
 import { BoundsSystem } from './ecs/systems/BoundsSystem.class';
 import { VisibleSystem } from './ecs/systems/VisibleSystem.class';
 import { World } from './ecs/World.class';
-import { EventEmitter, type EventKeys } from './events';
+import { EventEmitter, type EventKeys, Events } from './events';
 import { InputHandler } from './events/input/InputHandler.class';
 import { InteractionModeManager } from './mode/InteractionModeManager.class';
 import { OverlayRenderer } from './OverlayRenderer.class';
@@ -84,7 +84,7 @@ export class Canvas {
     topCanvas.style.top = `${rect.top}px`;
     topCanvas.style.left = `${rect.left}px`;
 
-    topCanvas.style.zIndex = '1000';
+    topCanvas.style.zIndex = '1';
     topCanvas.style.pointerEvents = 'none';
     this.canvasElement.parentElement?.insertBefore(topCanvas, this.canvasElement);
     this.topCanvas = topCanvas;
@@ -129,6 +129,12 @@ export class Canvas {
 
   get zoom(): number {
     return this.camera.zoom;
+  }
+
+  set zoom(value: number) {
+    this.camera.zoom = value;
+
+    this.requestRender();
   }
 
   get element(): HTMLCanvasElement {
