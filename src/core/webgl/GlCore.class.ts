@@ -184,4 +184,19 @@ export class GlCore {
   lineWidth(width: number) {
     this.ctx.lineWidth(width);
   }
+
+  captureCanvasRegion(x: number, y: number, width: number, height: number) {
+    // Create a buffer to hold the pixel data
+    const pixels = new Uint8Array(width * height * 4); // 4 bytes per pixel (RGBA)
+
+    // Read pixels from the WebGL context
+    // Note: WebGL's coordinate system has origin at bottom-left
+    // You may need to flip the y coordinate
+    const canvasHeight = this.ctx.canvas.height;
+    const flippedY = canvasHeight - y - height;
+
+    this.ctx.readPixels(x, flippedY, width, height, this.ctx.RGBA, this.ctx.UNSIGNED_BYTE, pixels);
+
+    return pixels;
+  }
 }

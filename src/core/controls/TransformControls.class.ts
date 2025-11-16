@@ -107,7 +107,7 @@ export class TransformControls {
       return;
     }
 
-    if (corner && this.activeGroup) {
+    if (corner) {
       this.startScaling(corner, worldPos);
       event.preventDefault();
       return;
@@ -125,13 +125,13 @@ export class TransformControls {
     const worldPos = this.canvas.camera.screenToWorld(event.offsetX, event.offsetY);
 
     if (this.modeManager.isRotating() && this.rotateState) {
-      this.updateRotating(worldPos);
+      this.updateRotating(event, worldPos);
 
       return;
     }
 
     if (this.modeManager.isScaling() && this.scaleState) {
-      this.updateScaling(worldPos);
+      this.updateScaling(event, worldPos);
 
       return;
     }
@@ -198,7 +198,7 @@ export class TransformControls {
     };
   }
 
-  private updateRotating(mouseWorldPos: Point): void {
+  private updateRotating(_event: MouseEvent, mouseWorldPos: Point): void {
     if (!this.rotateState || !this.activeGroup) return;
 
     const { centerLocal, inverseLocalMatrix, decomposedLocal, startAngle } = this.rotateState;
@@ -252,7 +252,7 @@ export class TransformControls {
     this.modeManager.setMode(InteractionMode.SCALING);
   }
 
-  private updateScaling(mouseWorldPos: Point): void {
+  private updateScaling(event: MouseEvent, mouseWorldPos: Point): void {
     if (!this.scaleState || !this.activeGroup) return;
 
     const { pivotLocal, localMatrix, inverseWorldMatrix, startDistX, startDistY, corner } = this.scaleState;
@@ -274,6 +274,11 @@ export class TransformControls {
 
     if (!doesEffectX) {
       scaleX = 1;
+    }
+
+    if (event.shiftKey) {
+      scaleX = scaleY;
+      scaleY = scaleX;
     }
 
     const newMatrix = m3.multiply(
