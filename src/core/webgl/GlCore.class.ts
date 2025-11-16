@@ -8,7 +8,10 @@ export class GlCore {
   _basic2DProgram: WebGLProgram;
 
   constructor(canvasElement: HTMLCanvasElement) {
-    const gl = canvasElement.getContext('webgl2');
+    const gl = canvasElement.getContext('webgl2', {
+      alpha: true,
+      premultipliedAlpha: false,
+    });
 
     if (!gl) {
       throw new Error('WebGL not supported');
@@ -103,7 +106,7 @@ export class GlCore {
   }
 
   clear() {
-    this.ctx.clearColor(0, 0, 0, 1);
+    this.ctx.clearColor(242, 240, 239, 1);
     this.ctx.clear(this.ctx.COLOR_BUFFER_BIT);
   }
 

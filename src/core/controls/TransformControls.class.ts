@@ -45,6 +45,7 @@ export class TransformControls {
     const listeners = [
       [Events.SELECTION_GROUP_ADDED, this.handleSelectionAdded],
       [Events.SELECTION_GROUP_UPDATED, this.handleSelectionUpdated],
+      [Events.ZOOM_CHANGED, this.handleZoomChanged],
       [Events.SELECTION_GROUP_REMOVED, this.handleSelectionRemoved],
       [Events.OBJECT_MODIFIED, this.handleSelectionUpdated],
       [Events.MOUSE_DOWN, this.handleMouseDown],
@@ -58,6 +59,14 @@ export class TransformControls {
   }
 
   // Selection handlers
+
+  private handleZoomChanged(): void {
+    if (!this.activeGroup) return;
+
+    this.updateGroupCorners(this.activeGroup);
+    this.canvas.requestRender();
+  }
+
   private handleSelectionAdded(event: { id: number }): void {
     this.activeGroup = event.id;
     this.updateGroupCorners(event.id);
@@ -328,7 +337,9 @@ export class TransformControls {
     const corners = Object.entries(this.activeGroupCorners).filter(([key]) => key !== 'center') as [Corner, Point][];
 
     for (const [key, point] of corners) {
-      if (this.isPointNearCorner(screenPos, point)) {
+      let finalPoint = point;
+
+      if (this.isPointNearCorner(screenPos, finalPoint)) {
         return key;
       }
     }

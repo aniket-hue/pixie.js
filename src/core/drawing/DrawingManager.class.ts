@@ -1,17 +1,12 @@
 import type { Canvas } from '../Canvas.class';
 import { assert } from '../lib/assert';
 import { InteractionMode } from '../mode/InteractionModeManager.class';
-import { RectangleDrawing } from './impl/RectangleDrawing.class';
-import type { DrawingOptions, DrawingStrategy } from './types';
+import type { DrawingStrategy } from './types';
 
 export class DrawingManager {
   private canvas: Canvas;
   private strategy: DrawingStrategy | null = null;
   private topCanvas: HTMLCanvasElement;
-
-  options: DrawingOptions = {
-    fillColor: 'rgba(145, 0, 0, 1)',
-  };
 
   constructor(canvas: Canvas) {
     this.canvas = canvas;
@@ -19,13 +14,6 @@ export class DrawingManager {
     assert(canvas.topCanvas !== null, 'Top canvas not initialized');
 
     this.topCanvas = canvas.topCanvas;
-
-    this.enableDrawing();
-    this.setStrategy(new RectangleDrawing(this.canvas, this.options));
-  }
-
-  setOptions(options: Partial<DrawingOptions>): void {
-    Object.assign(this.options, options);
   }
 
   enableDrawing(): void {
@@ -41,6 +29,9 @@ export class DrawingManager {
   }
 
   setStrategy(strategy: DrawingStrategy): void {
+    this.enableDrawing();
+
+    strategy.drawingManager = this;
     this.strategy = strategy;
   }
 

@@ -3,12 +3,13 @@ import type { Canvas } from '../../Canvas.class';
 import { Events } from '../../events';
 import { createRectangle } from '../../factory';
 import { assert } from '../../lib/assert';
-import { InteractionMode } from '../../mode/InteractionModeManager.class';
+import type { DrawingManager } from '../DrawingManager.class';
 import type { DrawingOptions, DrawingState, DrawingStrategy } from '../types';
 
 export class RectangleDrawing implements DrawingStrategy {
   private canvas: Canvas;
   private drawingOptions: DrawingOptions;
+  public drawingManager!: DrawingManager;
 
   private drawingState: DrawingState = {
     startPoint: null,
@@ -20,16 +21,6 @@ export class RectangleDrawing implements DrawingStrategy {
     this.drawingOptions = drawingOptions;
 
     this.initListeners();
-
-    this.enableDrawing();
-  }
-
-  enableDrawing(): void {
-    this.canvas.modeManager.setMode(InteractionMode.DRAWING);
-  }
-
-  disableDrawing(): void {
-    this.canvas.modeManager.setMode(InteractionMode.IDLE);
   }
 
   private initListeners(): void {
@@ -43,7 +34,7 @@ export class RectangleDrawing implements DrawingStrategy {
   }
 
   private onMouseDown(event: MouseEvent): void {
-    if (!this.canvas.modeManager.isDrawing()) {
+    if (!this.drawingManager.isDrawing()) {
       return;
     }
 
@@ -54,7 +45,7 @@ export class RectangleDrawing implements DrawingStrategy {
   }
 
   private onMouseMove(event: MouseEvent): void {
-    if (!this.canvas.modeManager.isDrawing()) {
+    if (!this.drawingManager.isDrawing()) {
       return;
     }
 
@@ -68,7 +59,7 @@ export class RectangleDrawing implements DrawingStrategy {
   }
 
   private onMouseUp(): void {
-    if (!this.canvas.modeManager.isDrawing()) {
+    if (!this.drawingManager.isDrawing()) {
       return;
     }
 
@@ -82,8 +73,8 @@ export class RectangleDrawing implements DrawingStrategy {
     };
 
     const worldCenter = this.canvas.camera.screenToWorld(center.x, center.y);
-    const width = Math.abs(endPoint.x - startPoint.x);
-    const height = Math.abs(endPoint.y - startPoint.y);
+    const width = Math.abs(endPoint.x - startPoint.x) / this.canvas.zoom;
+    const height = Math.abs(endPoint.y - startPoint.y) / this.canvas.zoom;
 
     const hexFillColor = convertHelper(this.drawingOptions.fillColor);
 
@@ -93,8 +84,8 @@ export class RectangleDrawing implements DrawingStrategy {
       width,
       height,
       fill: hexFillColor,
-      selectable: false,
-      draggable: false,
+      selectable: true,
+      draggable: true,
     });
 
     this.canvas.world.addEntityFactory(rectFactory);
@@ -106,7 +97,8 @@ export class RectangleDrawing implements DrawingStrategy {
 
     this.canvas.requestRender();
 
-    this.disableDrawing();
+    this.drawingManager.disableDrawing();
+    this.drawingOptions.onComplete?.();
   }
 
   render(ctx: CanvasRenderingContext2D): void {
@@ -117,7 +109,7 @@ export class RectangleDrawing implements DrawingStrategy {
     }
 
     ctx.save();
-    // ctx.clearRect(0, 0, this.topCanvas.width, this.topCanvas.height);
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     const width = Math.abs(endPoint.x - startPoint.x);
     const height = Math.abs(endPoint.y - startPoint.y);
 

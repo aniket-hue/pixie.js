@@ -48,7 +48,7 @@ export function getPointsOfRectangleSquare<T extends boolean>(canvas: Canvas, ei
     mr: { x: width / 2, y: 0 }, // right
 
     // Rotate
-    rotate: { x: 0, y: height / 2 + 30 },
+    rotate: { x: 0, y: height / 2 + 30 / canvas.zoom },
 
     center: { x: 0, y: 0 },
   };
