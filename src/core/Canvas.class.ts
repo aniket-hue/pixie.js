@@ -13,6 +13,7 @@ import { SelectionManager } from './selection/SelectionManager.class';
 import { GlCore } from './webgl/GlCore.class';
 
 import './app/colors';
+import { DrawingManager } from './drawing/DrawingManager.class';
 import { assert } from './lib/assert';
 import { Picking } from './webgl/Picking.class';
 
@@ -26,12 +27,15 @@ export class Canvas {
 
   private sceneRenderer: SceneRenderer;
   public overlayRenderer: OverlayRenderer;
+
   public transformControls: TransformControls | null = null;
+
   public modeManager: InteractionModeManager;
   topCanvas: HTMLCanvasElement | null = null;
   canvasElement: HTMLCanvasElement;
 
   selectionManager: SelectionManager;
+  drawing: DrawingManager;
 
   world: World;
   camera: Camera;
@@ -64,6 +68,7 @@ export class Canvas {
     assert(this.topCanvas !== null, 'Top canvas not initialized');
 
     this.overlayRenderer = new OverlayRenderer(this);
+    this.drawing = new DrawingManager(this);
   }
 
   initTopCanvas(): void {
@@ -105,6 +110,8 @@ export class Canvas {
         this.sceneRenderer.render(this.world);
         this.overlayRenderer.render(this.world);
 
+        this.drawing.render();
+
         clearAllDirty();
 
         resolve();
@@ -130,15 +137,6 @@ export class Canvas {
 
   getActiveGroup(): number | null {
     return this.selectionManager.activeGroup;
-  }
-
-  removeEntity(eid: number) {
-    this.world.removeEntity(eid);
-    const bounds = this.boundsSystem.getBounds(eid);
-
-    if (bounds) {
-      this.boundsSystem.removeBounds(eid);
-    }
   }
 
   getCtx(): WebGLRenderingContext | null {

@@ -3,6 +3,7 @@ export const InteractionMode = {
   DRAGGING: 'DRAGGING',
   SCALING: 'SCALING',
   ROTATING: 'ROTATING',
+  DRAWING: 'DRAWING',
 } as const;
 
 export type InteractionMode = (typeof InteractionMode)[keyof typeof InteractionMode];
@@ -36,6 +37,10 @@ export class InteractionModeManager {
 
   isInteracting(): boolean {
     return this.mode !== InteractionMode.IDLE;
+  }
+
+  isDrawing(): boolean {
+    return this.mode === InteractionMode.DRAWING;
   }
 
   reset(): void {

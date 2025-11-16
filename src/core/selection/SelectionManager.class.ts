@@ -103,7 +103,7 @@ export class SelectionManager {
 
     this.stopSelection = false;
 
-    if (this.canvas.modeManager.isInteracting()) {
+    if (this.canvas.modeManager.isInteracting() || this.canvas.modeManager.isDrawing()) {
       this.stopSelection = true;
       return;
     }
@@ -128,7 +128,7 @@ export class SelectionManager {
   }
 
   private onMouseMove(event: MouseEvent): void {
-    if (this.canvas.modeManager.isInteracting()) {
+    if (this.canvas.modeManager.isInteracting() || this.canvas.modeManager.isDrawing()) {
       return;
     }
 

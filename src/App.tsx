@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import { Canvas } from './core/Canvas.class';
 import { Events } from './core/events';
-import { createImage, createRectangle } from './core/factory';
+import { createImage } from './core/factory';
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -28,9 +28,9 @@ function App() {
       (window as any).cx = canvas;
 
       const shapes: number[] = [];
-      const imageSize = 100;
+      const imageSize = 200;
       const spacing = imageSize + 20;
-      const nums = 4;
+      const nums = 1;
 
       const imageUrls = Array.from({ length: nums * nums }).map((_, i) => {
         return `https://picsum.photos/${imageSize}/${imageSize}?random=${i}`;
