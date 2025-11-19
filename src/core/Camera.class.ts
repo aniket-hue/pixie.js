@@ -3,27 +3,22 @@ import type { Canvas } from './Canvas.class';
 import { Events } from './events';
 import { m3 } from './math';
 
-const DEFAULT_CAMERA_CONFIG = {
-  zoom: 1,
-  x: 0,
-  y: 0,
-};
 export class Camera {
-  minZoom: number = 0.1;
-  maxZoom: number = 5;
+  minZoom = 0.1;
+  maxZoom = 5;
 
   context: Canvas;
   viewportTransformMatrix: number[];
 
-  constructor(context: Canvas, config: typeof DEFAULT_CAMERA_CONFIG = DEFAULT_CAMERA_CONFIG) {
+  constructor(context: Canvas, zoom = 1, x = 0, y = 0) {
     this.context = context;
-    this.viewportTransformMatrix = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 
-    const clampedZoom = Math.max(this.minZoom, Math.min(this.maxZoom, config.zoom));
-    const scaleMatrix = m3.scale(clampedZoom, clampedZoom);
-    const translationMatrix = m3.translate(config.x + this.context.width / 2, config.y + this.context.height / 2);
+    const clamped = Math.max(this.minZoom, Math.min(this.maxZoom, zoom));
 
-    this.viewportTransformMatrix = m3.multiply(scaleMatrix, translationMatrix);
+    const scale = m3.scale(clamped, clamped);
+    const translate = m3.translate(x + context.width / 2, y + context.height / 2);
+
+    this.viewportTransformMatrix = m3.multiply(scale, translate);
   }
 
   get zoom(): number {
@@ -39,84 +34,79 @@ export class Camera {
   }
 
   set zoom(value: number) {
-    const currentZoom = this.zoom;
-    const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, value));
-    const scale = newZoom / currentZoom;
+    const current = this.zoom;
+    const target = Math.max(this.minZoom, Math.min(this.maxZoom, value));
+    const factor = target / current;
 
-    if (scale !== 1) {
-      const scaleMatrix = m3.scale(scale, scale);
-      this.viewportTransformMatrix = m3.multiply(this.viewportTransformMatrix, scaleMatrix);
+    if (factor !== 1) {
+      const s = m3.scale(factor, factor);
+      this.viewportTransformMatrix = m3.multiply(this.viewportTransformMatrix, s);
     }
 
     this.context.fire(Events.ZOOM_CHANGED, this.zoom);
   }
 
-  zoomAt(factor: number, screenX?: number, screenY?: number) {
-    const zoomSensitivity = 0.005;
-    let dZoom = Math.exp(-factor * zoomSensitivity);
-    const currentZoom = this.zoom;
-    let newZoom = currentZoom * dZoom;
+  zoomAt(delta: number, sx?: number, sy?: number) {
+    const sensitivity = 0.005;
+    let factor = Math.exp(-delta * sensitivity);
+
+    let newZoom = this.zoom * factor;
 
     if (newZoom > this.maxZoom) {
-      dZoom = this.maxZoom / currentZoom;
+      factor = this.maxZoom / this.zoom;
       newZoom = this.maxZoom;
     }
 
     if (newZoom < this.minZoom) {
-      dZoom = this.minZoom / currentZoom;
+      factor = this.minZoom / this.zoom;
       newZoom = this.minZoom;
     }
 
-    if (dZoom === 1) return;
+    if (factor === 1) return;
 
-    if (screenX !== undefined && screenY !== undefined) {
-      const pointX = screenX;
-      const pointY = this.context.height - screenY;
+    if (sx != null && sy != null) {
+      const px = sx;
+      const py = this.context.height - sy;
 
-      const translateToPoint = m3.translate(pointX, pointY);
-      const scale = m3.scale(dZoom, dZoom);
-      const translateFromPoint = m3.translate(-pointX, -pointY);
+      const t1 = m3.translate(px, py);
+      const s = m3.scale(factor, factor);
+      const t2 = m3.translate(-px, -py);
 
-      let scaleAtPoint = m3.multiply(scale, translateFromPoint);
-      scaleAtPoint = m3.multiply(translateToPoint, scaleAtPoint);
+      let m = m3.multiply(s, t2);
+      m = m3.multiply(t1, m);
 
-      this.viewportTransformMatrix = m3.multiply(scaleAtPoint, this.viewportTransformMatrix);
+      this.viewportTransformMatrix = m3.multiply(m, this.viewportTransformMatrix);
     } else {
-      const scaleMatrix = m3.scale(dZoom, dZoom);
-      this.viewportTransformMatrix = m3.multiply(this.viewportTransformMatrix, scaleMatrix);
+      const s = m3.scale(factor, factor);
+      this.viewportTransformMatrix = m3.multiply(this.viewportTransformMatrix, s);
     }
 
     this.context.fire(Events.ZOOM_CHANGED, this.zoom);
-
     this.context.requestRender();
   }
 
-  pan(deltaX: number, deltaY: number) {
-    const currentZoom = this.zoom;
-    const panX = -deltaX / currentZoom;
-    const panY = deltaY / currentZoom;
+  pan(dx: number, dy: number) {
+    const z = this.zoom;
 
-    const translationMatrix = m3.translate(panX, panY);
+    const tx = -dx / z;
+    const ty = dy / z;
 
-    this.viewportTransformMatrix = m3.multiply(this.viewportTransformMatrix, translationMatrix);
+    const t = m3.translate(tx, ty);
+
+    this.viewportTransformMatrix = m3.multiply(this.viewportTransformMatrix, t);
 
     this.context.fire(Events.PAN_CHANGED, this.x, this.y);
-
     this.context.requestRender();
   }
 
-  screenToWorld(screenX: number, screenY: number): Point {
-    const y = this.context.height - screenY;
-    const inverseMatrix = m3.inverse(this.viewportTransformMatrix);
-    return m3.transformPoint(inverseMatrix, screenX, y);
+  screenToWorld(sx: number, sy: number): Point {
+    const y = this.context.height - sy;
+    const inv = m3.inverse(this.viewportTransformMatrix);
+    return m3.transformPoint(inv, sx, y);
   }
 
   worldToScreen(x: number, y: number): Point {
-    const point = m3.transformPoint(this.viewportTransformMatrix, x, y);
-
-    return {
-      x: point.x,
-      y: this.context.height - point.y,
-    };
+    const p = m3.transformPoint(this.viewportTransformMatrix, x, y);
+    return { x: p.x, y: this.context.height - p.y };
   }
 }

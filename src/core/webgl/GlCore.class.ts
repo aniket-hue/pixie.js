@@ -106,7 +106,8 @@ export class GlCore {
   }
 
   clear() {
-    this.ctx.clearColor(242, 240, 239, 1);
+    const color = [242, 240, 239, 255].map((c) => c / 255);
+    this.ctx.clearColor(color[0], color[1], color[2], color[3]);
     this.ctx.clear(this.ctx.COLOR_BUFFER_BIT);
   }
 
