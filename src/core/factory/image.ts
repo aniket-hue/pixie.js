@@ -58,6 +58,7 @@ export function createImage({
 
       setWidth(image, actualWidth);
       setHeight(image, actualHeight);
+
       setTexture(image, textureData);
     } catch {
       setWidth(image, width ?? 100);

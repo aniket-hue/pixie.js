@@ -13,8 +13,10 @@ import { SelectionManager } from './selection/SelectionManager.class';
 import { GlCore } from './webgl/GlCore.class';
 
 import './app/colors';
+import type { BoundingBox } from '../types';
 import { DrawingManager } from './drawing/DrawingManager.class';
 import { assert } from './lib/assert';
+import { Capture } from './webgl/Capture.class';
 import { Picking } from './webgl/Picking.class';
 
 export class Canvas {
@@ -31,6 +33,9 @@ export class Canvas {
   public transformControls: TransformControls | null = null;
 
   public modeManager: InteractionModeManager;
+
+  private capture: Capture | null = null;
+
   topCanvas: HTMLCanvasElement | null = null;
   canvasElement: HTMLCanvasElement;
 
@@ -69,6 +74,8 @@ export class Canvas {
 
     this.overlayRenderer = new OverlayRenderer(this);
     this.drawing = new DrawingManager(this);
+
+    this.capture = new Capture(this);
   }
 
   initTopCanvas(): void {
@@ -191,6 +198,20 @@ export class Canvas {
 
   getGlCore() {
     return this.glCore;
+  }
+
+  toDataURL(
+    _options: { quality?: number },
+    bounds: BoundingBox = {
+      minX: 0,
+      minY: 0,
+      maxX: this.width,
+      maxY: this.height,
+    },
+  ): string {
+    assert(this.capture !== null, 'Capture not initialized');
+
+    return this.capture.captureRegion(bounds);
   }
 
   destroy(): void {
