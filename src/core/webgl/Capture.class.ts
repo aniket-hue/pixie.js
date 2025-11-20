@@ -27,84 +27,29 @@ export class Capture {
     const { minX, minY, maxX, maxY } = p;
 
     const savedViewport = gl.ctx.getParameter(gl.ctx.VIEWPORT);
-    const savedFramebuffer = gl.ctx.getParameter(gl.ctx.FRAMEBUFFER_BINDING);
     const savedCameraTransform = [...this.camera.viewportTransformMatrix];
 
     this.adjustViewport({ minX, minY, maxX, maxY });
-
     const aspectRatio = (maxX - minX) / (maxY - minY);
 
     const height = this.camera.context.height;
-    const width = height * aspectRatio;
-
-    if (width <= 0 || height <= 0) {
-      throw new Error('Invalid capture dimensions');
-    }
-
-    const fbo = this.createFramebuffer(width, height);
+    const width = Math.ceil(height * aspectRatio);
 
     try {
-      gl.ctx.bindFramebuffer(gl.ctx.FRAMEBUFFER, fbo.framebuffer);
-
-      gl.ctx.clearColor(0, 0, 0, 0);
-      gl.ctx.clear(gl.ctx.COLOR_BUFFER_BIT | gl.ctx.DEPTH_BUFFER_BIT);
+      gl.clear();
 
       this.renderer.render(this.world);
 
       const pixels = new Uint8Array(width * height * 4);
       gl.ctx.readPixels(0, 0, width, height, gl.ctx.RGBA, gl.ctx.UNSIGNED_BYTE, pixels);
-
       const dataURL = this.pixelsToDataURL(pixels, width, height);
-
-      this.camera.context.requestRender();
 
       return dataURL;
     } finally {
-      gl.ctx.bindFramebuffer(gl.ctx.FRAMEBUFFER, savedFramebuffer);
       gl.ctx.viewport(savedViewport[0], savedViewport[1], savedViewport[2], savedViewport[3]);
       this.camera.viewportTransformMatrix = savedCameraTransform;
-      this.deleteFramebuffer(fbo);
+      this.canvas.requestRender();
     }
-  }
-
-  private createFramebuffer(width: number, height: number) {
-    const gl = this.gl.ctx;
-
-    const framebuffer = gl.createFramebuffer();
-    const texture = gl.createTexture();
-    const depthBuffer = gl.createRenderbuffer();
-
-    if (!framebuffer || !texture || !depthBuffer) {
-      throw new Error('Failed to create framebuffer resources');
-    }
-
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-    gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer);
-    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
-
-    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthBuffer);
-
-    const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-    if (status !== gl.FRAMEBUFFER_COMPLETE) {
-      throw new Error(`Framebuffer not complete: ${status}`);
-    }
-
-    return { framebuffer, texture, depthBuffer };
-  }
-
-  private deleteFramebuffer(fbo: { framebuffer: WebGLFramebuffer; texture: WebGLTexture; depthBuffer: WebGLRenderbuffer }) {
-    const gl = this.gl.ctx;
-    gl.deleteFramebuffer(fbo.framebuffer);
-    gl.deleteTexture(fbo.texture);
-    gl.deleteRenderbuffer(fbo.depthBuffer);
   }
 
   private pixelsToDataURL(pixels: Uint8Array, width: number, height: number): string {
@@ -123,6 +68,7 @@ export class Capture {
       for (let x = 0; x < width; x++) {
         const srcIdx = (y * width + x) * 4;
         const dstIdx = ((height - 1 - y) * width + x) * 4;
+
         imageData.data[dstIdx] = pixels[srcIdx];
         imageData.data[dstIdx + 1] = pixels[srcIdx + 1];
         imageData.data[dstIdx + 2] = pixels[srcIdx + 2];
@@ -155,11 +101,8 @@ export class Capture {
     let m = m3.identity();
 
     m = m3.multiply(m, m3.scale(scale, scale));
-
     m = m3.multiply(m, m3.translate(-tlx, -tly));
 
     this.camera.viewportTransformMatrix = m;
-
-    this.canvas.requestRender();
   }
 }

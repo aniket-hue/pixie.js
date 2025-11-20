@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Canvas as CanvasClass } from '../../../core/Canvas.class';
-import { createImage } from '../../../core/factory';
+import { createImage, createRectangle } from '../../../core/factory';
+import { rgbaToArgb } from '../../../core/lib/color';
 import { Sidebar } from '../../../features/Sidebar';
 import { CanvasContext } from '../model/ctx';
 
@@ -20,8 +21,19 @@ export function Canvas() {
 
     (window as any).cx = canvas;
 
+    const rectFactory = createRectangle({
+      x: 2000,
+      y: -2000,
+      width: 500,
+      height: 500,
+      // smoothing red
+      fill: rgbaToArgb(124, 0, 0, 0.5),
+    });
+
+    world.addEntityFactory(rectFactory);
+
     const imageFactory = createImage({
-      x: 0,
+      x: 3000,
       y: 0,
       // url: 'https://images.unsplash.com/photo-1706111597624-69bfaa902da0?q=80&w=987&auto=format&fit=crop&ixlib=rb-4.1.0',
       url: 'https://www.shutterstock.com/shutterstock/photos/2699634123/display_1500/stock-photo-i-need-a-geometric-design-of-a-lions-head-from-the-side-with-medium-detail-and-a-x-2699634123.jpg',
@@ -40,7 +52,9 @@ export function Canvas() {
 
   function handleMouseDown(event: React.MouseEvent<HTMLCanvasElement>) {
     const p = canvas?.camera.screenToWorld(event.clientX, event.clientY);
-    console.log(p);
+
+    const pixels = canvas?.getGlCore().readPixels(p.x, p.y, 1, 1);
+    console.log(pixels);
   }
 
   return (
