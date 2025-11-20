@@ -1,4 +1,4 @@
-import { LucideZoomIn, Square, ZoomOut } from 'lucide-react';
+import { Download, LucideZoomIn, Square, ZoomOut } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { RectangleDrawing } from '../core/drawing/impl/RectangleDrawing.class';
 import { Events } from '../core/events';
@@ -91,6 +91,20 @@ export function Sidebar() {
     );
   }
 
+  async function handleCapture() {
+    if (!canvas) {
+      return;
+    }
+
+    const selectedObjects = canvas.getSelectedObjects();
+
+    const dataUrl = await canvas.toDataURL({}, { entities: selectedObjects });
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = 'screenshot.png';
+    a.click();
+  }
+
   return (
     <div className="bg-blue-900/70 ring-1 ring-blue-700/50 backdrop-blur-md absolute left-4 top-1/2 -translate-y-1/2 z-[1000] rounded-lg px-1 py-1 shadow-md">
       <ToolbarGroup>
@@ -98,6 +112,7 @@ export function Sidebar() {
           <Square size={20} />
         </ToolbarItem>
       </ToolbarGroup>
+
       <ToolbarSeparator />
 
       <ToolbarGroup>
@@ -111,6 +126,12 @@ export function Sidebar() {
 
         <ToolbarItem onClick={handleZoomOut}>
           <ZoomOut size={20} />
+        </ToolbarItem>
+
+        <ToolbarSeparator />
+
+        <ToolbarItem onClick={handleCapture}>
+          <Download size={20} />
         </ToolbarItem>
       </ToolbarGroup>
     </div>

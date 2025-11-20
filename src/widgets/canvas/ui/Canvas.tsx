@@ -33,7 +33,7 @@ export function Canvas() {
     world.addEntityFactory(rectFactory);
 
     const imageFactory = createImage({
-      x: 3000,
+      x: 0,
       y: 0,
       // url: 'https://images.unsplash.com/photo-1706111597624-69bfaa902da0?q=80&w=987&auto=format&fit=crop&ixlib=rb-4.1.0',
       url: 'https://www.shutterstock.com/shutterstock/photos/2699634123/display_1500/stock-photo-i-need-a-geometric-design-of-a-lions-head-from-the-side-with-medium-detail-and-a-x-2699634123.jpg',
