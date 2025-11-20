@@ -1,6 +1,6 @@
 import { Camera } from './Camera.class';
 import { TransformControls } from './controls/TransformControls.class';
-import { clearAllDirty, getBounds, isDirty } from './ecs/components';
+import { clearAllDirty, getBounds, getChildren, isDirty } from './ecs/components';
 import { BoundsSystem } from './ecs/systems/BoundsSystem.class';
 import { VisibleSystem } from './ecs/systems/VisibleSystem.class';
 import { World } from './ecs/World.class';
@@ -150,6 +150,14 @@ export class Canvas {
 
   getActiveGroup(): number | null {
     return this.selectionManager.activeGroup;
+  }
+
+  getSelectedObjects(): number[] {
+    if (!this.selectionManager.activeGroup) {
+      return [];
+    }
+
+    return getChildren(this.selectionManager.activeGroup);
   }
 
   getCtx(): WebGLRenderingContext | null {
