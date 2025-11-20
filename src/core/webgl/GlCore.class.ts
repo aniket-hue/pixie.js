@@ -11,6 +11,7 @@ export class GlCore {
     const gl = canvasElement.getContext('webgl2', {
       alpha: true,
       premultipliedAlpha: false,
+      preserveDrawingBuffer: true,
     });
 
     if (!gl) {
@@ -189,7 +190,7 @@ export class GlCore {
     this.ctx.lineWidth(width);
   }
 
-  captureCanvasRegion(x: number, y: number, width: number, height: number) {
+  readPixels(x: number, y: number, width: number, height: number) {
     // Create a buffer to hold the pixel data
     const pixels = new Uint8Array(width * height * 4); // 4 bytes per pixel (RGBA)
 

@@ -1,6 +1,6 @@
 import { Camera } from './Camera.class';
 import { TransformControls } from './controls/TransformControls.class';
-import { clearAllDirty, isDirty } from './ecs/components';
+import { clearAllDirty, getBounds, isDirty } from './ecs/components';
 import { BoundsSystem } from './ecs/systems/BoundsSystem.class';
 import { VisibleSystem } from './ecs/systems/VisibleSystem.class';
 import { World } from './ecs/World.class';
@@ -202,16 +202,45 @@ export class Canvas {
 
   toDataURL(
     _options: { quality?: number },
-    bounds: BoundingBox = {
+    box: BoundingBox | { entities: number[] } = {
       minX: 0,
       minY: 0,
       maxX: this.width,
       maxY: this.height,
     },
-  ): string {
-    assert(this.capture !== null, 'Capture not initialized');
+  ): Promise<string> {
+    return new Promise((resolve) => {
+      requestIdleCallback(() => {
+        assert(this.capture !== null, 'Capture not initialized');
 
-    return this.capture.captureRegion(bounds);
+        let bounds: BoundingBox;
+
+        if ('entities' in box) {
+          const finalBounds = {
+            minX: Infinity,
+            minY: Infinity,
+            maxX: -Infinity,
+            maxY: -Infinity,
+          };
+
+          for (const entity of box.entities) {
+            const bounds = getBounds(entity);
+            console.log(bounds);
+            finalBounds.minX = Math.min(finalBounds.minX, bounds.minX);
+            finalBounds.minY = Math.min(finalBounds.minY, bounds.minY);
+            finalBounds.maxX = Math.max(finalBounds.maxX, bounds.maxX);
+            finalBounds.maxY = Math.max(finalBounds.maxY, bounds.maxY);
+          }
+
+          console.log(finalBounds);
+          bounds = finalBounds;
+        } else {
+          bounds = box;
+        }
+
+        resolve(this.capture.captureRegion(bounds));
+      });
+    });
   }
 
   destroy(): void {
