@@ -1,11 +1,12 @@
 import type { Point } from '../../types';
 import type { Camera } from '../Camera.class';
 import type { Canvas } from '../Canvas.class';
-import type { Entity } from '../ecs/Entity.class';
-import { Events } from '../events';
+import type { Entity } from '../ecs/base/Entity.class';
+import { EventBus, Events } from '../events';
 import { PRIMARY_MODIFIER_KEY } from '../events/input/constants';
 import { createSelectionGroup } from '../factory/selectionGroup';
 import { assert } from '../lib/assert';
+import { createBoundingBoxOfchildren } from '../utils/createBoundingBoxOfchildren';
 import { AddSelection } from './AddSelection.class';
 import { ClickSelection } from './ClickSelection.class';
 import { MarqueeSelection } from './MarqueeSelection.class';
@@ -67,11 +68,11 @@ export class SelectionManager {
     this.onKeyDown = this.onKeyDown.bind(this);
     this.onKeyUp = this.onKeyUp.bind(this);
 
-    this.canvas.on(Events.MOUSE_MOVE, this.onMouseMove);
-    this.canvas.on(Events.MOUSE_DOWN, this.onMouseDown);
-    this.canvas.on(Events.MOUSE_UP, this.onMouseUp);
-    this.canvas.on(Events.KEY_DOWN, this.onKeyDown);
-    this.canvas.on(Events.KEY_UP, this.onKeyUp);
+    EventBus.on(Events.MOUSE_MOVE, this.onMouseMove);
+    EventBus.on(Events.MOUSE_DOWN, this.onMouseDown);
+    EventBus.on(Events.MOUSE_UP, this.onMouseUp);
+    EventBus.on(Events.KEY_DOWN, this.onKeyDown);
+    EventBus.on(Events.KEY_UP, this.onKeyUp);
   }
 
   private onKeyDown(event: KeyboardEvent): void {
@@ -129,6 +130,14 @@ export class SelectionManager {
 
   private onMouseMove(event: MouseEvent): void {
     if (this.canvas.modeManager.isInteracting() || this.canvas.modeManager.isDrawing()) {
+      /**
+       * This is a hack to stop selection when the user is interacting with the objects
+       * Fix this
+       * Try removing next line and start interacting with the objects in some group
+       * group should get selected after moving or scaling the object.
+       * This is because of race condition exists in interaction manager and onMouseUp.
+       */
+      this.stopSelection = true;
       return;
     }
 
@@ -177,6 +186,10 @@ export class SelectionManager {
   private onMouseUp(): void {
     const state = this.state;
 
+    if (this.canvas.modeManager.isInteracting() || this.canvas.modeManager.isDrawing()) {
+      return;
+    }
+
     if (!state || !this.selectionStrategy || this.stopSelection) {
       return;
     }
@@ -185,36 +198,37 @@ export class SelectionManager {
 
     if (entities?.length) {
       if (!this.group) {
-        this.group = this.canvas.world.addEntity(createSelectionGroup({ children: entities })(this.canvas.world));
+        this.group = this.canvas.world.addEntity(createSelectionGroup({ children: entities })());
 
         this.canvas.fire(Events.SELECTION_GROUP_ADDED, {
           id: this.group.id,
         });
       } else {
-        const group = this.group;
+        /**
+         * See if this can be optimized
+         */
+        this.group.hierarchy.clearChildren();
 
-        const oldChildren = group.hierarchy.children;
-        const removedEntities = oldChildren.filter((entity) => !entities.includes(entity));
-        const addedEntities = entities.filter((entity) => !oldChildren.includes(entity));
+        const { width, height, localMatrix } = createBoundingBoxOfchildren(entities);
+        this.group.matrix.setLocalMatrix(localMatrix);
+        this.group.matrix.setWorldMatrix();
+        this.group.size.setHeight(height);
+        this.group.size.setWidth(width);
 
-        if (removedEntities.length || addedEntities.length) {
-          removedEntities.forEach((entity) => {
-            group.hierarchy.removeChild(entity);
-          });
+        entities.forEach((e) => {
+          this.group?.hierarchy.addChild(e);
+        });
 
-          addedEntities.forEach((entity) => {
-            group.hierarchy.addChild(entity);
-          });
-
-          this.canvas.fire(Events.SELECTION_GROUP_UPDATED, {
-            id: this.group.id,
-          });
-        }
+        this.canvas.fire(Events.SELECTION_GROUP_UPDATED, {
+          id: this.group.id,
+        });
       }
     } else {
+      const id = this.group?.id;
+
       this.removeGroup();
       this.canvas.fire(Events.SELECTION_GROUP_REMOVED, {
-        id: this.group?.id,
+        id,
       });
     }
 
@@ -229,10 +243,10 @@ export class SelectionManager {
   }
 
   public destroy(): void {
-    this.canvas.off(Events.MOUSE_MOVE, this.onMouseMove);
-    this.canvas.off(Events.MOUSE_DOWN, this.onMouseDown);
-    this.canvas.off(Events.MOUSE_UP, this.onMouseUp);
-    this.canvas.off(Events.KEY_DOWN, this.onKeyDown);
-    this.canvas.off(Events.KEY_UP, this.onKeyUp);
+    EventBus.off(Events.MOUSE_MOVE, this.onMouseMove);
+    EventBus.off(Events.MOUSE_DOWN, this.onMouseDown);
+    EventBus.off(Events.MOUSE_UP, this.onMouseUp);
+    EventBus.off(Events.KEY_DOWN, this.onKeyDown);
+    EventBus.off(Events.KEY_UP, this.onKeyUp);
   }
 }

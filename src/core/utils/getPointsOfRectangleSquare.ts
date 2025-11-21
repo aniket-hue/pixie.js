@@ -1,6 +1,6 @@
 import type { Point } from '../../types';
 import type { Canvas } from '../Canvas.class';
-import type { Entity } from '../ecs/Entity.class';
+import type { Entity } from '../ecs/base/Entity.class';
 import { m3 } from '../math';
 
 type ReturnType<T extends boolean> = T extends true
@@ -30,20 +30,7 @@ export const diagonalPivotMap: Record<Corner, Corner> = {
   center: 'center',
 };
 
-export function getPointsOfRectangleSquare<T extends boolean>(canvas: Canvas, entityOrId: Entity | number, withScreen: T = false as T): ReturnType<T> {
-  let entity: Entity;
-  
-  if (typeof entityOrId === 'number') {
-    // Legacy support: look up entity by ID
-    const foundEntity = canvas.world.getEntityById(entityOrId);
-    if (!foundEntity) {
-      throw new Error(`Entity with id ${entityOrId} not found`);
-    }
-    entity = foundEntity;
-  } else {
-    entity = entityOrId;
-  }
-
+export function getPointsOfRectangleSquare<T extends boolean>(canvas: Canvas, entity: Entity, withScreen: T = false as T): ReturnType<T> {
   const worldMatrix = entity.matrix.getWorldMatrix();
   const width = entity.size.width;
   const height = entity.size.height;

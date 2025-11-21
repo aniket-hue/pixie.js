@@ -19,8 +19,10 @@ export enum Events {
   SELECTION_GROUP_ADDED = 'selection_group_added',
   SELECTION_GROUP_REMOVED = 'selection_group_removed',
   SELECTION_GROUP_UPDATED = 'selection_group_updated',
+
+  LOCAL_MATRIX_CHANGED = 'local_matrix_changed',
 }
 
 export type EventKeys = Events;
 
-export { EventEmitter } from './Events.class';
+export { EventBus } from './Events.class';

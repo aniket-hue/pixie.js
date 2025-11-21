@@ -1,8 +1,6 @@
-import { Entity } from '../ecs/Entity.class';
-import type { World } from '../ecs/World.class';
+import { Entity } from '../ecs/base/Entity.class';
 
-export function createBaseEntity(world: World): Entity {
+export function createBaseEntity(): Entity {
   const entity = new Entity();
-  world.addEntity(entity);
   return entity;
 }

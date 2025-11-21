@@ -1,6 +1,6 @@
 import type { Point } from '../types';
 import type { Canvas } from './Canvas.class';
-import type { Entity } from './ecs/Entity.class';
+import type { Entity } from './ecs/base/Entity.class';
 import type { World } from './ecs/World.class';
 import { assert } from './lib/assert';
 import type { SelectionManager } from './selection/SelectionManager.class';
@@ -130,7 +130,7 @@ export class OverlayRenderer {
 
   private drawSelectionGroup(activeGroup: Entity) {
     const ctx = this.topCtx;
-    const { screenCorners: bounds } = getPointsOfRectangleSquare(this.canvas, activeGroup.id, true);
+    const { screenCorners: bounds } = getPointsOfRectangleSquare(this.canvas, activeGroup, true);
 
     const strokeColor = '#1c398e';
     const strokeWidth = 2;

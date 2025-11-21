@@ -1,7 +1,7 @@
 import type { Point } from '../../types';
 import type { Canvas } from '../Canvas.class';
-import type { Entity } from '../ecs/Entity.class';
-import { Events } from '../events';
+import type { Entity } from '../ecs/base/Entity.class';
+import { EventBus, Events } from '../events';
 import { m3 } from '../math';
 import { InteractionMode, type InteractionModeManager } from '../mode/InteractionModeManager.class';
 import { type Corner, diagonalPivotMap, getPointsOfRectangleSquare } from '../utils/getPointsOfRectangleSquare';
@@ -54,11 +54,9 @@ export class TransformControls {
     ] as const;
 
     listeners.forEach(([event, handler]) => {
-      this.canvas.on(event, handler.bind(this));
+      EventBus.on(event, handler.bind(this));
     });
   }
-
-  // Selection handlers
 
   private handleZoomChanged(): void {
     if (!this.activeGroup) return;
@@ -69,6 +67,7 @@ export class TransformControls {
 
   private handleSelectionAdded(event: { id: number }): void {
     const entity = this.canvas.world.getEntityById(event.id);
+
     if (entity) {
       this.activeGroup = entity;
       this.updateGroupCorners(entity);
@@ -99,7 +98,7 @@ export class TransformControls {
   }
 
   private updateGroupCorners(group: Entity): void {
-    const { screenCorners } = getPointsOfRectangleSquare(this.canvas, group.id, true);
+    const { screenCorners } = getPointsOfRectangleSquare(this.canvas, group, true);
     this.activeGroupCorners = screenCorners;
   }
 
@@ -113,7 +112,6 @@ export class TransformControls {
     }
 
     if (corner === 'rotate') {
-      this.modeManager.setMode(InteractionMode.ROTATING);
       this.startRotating();
       event.preventDefault();
       return;
@@ -127,8 +125,11 @@ export class TransformControls {
 
     const entity = this.canvas.picker.pick({ point: worldPos })?.[0];
 
-    if (entity && entity.interaction.draggable) {
-      this.startDragging(entity, worldPos, screenPos);
+    if (entity && this.activeGroup?.hierarchy.doesChildBelongToGroup(entity) && entity.interaction.draggable) {
+      /**
+       * If there is no active group, we're dragging the entity directly.
+       */
+      this.startDragging(this.activeGroup || entity, worldPos, screenPos);
     }
   }
 
@@ -188,7 +189,8 @@ export class TransformControls {
   private startRotating(): void {
     if (!this.activeGroup) return;
 
-    const { worldCorners } = getPointsOfRectangleSquare(this.canvas, this.activeGroup.id, false);
+    this.modeManager.setMode(InteractionMode.ROTATING);
+    const { worldCorners } = getPointsOfRectangleSquare(this.canvas, this.activeGroup, false);
     const center = worldCorners.center;
 
     const worldMatrix = this.activeGroup.matrix.getWorldMatrix();
@@ -229,6 +231,8 @@ export class TransformControls {
     });
 
     this.activeGroup.matrix.setLocalMatrix(finalMatrix);
+    this.activeGroup.matrix.setWorldMatrix();
+
     this.activeGroup.dirty.markDirty();
     this.updateGroupCorners(this.activeGroup);
     this.canvas.requestRender();
@@ -237,7 +241,9 @@ export class TransformControls {
   private startScaling(corner: Corner, mouseWorldPos: Point): void {
     if (!this.activeGroup) return;
 
-    const { worldCorners } = getPointsOfRectangleSquare(this.canvas, this.activeGroup.id, false);
+    this.modeManager.setMode(InteractionMode.SCALING);
+
+    const { worldCorners } = getPointsOfRectangleSquare(this.canvas, this.activeGroup, false);
     const pivot = worldCorners[diagonalPivotMap[corner]];
 
     const worldMatrix = this.activeGroup.matrix.getWorldMatrix();
@@ -258,8 +264,6 @@ export class TransformControls {
       startDistX,
       startDistY,
     };
-
-    this.modeManager.setMode(InteractionMode.SCALING);
   }
 
   private updateScaling(event: MouseEvent, mouseWorldPos: Point): void {
@@ -299,21 +303,24 @@ export class TransformControls {
     );
 
     this.activeGroup.matrix.setLocalMatrix(newMatrix);
+    this.activeGroup.matrix.setWorldMatrix();
+
     this.activeGroup.dirty.markDirty();
     this.updateGroupCorners(this.activeGroup);
+
     this.canvas.requestRender();
   }
 
   private startDragging(entity: Entity, worldPos: Point, screenPos: Point): void {
-    const worldMatrix = entity.matrix.getWorldMatrix();
+    const localMatrix = entity.matrix.getLocalMatrix();
 
     this.dragState = {
       entityId: entity.id,
       entity,
       startPos: screenPos,
       offset: {
-        x: worldPos.x - worldMatrix[6],
-        y: worldPos.y - worldMatrix[7],
+        x: worldPos.x - localMatrix[6],
+        y: worldPos.y - localMatrix[7],
       },
     };
   }
@@ -322,13 +329,14 @@ export class TransformControls {
     if (!this.dragState) return;
 
     const { entity, offset } = this.dragState;
-    const worldMatrix = [...entity.matrix.getWorldMatrix()];
+    const localMatrix = entity.matrix.getLocalMatrix();
 
-    worldMatrix[6] = worldPos.x - offset.x;
-    worldMatrix[7] = worldPos.y - offset.y;
+    localMatrix[6] = worldPos.x - offset.x;
+    localMatrix[7] = worldPos.y - offset.y;
 
-    entity.matrix.setWorldMatrix(worldMatrix);
-    entity.dirty.markDirty();
+    entity.matrix.setLocalMatrix(localMatrix);
+    entity.matrix.setWorldMatrix();
+
     this.canvas.fire(Events.OBJECT_MODIFIED, { id: entity.id });
     this.canvas.requestRender();
   }
@@ -377,7 +385,7 @@ export class TransformControls {
     ] as const;
 
     listeners.forEach(([event, handler]) => {
-      this.canvas.off(event, handler);
+      EventBus.off(event, handler);
     });
   }
 }

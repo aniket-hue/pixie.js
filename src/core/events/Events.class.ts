@@ -24,3 +24,5 @@ export class EventEmitter {
     this.callbacks = {};
   }
 }
+
+export const EventBus = new EventEmitter();

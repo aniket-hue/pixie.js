@@ -1,7 +1,6 @@
 import { BLACK_COLOR } from '../app/colors';
-import { TextureComponent } from '../ecs/components/TextureComponent.class';
-import type { Entity } from '../ecs/Entity.class';
-import type { World } from '../ecs/World.class';
+import { TextureComponent } from '../ecs/base/components/TextureComponent.class';
+import type { Entity } from '../ecs/base/Entity.class';
 import { m3 } from '../math/matrix';
 import { TextureManager } from '../utils/TextureManager.class';
 import { createBaseEntity } from './base';
@@ -23,8 +22,8 @@ export function createImage({
   draggable = true,
   selectable = true,
 }: ImageProps) {
-  return async (world: World): Promise<Entity> => {
-    const image = createBaseEntity(world);
+  return (): Entity => {
+    const image = createBaseEntity();
 
     const matrix = m3.compose({
       tx: x,
@@ -34,21 +33,23 @@ export function createImage({
       r: angle,
     });
 
-    // setWorldMatrix will automatically set local matrix for root entities
-    image.matrix.setWorldMatrix(matrix);
+    // For root entities, local matrix = world matrix
+    image.matrix.setLocalMatrix(matrix);
+    image.matrix.setWorldMatrix();
 
     // Load texture
     const textureManager = TextureManager.getInstance();
     try {
-      const textureData = await textureManager.loadTexture(url);
+      textureManager.loadTexture(url).then((textureData) => {
+        const actualWidth = width ?? textureData.width;
+        const actualHeight = height ?? textureData.height;
 
-      const actualWidth = width ?? textureData.width;
-      const actualHeight = height ?? textureData.height;
+        image.size.setWidth(actualWidth);
+        image.size.setHeight(actualHeight);
 
-      image.size.setWidth(actualWidth);
-      image.size.setHeight(actualHeight);
-
-      image.texture = new TextureComponent(textureData);
+        image.texture = new TextureComponent(textureData);
+        image.dirty.markDirty();
+      });
     } catch {
       image.size.setWidth(width ?? 100);
       image.size.setHeight(height ?? 100);

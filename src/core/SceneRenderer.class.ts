@@ -1,6 +1,6 @@
 import type { Camera } from './Camera.class';
 import type { Canvas } from './Canvas.class';
-import type { Entity } from './ecs/Entity.class';
+import type { Entity } from './ecs/base/Entity.class';
 import type { World } from './ecs/World.class';
 import { argbToRgba } from './lib/color';
 import { TextureManager } from './utils/TextureManager.class';
@@ -45,10 +45,8 @@ export class SceneRenderer {
 
   private camera: Camera;
   public textureManager: TextureManager;
-  private canvas: Canvas;
 
   constructor(context: Canvas) {
-    this.canvas = context;
     this.gl = context.getGlCore();
     this.camera = context.camera;
     this.textureManager = TextureManager.getInstance();
@@ -308,63 +306,108 @@ export class SceneRenderer {
     gl.drawArraysInstanced(gl.ctx.TRIANGLES, 0, 6, instanceCount);
   }
 
+  // /**
+  //  * Recursively collect all entities in the scene graph (DFS traversal)
+  //  */
+  // private collectEntitiesDFS(entity: Entity, result: Entity[]): void {
+  //   // Add current entity if visible
+  //   if (entity.visibility.visible) {
+  //     result.push(entity);
+  //   }
+
+  //   // Recursively add children (DFS)
+  //   for (const child of entity.hierarchy.children) {
+  //     this.collectEntitiesDFS(child, result);
+  //   }
+  // }
+
+  // render(world: World) {
+  //   this.updateViewportAndResolution();
+
+  //   const allEntities: Entity[] = [];
+
+  //   console.log(world.getEntities());
+
+  //   // DFS traversal: collect all entities from root entities
+  //   for (const rootEntity of world.getEntities()) {
+  //     this.collectEntitiesDFS(rootEntity, allEntities);
+  //   }
+
+  //   const nonTexturedEntities: Entity[] = [];
+  //   const texturedEntities: Entity[] = [];
+
+  //   // Separate entities by texture
+  //   for (const entity of allEntities) {
+  //     if (entity.texture !== undefined) {
+  //       texturedEntities.push(entity);
+  //     } else {
+  //       nonTexturedEntities.push(entity);
+  //     }
+  //   }
+
+  //   if (nonTexturedEntities.length === 0 && texturedEntities.length === 0) {
+  //     return;
+  //   }
+
+  //   this.updateEntities(nonTexturedEntities);
+
+  //   const groupTexturedEntities = texturedEntities.reduce(
+  //     (acc, entity) => {
+  //       const textureData = entity.texture!.data;
+  //       const bin = textureData.bin;
+
+  //       if (!acc[bin]) {
+  //         acc[bin] = [];
+  //       }
+
+  //       acc[bin].push(entity);
+
+  //       return acc;
+  //     },
+  //     {} as Record<number, Entity[]>,
+  //   );
+
+  //   // Flush any pending atlas updates before rendering
+  //   this.textureManager.flushAtlasUpdates();
+
+  //   for (const bin in groupTexturedEntities) {
+  //     const atlasTexture = this.textureManager.getAtlasTexture(+bin);
+
+  //     if (atlasTexture) {
+  //       this.gl.ctx.activeTexture(this.gl.ctx.TEXTURE0);
+  //       this.gl.ctx.bindTexture(this.gl.ctx.TEXTURE_2D, atlasTexture);
+  //       this.gl.setUniform1i('basic2DProgram', 'u_texture', 0);
+  //     }
+
+  //     this.updateEntities(groupTexturedEntities[bin]);
+  //   }
+  // }
+
+  private collectEntitiesDFS(entity: Entity, result: Entity[]): void {
+    if (entity.visibility.visible) {
+      result.push(entity);
+    }
+
+    for (const child of entity.hierarchy.children) {
+      this.collectEntitiesDFS(child, result);
+    }
+  }
+
   render(world: World) {
     this.updateViewportAndResolution();
 
-    const nonTexturedEntities: Entity[] = [];
-    const texturedEntities: Entity[] = [];
+    const allEntities: Entity[] = [];
 
-    for (const entity of world.getEntities()) {
-      if (!entity.visibility.visible) {
-        continue;
-      }
-
-      if (this.canvas.getActiveGroup() === entity.id) {
-        continue;
-      }
-
-      if (entity.texture !== undefined) {
-        texturedEntities.push(entity);
-      } else {
-        nonTexturedEntities.push(entity);
-      }
+    for (const root of world.getEntities()) {
+      this.collectEntitiesDFS(root, allEntities);
     }
 
-    if (nonTexturedEntities.length === 0 && texturedEntities.length === 0) {
-      return;
-    }
+    if (allEntities.length === 0) return;
 
-    this.updateEntities(nonTexturedEntities);
-
-    const groupTexturedEntities = texturedEntities.reduce(
-      (acc, entity) => {
-        const textureData = entity.texture!.data;
-        const bin = textureData.bin;
-
-        if (!acc[bin]) {
-          acc[bin] = [];
-        }
-
-        acc[bin].push(entity);
-
-        return acc;
-      },
-      {} as Record<number, Entity[]>,
-    );
-
-    // Flush any pending atlas updates before rendering
+    // Flush atlas changes before drawing
     this.textureManager.flushAtlasUpdates();
 
-    for (const bin in groupTexturedEntities) {
-      const atlasTexture = this.textureManager.getAtlasTexture(+bin);
-
-      if (atlasTexture) {
-        this.gl.ctx.activeTexture(this.gl.ctx.TEXTURE0);
-        this.gl.ctx.bindTexture(this.gl.ctx.TEXTURE_2D, atlasTexture);
-        this.gl.setUniform1i('basic2DProgram', 'u_texture', 0);
-      }
-
-      this.updateEntities(groupTexturedEntities[bin]);
-    }
+    // One render pass
+    this.updateEntities(allEntities);
   }
 }

@@ -1,8 +1,8 @@
 import { Camera } from './Camera.class';
 import { TransformControls } from './controls/TransformControls.class';
-import type { Entity } from './ecs/Entity.class';
+import type { Entity } from './ecs/base/Entity.class';
 import { World } from './ecs/World.class';
-import { EventEmitter, type EventKeys } from './events';
+import { EventBus, type EventKeys } from './events';
 import { InputHandler } from './events/input/InputHandler.class';
 import { InteractionModeManager } from './mode/InteractionModeManager.class';
 import { OverlayRenderer } from './OverlayRenderer.class';
@@ -18,7 +18,6 @@ import { Capture } from './webgl/Capture.class';
 import { Picking } from './webgl/Picking.class';
 
 export class Canvas {
-  private events: EventEmitter;
   private glCore: GlCore;
   private inputHandler: InputHandler;
 
@@ -50,7 +49,6 @@ export class Canvas {
     this.canvasElement = canvas;
 
     this.glCore = new GlCore(this.canvasElement);
-    this.events = new EventEmitter();
     this.world = new World();
     this.camera = new Camera(this);
     this.picker = new Picking(this);
@@ -97,20 +95,11 @@ export class Canvas {
 
         const allEntities = this.world.getEntities();
 
-        // Update visibility and bounds for dirty entities
-        for (const entity of allEntities) {
-          if (entity.dirty.dirty) {
-            entity.visibility.updateVisibility();
-            this.world.updateEntityBounds(entity);
-          }
-        }
-
         this.sceneRenderer.render(this.world);
         this.overlayRenderer.render(this.world);
 
         this.drawing.render();
 
-        // Clear dirty flags
         for (const entity of allEntities) {
           entity.dirty.clearDirty();
         }
@@ -187,15 +176,15 @@ export class Canvas {
   }
 
   on(event: EventKeys, callback: (...args: any[]) => void): void {
-    this.events.on(event, callback);
+    EventBus.on(event, callback);
   }
 
   off(event: EventKeys, callback: (...args: any[]) => void): void {
-    this.events.off(event, callback);
+    EventBus.off(event, callback);
   }
 
   fire(event: EventKeys, ...args: any[]): void {
-    this.events.emit(event, ...args);
+    EventBus.emit(event, ...args);
   }
 
   getGlCore() {
@@ -245,7 +234,7 @@ export class Canvas {
   }
 
   destroy(): void {
-    this.events.destroy();
+    EventBus.destroy();
     this.inputHandler.destroy();
     if (this.transformControls) {
       this.transformControls.destroy();

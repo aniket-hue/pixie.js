@@ -1,4 +1,4 @@
-import { computeBoundsOfMatrix } from '../../utils/computeBoundsOfMatrix';
+import { computeBoundsOfMatrix } from '../../../utils/computeBoundsOfMatrix';
 import type { Entity } from '../Entity.class';
 
 export class BoundsComponent {

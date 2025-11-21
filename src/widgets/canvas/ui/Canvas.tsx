@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Canvas as CanvasClass } from '../../../core/Canvas.class';
 import { createImage, createRectangle } from '../../../core/factory';
+import { createGroup } from '../../../core/factory/group';
 import { rgbaToArgb } from '../../../core/lib/color';
 import { Sidebar } from '../../../features/Sidebar';
 import { CanvasContext } from '../model/ctx';
@@ -21,21 +22,26 @@ export function Canvas() {
 
     (window as any).cx = canvas;
 
+    const groupFactory = createGroup();
+
+    const groupEntity = groupFactory();
+
+    world.addEntity(groupEntity);
+
     const rectFactory = createRectangle({
-      x: 2000,
-      y: -2000,
+      x: 1000,
+      y: 1000,
       width: 500,
       height: 500,
-      // smoothing red
-      fill: rgbaToArgb(124, 0, 0, 0.5),
+      fill: rgbaToArgb(124, 244, 0, 1),
     });
 
-    const rectEntity = rectFactory(world);
-    world.addEntity(rectEntity);
+    const rectEntity = rectFactory();
+    // world.addEntity(rectEntity);
 
     const imageFactory = createImage({
-      x: 0,
-      y: 0,
+      x: -100,
+      y: -100,
       // url: 'https://images.unsplash.com/photo-1706111597624-69bfaa902da0?q=80&w=987&auto=format&fit=crop&ixlib=rb-4.1.0',
       url: 'https://www.shutterstock.com/shutterstock/photos/2699634123/display_1500/stock-photo-i-need-a-geometric-design-of-a-lions-head-from-the-side-with-medium-detail-and-a-x-2699634123.jpg',
       scaleX: 1,
@@ -43,20 +49,22 @@ export function Canvas() {
       angle: 0,
     });
 
-    imageFactory(world).then(() => {
-      canvas.zoom = 0.5;
+    const imageEntity = imageFactory();
+    // world.addEntity(imageEntity);
+
+    setTimeout(() => {
+      groupEntity.style.setFill(rgbaToArgb(255, 0, 0, 0.2));
+
+      groupEntity.hierarchy.addChild(imageEntity);
+      groupEntity.hierarchy.addChild(rectEntity);
+
       canvas.requestRender();
-    });
+    }, 1000);
 
     canvas.requestRender();
   }, []);
 
-  function handleMouseDown(event: React.MouseEvent<HTMLCanvasElement>) {
-    const p = canvas?.camera.screenToWorld(event.clientX, event.clientY);
-
-    const pixels = canvas?.getGlCore().readPixels(p.x, p.y, 1, 1);
-    console.log(pixels);
-  }
+  function handleMouseDown(event: React.MouseEvent<HTMLCanvasElement>) {}
 
   return (
     <CanvasContext.Provider value={{ canvas }}>

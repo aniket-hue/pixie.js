@@ -1,5 +1,5 @@
 import RBush from 'rbush';
-import type { Entity } from './Entity.class';
+import type { Entity } from './base/Entity.class';
 
 interface TreeItem {
   id: number;

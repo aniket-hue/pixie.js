@@ -1,6 +1,7 @@
+import { iterateReverse } from '../../shared/array';
 import type { BoundingBox, Point } from '../../types';
 import type { Canvas } from '../Canvas.class';
-import type { Entity } from '../ecs/Entity.class';
+import type { Entity } from '../ecs/base/Entity.class';
 import { m3 } from '../math';
 
 interface PickOptionsBoundingBox {
@@ -38,9 +39,7 @@ export class Picking {
     const allIntersecting: Entity[] = [];
     const tree = this.canvas.world.tree;
 
-    const intersectingIds = tree
-      .search(boundingBox)
-      .map((item) => item.id);
+    const intersectingIds = tree.search(boundingBox).map((item) => item.id);
 
     for (const id of intersectingIds) {
       const entity = this.canvas.world.getEntityById(id);
@@ -52,18 +51,39 @@ export class Picking {
     return allIntersecting;
   }
 
-  pick(options: PickOptionsPoint | PickOptionsBoundingBox): Entity[] | null {
+  pick(options: PickOptionsPoint | PickOptionsBoundingBox, entities = Array.from(this.canvas.world.getEntities())): Entity[] | null {
     if ('point' in options) {
-      const array = Array.from(this.canvas.world.getEntities());
+      let selectedEntities: Entity[] = [];
 
-      for (let i = array.length - 1; i >= 0; i--) {
-        const entity = array[i];
+      for (let i = entities.length - 1; i >= 0; i--) {
+        const entity = entities[i];
 
-        if (this.containsPoint(entity, options.point.x, options.point.y)) {
-          if (!options.filter || options.filter(entity)) {
-            return [entity];
+        if (options.filter?.(entity) === false) {
+          continue;
+        }
+
+        const isIntersecting = this.containsPoint(entity, options.point.x, options.point.y);
+
+        if (!isIntersecting) {
+          continue;
+        }
+
+        if (entity.hierarchy.children.length) {
+          const childrens = this.pick({ point: options.point, filter: options.filter }, entity.hierarchy.children);
+
+          if (childrens?.length) {
+            selectedEntities = childrens;
+            break;
           }
         }
+
+        selectedEntities = [entity];
+
+        break;
+      }
+
+      if (selectedEntities.length) {
+        return selectedEntities;
       }
 
       return null;
