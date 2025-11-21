@@ -1,10 +1,8 @@
 import { Camera } from './Camera.class';
 import { TransformControls } from './controls/TransformControls.class';
-import { clearAllDirty, getBounds, getChildren, isDirty } from './ecs/components';
-import { BoundsSystem } from './ecs/systems/BoundsSystem.class';
-import { VisibleSystem } from './ecs/systems/VisibleSystem.class';
+import type { Entity } from './ecs/Entity.class';
 import { World } from './ecs/World.class';
-import { EventEmitter, type EventKeys, Events } from './events';
+import { EventEmitter, type EventKeys } from './events';
 import { InputHandler } from './events/input/InputHandler.class';
 import { InteractionModeManager } from './mode/InteractionModeManager.class';
 import { OverlayRenderer } from './OverlayRenderer.class';
@@ -23,9 +21,6 @@ export class Canvas {
   private events: EventEmitter;
   private glCore: GlCore;
   private inputHandler: InputHandler;
-
-  private visibleSystem: VisibleSystem;
-  private boundsSystem: BoundsSystem;
 
   private sceneRenderer: SceneRenderer;
   public overlayRenderer: OverlayRenderer;
@@ -63,8 +58,6 @@ export class Canvas {
     this.modeManager = new InteractionModeManager();
     this.transformControls = new TransformControls(this, this.modeManager);
     this.selectionManager = new SelectionManager(this);
-    this.visibleSystem = new VisibleSystem();
-    this.boundsSystem = new BoundsSystem(this);
     this.sceneRenderer = new SceneRenderer(this);
 
     this.resize();
@@ -102,24 +95,25 @@ export class Canvas {
       requestAnimationFrame(() => {
         this.glCore.clear();
 
-        const dirtyEntities = [];
         const allEntities = this.world.getEntities();
 
-        for (const eid of allEntities) {
-          if (isDirty(eid)) {
-            dirtyEntities.push(eid);
+        // Update visibility and bounds for dirty entities
+        for (const entity of allEntities) {
+          if (entity.dirty.dirty) {
+            entity.visibility.updateVisibility();
+            this.world.updateEntityBounds(entity);
           }
         }
-
-        this.visibleSystem.update(dirtyEntities);
-        this.boundsSystem.update(dirtyEntities);
 
         this.sceneRenderer.render(this.world);
         this.overlayRenderer.render(this.world);
 
         this.drawing.render();
 
-        clearAllDirty();
+        // Clear dirty flags
+        for (const entity of allEntities) {
+          entity.dirty.clearDirty();
+        }
 
         resolve();
       });
@@ -149,15 +143,15 @@ export class Canvas {
   }
 
   getActiveGroup(): number | null {
-    return this.selectionManager.activeGroup;
+    return this.selectionManager.activeGroup?.id ?? null;
   }
 
-  getSelectedObjects(): number[] {
+  getSelectedObjects(): Entity[] {
     if (!this.selectionManager.activeGroup) {
       return [];
     }
 
-    return getChildren(this.selectionManager.activeGroup);
+    return this.selectionManager.activeGroup.hierarchy.children;
   }
 
   getCtx(): WebGLRenderingContext | null {
@@ -210,7 +204,7 @@ export class Canvas {
 
   toDataURL(
     _options: { quality?: number },
-    box: BoundingBox | { entities: number[] } = {
+    box: BoundingBox | { entities: Entity[] } = {
       minX: 0,
       minY: 0,
       maxX: this.width,
@@ -232,12 +226,11 @@ export class Canvas {
           };
 
           for (const entity of box.entities) {
-            const bounds = getBounds(entity);
-            console.log(bounds);
-            finalBounds.minX = Math.min(finalBounds.minX, bounds.minX);
-            finalBounds.minY = Math.min(finalBounds.minY, bounds.minY);
-            finalBounds.maxX = Math.max(finalBounds.maxX, bounds.maxX);
-            finalBounds.maxY = Math.max(finalBounds.maxY, bounds.maxY);
+            console.log(entity.bounds);
+            finalBounds.minX = Math.min(finalBounds.minX, entity.bounds.minX);
+            finalBounds.minY = Math.min(finalBounds.minY, entity.bounds.minY);
+            finalBounds.maxX = Math.max(finalBounds.maxX, entity.bounds.maxX);
+            finalBounds.maxY = Math.max(finalBounds.maxY, entity.bounds.maxY);
           }
 
           console.log(finalBounds);

@@ -1,8 +1,10 @@
 import type { Point } from '../../types';
+import type { Entity } from '../ecs/Entity.class';
 import type { Corner } from '../utils/getPointsOfRectangleSquare';
 
 export interface DragState {
   entityId: number;
+  entity: Entity;
   offset: Point;
   startPos: Point;
 }

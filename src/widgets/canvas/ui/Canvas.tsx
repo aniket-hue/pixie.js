@@ -30,7 +30,8 @@ export function Canvas() {
       fill: rgbaToArgb(124, 0, 0, 0.5),
     });
 
-    world.addEntityFactory(rectFactory);
+    const rectEntity = rectFactory(world);
+    world.addEntity(rectEntity);
 
     const imageFactory = createImage({
       x: 0,

@@ -1,28 +1,9 @@
-export { Bounds, getBounds, setBounds } from './bounds';
-export { addChild, Children, clearChildren, getChildren, removeChild } from './children';
-export { clearAllDirty, clearDirty, isDirty, markDirty } from './dirty';
-export {
-  getDraggable,
-  getSelectable,
-  getSelected,
-  Interaction,
-  setDraggable,
-  setSelectable,
-  setSelected,
-} from './interaction';
-export { defineComponent } from './lib';
-export {
-  getLocalMatrix,
-  getWorldMatrix,
-  LocalMatrix,
-  setLocalMatrix,
-  setLocalMatrixDirect,
-  setWorldMatrix,
-  setWorldMatrixDirect,
-  WorldMatrix,
-} from './matrix';
-export { getParent, Parent, updateParent } from './parent';
-export { getHeight, getWidth, Size, setHeight, setWidth } from './size';
-export { getFill, getStroke, getStrokeWidth, Style, setFill, setStroke, setStrokeWidth } from './style';
-export { getTexture, hasTexture, removeTexture, setTexture, type TextureData } from './texture';
-export { isVisible, setVisible, Visibility } from './visible';
+export { BoundsComponent } from './BoundsComponent.class';
+export { DirtyComponent } from './DirtyComponent.class';
+export { HierarchyComponent } from './HierarchyComponent.class';
+export { InteractionComponent } from './InteractionComponent.class';
+export { MatrixComponent } from './MatrixComponent.class';
+export { SizeComponent } from './SizeComponent.class';
+export { StyleComponent } from './StyleComponent.class';
+export { TextureComponent, type TextureData } from './TextureComponent.class';
+export { VisibilityComponent } from './VisibilityComponent.class';

@@ -1,7 +1,7 @@
 import type { Point } from '../../types';
 import type { Camera } from '../Camera.class';
 import type { Canvas } from '../Canvas.class';
-import { addChild, clearChildren, getChildren, removeChild } from '../ecs/components/children';
+import type { Entity } from '../ecs/Entity.class';
 import { Events } from '../events';
 import { PRIMARY_MODIFIER_KEY } from '../events/input/constants';
 import { createSelectionGroup } from '../factory/selectionGroup';
@@ -28,7 +28,7 @@ export class SelectionManager {
   private camera: Camera;
   private canvas: Canvas;
 
-  private group: number | null = null;
+  private group: Entity | null = null;
 
   private selectionStrategy: MarqueeSelection | ClickSelection | AddSelection;
   private selections: Selections = {
@@ -46,7 +46,7 @@ export class SelectionManager {
     current?: Point;
   } | null = null;
 
-  get activeGroup(): number | null {
+  get activeGroup(): Entity | null {
     return this.group;
   }
 
@@ -169,7 +169,7 @@ export class SelectionManager {
       return;
     }
 
-    clearChildren(this.group);
+    this.group.hierarchy.clearChildren();
     this.canvas.world.removeEntity(this.group);
     this.group = null;
   }
@@ -185,36 +185,36 @@ export class SelectionManager {
 
     if (entities?.length) {
       if (!this.group) {
-        this.group = this.canvas.world.addEntityFactory(createSelectionGroup({ children: entities }));
+        this.group = this.canvas.world.addEntity(createSelectionGroup({ children: entities })(this.canvas.world));
 
         this.canvas.fire(Events.SELECTION_GROUP_ADDED, {
-          id: this.group,
+          id: this.group.id,
         });
       } else {
         const group = this.group;
 
-        const oldChildren = getChildren(group);
+        const oldChildren = group.hierarchy.children;
         const removedEntities = oldChildren.filter((entity) => !entities.includes(entity));
         const addedEntities = entities.filter((entity) => !oldChildren.includes(entity));
 
         if (removedEntities.length || addedEntities.length) {
           removedEntities.forEach((entity) => {
-            removeChild(group, entity);
+            group.hierarchy.removeChild(entity);
           });
 
           addedEntities.forEach((entity) => {
-            addChild(group, entity);
+            group.hierarchy.addChild(entity);
           });
 
           this.canvas.fire(Events.SELECTION_GROUP_UPDATED, {
-            id: this.group,
+            id: this.group.id,
           });
         }
       }
     } else {
       this.removeGroup();
       this.canvas.fire(Events.SELECTION_GROUP_REMOVED, {
-        id: this.group,
+        id: this.group?.id,
       });
     }
 

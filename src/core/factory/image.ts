@@ -1,17 +1,6 @@
 import { BLACK_COLOR } from '../app/colors';
-import {
-  markDirty,
-  setDraggable,
-  setFill,
-  setHeight,
-  setSelectable,
-  setStroke,
-  setStrokeWidth,
-  setTexture,
-  setWidth,
-  setWorldMatrix,
-} from '../ecs/components';
-import { setVisible } from '../ecs/components/visible';
+import { TextureComponent } from '../ecs/components/TextureComponent.class';
+import type { Entity } from '../ecs/Entity.class';
 import type { World } from '../ecs/World.class';
 import { m3 } from '../math/matrix';
 import { TextureManager } from '../utils/TextureManager.class';
@@ -34,7 +23,7 @@ export function createImage({
   draggable = true,
   selectable = true,
 }: ImageProps) {
-  return async (world: World) => {
+  return async (world: World): Promise<Entity> => {
     const image = createBaseEntity(world);
 
     const matrix = m3.compose({
@@ -46,7 +35,7 @@ export function createImage({
     });
 
     // setWorldMatrix will automatically set local matrix for root entities
-    setWorldMatrix(image, matrix);
+    image.matrix.setWorldMatrix(matrix);
 
     // Load texture
     const textureManager = TextureManager.getInstance();
@@ -56,15 +45,15 @@ export function createImage({
       const actualWidth = width ?? textureData.width;
       const actualHeight = height ?? textureData.height;
 
-      setWidth(image, actualWidth);
-      setHeight(image, actualHeight);
+      image.size.setWidth(actualWidth);
+      image.size.setHeight(actualHeight);
 
-      setTexture(image, textureData);
+      image.texture = new TextureComponent(textureData);
     } catch {
-      setWidth(image, width ?? 100);
-      setHeight(image, height ?? 100);
+      image.size.setWidth(width ?? 100);
+      image.size.setHeight(height ?? 100);
 
-      setTexture(image, {
+      image.texture = new TextureComponent({
         texture: null,
         image: null,
         url,
@@ -79,17 +68,17 @@ export function createImage({
       });
     }
 
-    setFill(image, fill);
-    setStroke(image, stroke);
-    setStrokeWidth(image, strokeWidth);
+    image.style.setFill(fill);
+    image.style.setStroke(stroke);
+    image.style.setStrokeWidth(strokeWidth);
 
-    setDraggable(image, draggable);
-    setSelectable(image, selectable);
+    image.interaction.setDraggable(draggable);
+    image.interaction.setSelectable(selectable);
 
-    markDirty(image);
+    image.dirty.markDirty();
 
     if (visible !== undefined) {
-      setVisible(image, visible);
+      image.visibility.setVisible(visible);
     }
 
     return image;

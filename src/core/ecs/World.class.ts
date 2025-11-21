@@ -1,5 +1,5 @@
 import RBush from 'rbush';
-import { setBounds } from './components';
+import type { Entity } from './Entity.class';
 
 interface TreeItem {
   id: number;
@@ -8,83 +8,77 @@ interface TreeItem {
   maxX: number;
   maxY: number;
 }
-export class World {
-  entities: Set<number>;
-  nextEntity: number;
-  components: Map<any, Set<number>>;
 
+export class World {
+  entities: Set<Entity>;
   tree: RBush<TreeItem>;
   treeMap: Map<number, TreeItem>;
 
   constructor() {
     this.entities = new Set();
-    this.nextEntity = 1;
-    this.components = new Map();
     this.tree = new RBush();
     this.treeMap = new Map();
   }
 
-  addEntityFactory(factory: (world: World) => number) {
-    const eid = factory(this);
-    this.entities.add(eid);
+  addEntity(entity: Entity): Entity {
+    this.entities.add(entity);
 
-    return eid;
+    const bounds = entity.bounds.updateBounds();
+    const newBounds = { id: entity.id, ...bounds };
+
+    this.treeMap.set(entity.id, newBounds);
+    this.tree.insert(newBounds);
+
+    return entity;
   }
 
-  addEntity() {
-    const eid = this.nextEntity++;
+  removeEntity(entity: Entity): void {
+    this.entities.delete(entity);
 
-    this.entities.add(eid);
-
-    const bounds = setBounds(eid);
-
-    if (bounds) {
-      const newBounds = { id: eid, ...bounds };
-
-      this.treeMap.set(eid, newBounds);
-      this.tree.insert(newBounds);
-    }
-
-    return eid;
-  }
-
-  removeEntity(eid: number) {
-    this.entities.delete(eid);
-
-    const bounds = this.treeMap.get(eid);
+    const bounds = this.treeMap.get(entity.id);
 
     if (bounds) {
       this.tree.remove(bounds);
-      this.treeMap.delete(eid);
-    }
-
-    for (const comp of this.components.values()) {
-      comp.delete(eid);
+      this.treeMap.delete(entity.id);
     }
   }
 
-  addComponent(comp: any, eid: number) {
-    if (!this.components.has(comp)) {
-      this.components.set(comp, new Set());
-    }
-
-    this.components.get(comp)!.add(eid);
-  }
-
-  removeComponent(comp: any, eid: number) {
-    this.components.get(comp)?.delete(eid);
-  }
-
-  query(comps: any[]) {
-    const sets = comps.map((c) => this.components.get(c) ?? new Set());
-    return [...sets.reduce((a, b) => new Set([...a].filter((x) => b.has(x))))];
-  }
-
-  getEntities() {
+  getEntities(): Set<Entity> {
     return this.entities;
   }
 
-  hasComponent(comp: any, eid: number) {
-    return this.components.has(comp) && this.components.get(comp)!.has(eid);
+  getEntityById(id: number): Entity | undefined {
+    for (const entity of this.entities) {
+      if (entity.id === id) {
+        return entity;
+      }
+    }
+    return undefined;
+  }
+
+  updateBoundsForDirtyEntities(): void {
+    for (const entity of this.entities) {
+      if (entity.dirty.dirty) {
+        this.updateEntityBounds(entity);
+      }
+    }
+  }
+
+  updateEntityBounds(entity: Entity): void {
+    const oldBounds = this.treeMap.get(entity.id);
+
+    if (oldBounds) {
+      this.tree.remove(oldBounds);
+    }
+
+    const bounds = entity.bounds.updateBounds();
+    const newBounds = { id: entity.id, ...bounds };
+
+    this.treeMap.set(entity.id, newBounds);
+    this.tree.insert(newBounds);
+  }
+
+  getBounds(entity: Entity): { id: number; minX: number; minY: number; maxX: number; maxY: number } | undefined {
+    return this.treeMap.get(entity.id);
   }
 }

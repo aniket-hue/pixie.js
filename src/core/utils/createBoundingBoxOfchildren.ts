@@ -1,4 +1,4 @@
-import { getHeight, getWidth, getWorldMatrix } from '../ecs/components';
+import type { Entity } from '../ecs/Entity.class';
 import { m3 } from '../math';
 import { computeBoundsOfMatrix } from './computeBoundsOfMatrix';
 
@@ -20,7 +20,7 @@ function getBounds({ worldMatrix, size }: { worldMatrix: number[]; size: { width
   });
 }
 
-export function createBoundingBoxOfchildren(children: number[]) {
+export function createBoundingBoxOfchildren(children: Entity[]) {
   if (!children.length) {
     return {
       localMatrix: m3.identity(),
@@ -37,13 +37,15 @@ export function createBoundingBoxOfchildren(children: number[]) {
   };
 
   children.forEach((child) => {
-    const worldMatrix = getWorldMatrix(child);
+    const worldMatrix = child.matrix.getWorldMatrix();
+    const width = child.size.width;
+    const height = child.size.height;
 
     const bounds = getBounds({
       worldMatrix,
       size: {
-        width: getWidth(child),
-        height: getHeight(child),
+        width,
+        height,
       },
     });
 
