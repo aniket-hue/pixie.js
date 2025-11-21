@@ -1,6 +1,6 @@
 import type { Point } from '../../types';
 import type { Canvas } from '../Canvas.class';
-import type { Entity } from '../ecs/Entity.class';
+import type { Entity } from '../ecs/base/Entity.class';
 import type { Picking } from '../webgl/Picking.class';
 import type { SelectionState } from './SelectionState.class';
 

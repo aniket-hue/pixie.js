@@ -1,6 +1,5 @@
 import { BLACK_COLOR } from '../app/colors';
-import type { Entity } from '../ecs/Entity.class';
-import type { World } from '../ecs/World.class';
+import type { Entity } from '../ecs/base/Entity.class';
 import { m3 } from '../math/matrix';
 import { createBaseEntity } from './base';
 import type { RectangleProps } from './types';
@@ -20,8 +19,8 @@ export function createRectangle({
   draggable = true,
   selectable = true,
 }: RectangleProps) {
-  return (world: World): Entity => {
-    const rect = createBaseEntity(world);
+  return (): Entity => {
+    const rect = createBaseEntity();
 
     const matrix = m3.compose({
       tx: x,
@@ -31,7 +30,8 @@ export function createRectangle({
       r: angle,
     });
 
-    rect.matrix.setWorldMatrix(matrix);
+    rect.matrix.setLocalMatrix(matrix);
+    rect.matrix.setWorldMatrix();
 
     rect.size.setWidth(width);
     rect.size.setHeight(height);

@@ -1,6 +1,6 @@
 import { convertHelper } from '../../app/colors';
 import type { Canvas } from '../../Canvas.class';
-import { Events } from '../../events';
+import { EventBus, Events } from '../../events';
 import { createRectangle } from '../../factory';
 import { assert } from '../../lib/assert';
 import type { DrawingManager } from '../DrawingManager.class';
@@ -28,9 +28,9 @@ export class RectangleDrawing implements DrawingStrategy {
     this.onMouseUp = this.onMouseUp.bind(this);
     this.onMouseMove = this.onMouseMove.bind(this);
 
-    this.canvas.on(Events.MOUSE_DOWN, this.onMouseDown.bind(this));
-    this.canvas.on(Events.MOUSE_UP, this.onMouseUp.bind(this));
-    this.canvas.on(Events.MOUSE_MOVE, this.onMouseMove.bind(this));
+    EventBus.on(Events.MOUSE_DOWN, this.onMouseDown.bind(this));
+    EventBus.on(Events.MOUSE_UP, this.onMouseUp.bind(this));
+    EventBus.on(Events.MOUSE_MOVE, this.onMouseMove.bind(this));
   }
 
   private onMouseDown(event: MouseEvent): void {

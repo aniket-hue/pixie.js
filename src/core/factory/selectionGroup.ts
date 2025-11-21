@@ -1,18 +1,17 @@
-import { convertHelper, SELECTION_BOX_FILL_COLOR } from '../app/colors';
-import type { Entity } from '../ecs/Entity.class';
-import type { World } from '../ecs/World.class';
-import { createBaseEntity } from './base';
+import { Entity } from '../ecs/base/Entity.class';
+import { createBoundingBoxOfchildren } from '../utils/createBoundingBoxOfchildren';
 
 export function createSelectionGroup({ children }: { children: Entity[] }) {
-  return (world: World): Entity => {
-    const newGroup = createBaseEntity(world);
+  return (): Entity => {
+    const newGroup = new Entity();
 
-    const identity = [1, 0, 0, 0, 1, 0, 0, 0, 1];
-    newGroup.matrix.setLocalMatrixDirect(identity);
-    newGroup.matrix.setWorldMatrixDirect(identity);
+    const { width, height, localMatrix } = createBoundingBoxOfchildren(children);
 
-    newGroup.size.setWidth(0);
-    newGroup.size.setHeight(0);
+    newGroup.matrix.setLocalMatrix(localMatrix);
+    newGroup.matrix.setWorldMatrix();
+
+    newGroup.size.setWidth(width);
+    newGroup.size.setHeight(height);
 
     /**
      * We're not going to add styles components because we're not going to
@@ -21,8 +20,6 @@ export function createSelectionGroup({ children }: { children: Entity[] }) {
     newGroup.interaction.setDraggable(true);
     newGroup.interaction.setSelectable(false);
     newGroup.visibility.setVisible(true);
-
-    newGroup.style.setFill(convertHelper(SELECTION_BOX_FILL_COLOR));
 
     newGroup.dirty.markDirty();
 

@@ -1,4 +1,4 @@
-import type { Entity } from '../ecs/Entity.class';
+import type { Entity } from '../ecs/base/Entity.class';
 
 export class SelectionState {
   selectedEntities: Entity[] = [];
