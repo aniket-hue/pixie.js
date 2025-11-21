@@ -1,28 +1,30 @@
+import type { Entity } from '../ecs/Entity.class';
+
 export class SelectionState {
-  selectedEntities: number[] = [];
+  selectedEntities: Entity[] = [];
 
   constructor() {
     this.selectedEntities = [];
   }
 
-  setSelectedEntities(entities: number[]) {
+  setSelectedEntities(entities: Entity[]) {
     this.selectedEntities = entities;
   }
 
-  addToSelection(...entities: number[]) {
+  addToSelection(...entities: Entity[]) {
     this.selectedEntities.push(...entities);
   }
 
-  removeFromSelection(...entities: number[]) {
-    this.selectedEntities = this.selectedEntities.filter((eid) => !entities.includes(eid));
+  removeFromSelection(...entities: Entity[]) {
+    this.selectedEntities = this.selectedEntities.filter((entity) => !entities.includes(entity));
   }
 
   clearSelection() {
     this.selectedEntities = [];
   }
 
-  toggleSelection(...entities: number[]) {
-    if (this.selectedEntities.some((eid) => entities.includes(eid))) {
+  toggleSelection(...entities: Entity[]) {
+    if (this.selectedEntities.some((entity) => entities.includes(entity))) {
       this.removeFromSelection(...entities);
     } else {
       this.addToSelection(...entities);

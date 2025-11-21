@@ -1,6 +1,6 @@
 import type { Point } from '../../types';
 import type { Canvas } from '../Canvas.class';
-import { getDraggable, getLocalMatrix, getWorldMatrix, markDirty, setLocalMatrix, setWorldMatrix } from '../ecs/components';
+import type { Entity } from '../ecs/Entity.class';
 import { Events } from '../events';
 import { m3 } from '../math';
 import { InteractionMode, type InteractionModeManager } from '../mode/InteractionModeManager.class';
@@ -28,7 +28,7 @@ const CURSOR_MAP: Record<Corner, string> = {
 export class TransformControls {
   private canvas: Canvas;
   private modeManager: InteractionModeManager;
-  private activeGroup: number | null = null;
+  private activeGroup: Entity | null = null;
   private activeGroupCorners: Record<Corner, Point> | null = null;
 
   private dragState: DragState | null = null;
@@ -68,14 +68,17 @@ export class TransformControls {
   }
 
   private handleSelectionAdded(event: { id: number }): void {
-    this.activeGroup = event.id;
-    this.updateGroupCorners(event.id);
-    this.canvas.requestRender();
+    const entity = this.canvas.world.getEntityById(event.id);
+    if (entity) {
+      this.activeGroup = entity;
+      this.updateGroupCorners(entity);
+      this.canvas.requestRender();
+    }
   }
 
   private handleSelectionUpdated(event: { id: number }): void {
-    if (this.activeGroup === event.id) {
-      this.updateGroupCorners(event.id);
+    if (this.activeGroup?.id === event.id) {
+      this.updateGroupCorners(this.activeGroup);
       this.canvas.requestRender();
     }
   }
@@ -95,8 +98,8 @@ export class TransformControls {
     this.setCursor('default');
   }
 
-  private updateGroupCorners(groupId: number): void {
-    const { screenCorners } = getPointsOfRectangleSquare(this.canvas, groupId, true);
+  private updateGroupCorners(group: Entity): void {
+    const { screenCorners } = getPointsOfRectangleSquare(this.canvas, group.id, true);
     this.activeGroupCorners = screenCorners;
   }
 
@@ -124,7 +127,7 @@ export class TransformControls {
 
     const entity = this.canvas.picker.pick({ point: worldPos })?.[0];
 
-    if (entity && getDraggable(entity)) {
+    if (entity && entity.interaction.draggable) {
       this.startDragging(entity, worldPos, screenPos);
     }
   }
@@ -185,19 +188,17 @@ export class TransformControls {
   private startRotating(): void {
     if (!this.activeGroup) return;
 
-    const { worldCorners } = getPointsOfRectangleSquare(this.canvas, this.activeGroup, false);
+    const { worldCorners } = getPointsOfRectangleSquare(this.canvas, this.activeGroup.id, false);
     const center = worldCorners.center;
 
-    const worldMatrix = getWorldMatrix(this.activeGroup);
+    const worldMatrix = this.activeGroup.matrix.getWorldMatrix();
     const inverseWorldMatrix = m3.inverse(worldMatrix);
 
-    const localMatrix = getLocalMatrix(this.activeGroup);
+    const localMatrix = this.activeGroup.matrix.getLocalMatrix();
     const decomposedLocal = m3.decompose(localMatrix);
     const inverseLocalMatrix = m3.inverse(localMatrix);
 
     const centerLocal = m3.transformPoint(inverseWorldMatrix, center.x, center.y);
-    // const startMouseLocal = m3.transformPoint(inverseWorldMatrix, mouseWorldPos.x, mouseWorldPos.y);
-    // const startAngle = Math.atan2(startMouseLocal.y - centerLocal.y, startMouseLocal.x - centerLocal.x);
 
     this.rotateState = {
       centerLocal,
@@ -227,8 +228,8 @@ export class TransformControls {
       r: newRotation,
     });
 
-    setLocalMatrix(this.activeGroup, finalMatrix);
-    markDirty(this.activeGroup);
+    this.activeGroup.matrix.setLocalMatrix(finalMatrix);
+    this.activeGroup.dirty.markDirty();
     this.updateGroupCorners(this.activeGroup);
     this.canvas.requestRender();
   }
@@ -236,11 +237,11 @@ export class TransformControls {
   private startScaling(corner: Corner, mouseWorldPos: Point): void {
     if (!this.activeGroup) return;
 
-    const { worldCorners } = getPointsOfRectangleSquare(this.canvas, this.activeGroup, false);
+    const { worldCorners } = getPointsOfRectangleSquare(this.canvas, this.activeGroup.id, false);
     const pivot = worldCorners[diagonalPivotMap[corner]];
 
-    const worldMatrix = getWorldMatrix(this.activeGroup);
-    const localMatrix = getLocalMatrix(this.activeGroup);
+    const worldMatrix = this.activeGroup.matrix.getWorldMatrix();
+    const localMatrix = this.activeGroup.matrix.getLocalMatrix();
     const inverseWorldMatrix = m3.inverse(worldMatrix);
 
     const pivotLocal = m3.transformPoint(inverseWorldMatrix, pivot.x, pivot.y);
@@ -297,17 +298,18 @@ export class TransformControls {
       m3.translate(-pivotLocal.x, -pivotLocal.y),
     );
 
-    setLocalMatrix(this.activeGroup, newMatrix);
-    markDirty(this.activeGroup);
+    this.activeGroup.matrix.setLocalMatrix(newMatrix);
+    this.activeGroup.dirty.markDirty();
     this.updateGroupCorners(this.activeGroup);
     this.canvas.requestRender();
   }
 
-  private startDragging(entityId: number, worldPos: Point, screenPos: Point): void {
-    const worldMatrix = getWorldMatrix(entityId);
+  private startDragging(entity: Entity, worldPos: Point, screenPos: Point): void {
+    const worldMatrix = entity.matrix.getWorldMatrix();
 
     this.dragState = {
-      entityId,
+      entityId: entity.id,
+      entity,
       startPos: screenPos,
       offset: {
         x: worldPos.x - worldMatrix[6],
@@ -319,15 +321,15 @@ export class TransformControls {
   private updateDragging(worldPos: Point): void {
     if (!this.dragState) return;
 
-    const { entityId, offset } = this.dragState;
-    const worldMatrix = [...getWorldMatrix(entityId)];
+    const { entity, offset } = this.dragState;
+    const worldMatrix = [...entity.matrix.getWorldMatrix()];
 
     worldMatrix[6] = worldPos.x - offset.x;
     worldMatrix[7] = worldPos.y - offset.y;
 
-    setWorldMatrix(entityId, worldMatrix);
-    markDirty(entityId);
-    this.canvas.fire(Events.OBJECT_MODIFIED, { id: entityId });
+    entity.matrix.setWorldMatrix(worldMatrix);
+    entity.dirty.markDirty();
+    this.canvas.fire(Events.OBJECT_MODIFIED, { id: entity.id });
     this.canvas.requestRender();
   }
 
@@ -337,7 +339,7 @@ export class TransformControls {
     const corners = Object.entries(this.activeGroupCorners).filter(([key]) => key !== 'center') as [Corner, Point][];
 
     for (const [key, point] of corners) {
-      let finalPoint = point;
+      const finalPoint = point;
 
       if (this.isPointNearCorner(screenPos, finalPoint)) {
         return key;

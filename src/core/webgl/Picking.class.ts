@@ -1,17 +1,16 @@
 import type { BoundingBox, Point } from '../../types';
 import type { Canvas } from '../Canvas.class';
-import { getWorldMatrix } from '../ecs/components';
-import { getHeight, getWidth } from '../ecs/components/size';
+import type { Entity } from '../ecs/Entity.class';
 import { m3 } from '../math';
 
 interface PickOptionsBoundingBox {
   boundingBox: BoundingBox;
-  filter?: (eid: number) => boolean;
+  filter?: (entity: Entity) => boolean;
 }
 
 interface PickOptionsPoint {
   point: Point;
-  filter?: (eid: number) => boolean;
+  filter?: (entity: Entity) => boolean;
 }
 
 export class Picking {
@@ -21,13 +20,13 @@ export class Picking {
     this.canvas = canvas;
   }
 
-  containsPoint(eid: number, worldX: number, worldY: number) {
-    const worldMatrix = getWorldMatrix(eid);
+  containsPoint(entity: Entity, worldX: number, worldY: number) {
+    const worldMatrix = entity.matrix.getWorldMatrix();
     const inMatrix = m3.inverse(worldMatrix);
     const localPoint = m3.transformPoint(inMatrix, worldX, worldY);
 
-    const w = getWidth(eid);
-    const h = getHeight(eid);
+    const w = entity.size.width;
+    const h = entity.size.height;
 
     const halfWidth = w * 0.5;
     const halfHeight = h * 0.5;
@@ -35,29 +34,35 @@ export class Picking {
     return localPoint.x >= -halfWidth && localPoint.x <= halfWidth && localPoint.y >= -halfHeight && localPoint.y <= halfHeight;
   }
 
-  private findEntitiesInBoundingBox(boundingBox: BoundingBox, filter?: (eid: number) => boolean): number[] {
-    const allIntersecting = [];
+  private findEntitiesInBoundingBox(boundingBox: BoundingBox, filter?: (entity: Entity) => boolean): Entity[] {
+    const allIntersecting: Entity[] = [];
     const tree = this.canvas.world.tree;
 
-    const intersecting = tree
+    const intersectingIds = tree
       .search(boundingBox)
-      .map((item) => item.id)
-      .filter((item) => (filter ? filter(item) : true));
+      .map((item) => item.id);
 
-    allIntersecting.push(...intersecting);
+    for (const id of intersectingIds) {
+      const entity = this.canvas.world.getEntityById(id);
+      if (entity && (!filter || filter(entity))) {
+        allIntersecting.push(entity);
+      }
+    }
 
     return allIntersecting;
   }
 
-  pick(options: PickOptionsPoint | PickOptionsBoundingBox): number[] | null {
+  pick(options: PickOptionsPoint | PickOptionsBoundingBox): Entity[] | null {
     if ('point' in options) {
       const array = Array.from(this.canvas.world.getEntities());
 
       for (let i = array.length - 1; i >= 0; i--) {
-        const eid = array[i];
+        const entity = array[i];
 
-        if (this.containsPoint(eid, options.point.x, options.point.y)) {
-          return [eid];
+        if (this.containsPoint(entity, options.point.x, options.point.y)) {
+          if (!options.filter || options.filter(entity)) {
+            return [entity];
+          }
         }
       }
 

@@ -1,6 +1,6 @@
 import type { BoundingBox, Point } from '../../types';
 import type { Canvas } from '../Canvas.class';
-import { getSelectable } from '../ecs/components';
+import type { Entity } from '../ecs/Entity.class';
 import { m3 } from '../math';
 import { getBoundingBoxFrom2Points } from '../utils/getBoundingBoxFrom2Points';
 import type { Picking } from '../webgl/Picking.class';
@@ -70,7 +70,7 @@ export class MarqueeSelection {
 
     const entities = this.picker.pick({
       boundingBox: this.boundingBox,
-      filter: getSelectable,
+      filter: (entity: Entity) => entity.interaction.selectable,
     });
 
     if (!entities?.length) {
@@ -80,14 +80,14 @@ export class MarqueeSelection {
     }
   }
 
-  finish() {
+  finish(): Entity[] {
     if (!this.marquee || !this.boundingBox) {
       return [];
     }
 
     const entities = this.picker.pick({
       boundingBox: this.boundingBox,
-      filter: getSelectable,
+      filter: (entity: Entity) => entity.interaction.selectable,
     });
 
     if (entities?.length) {

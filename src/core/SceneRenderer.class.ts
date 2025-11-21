@@ -1,6 +1,6 @@
 import type { Camera } from './Camera.class';
 import type { Canvas } from './Canvas.class';
-import { getFill, getHeight, getStroke, getStrokeWidth, getTexture, getWidth, getWorldMatrix, hasTexture, isVisible } from './ecs/components';
+import type { Entity } from './ecs/Entity.class';
 import type { World } from './ecs/World.class';
 import { argbToRgba } from './lib/color';
 import { TextureManager } from './utils/TextureManager.class';
@@ -207,7 +207,7 @@ export class SceneRenderer {
     }
   }
 
-  private updateEntities(entities: number[]) {
+  private updateEntities(entities: Entity[]) {
     const gl = this.gl;
     const instanceCount = Math.min(entities.length, this.maxInstances);
 
@@ -215,43 +215,43 @@ export class SceneRenderer {
 
     // Pack instance data into arrays
     for (let i = 0; i < instanceCount; i++) {
-      const eid = entities[i];
+      const entity = entities[i];
 
       // Copy transformation matrix directly
       const matrixOffset = i * 9;
-      const worldMatrix = getWorldMatrix(eid);
+      const worldMatrix = entity.matrix.getWorldMatrix();
 
       for (let j = 0; j < 9; j++) {
         this.instanceMatrixData[matrixOffset + j] = worldMatrix[j];
       }
 
       // Size
-      this.instanceSizeData[i * 2] = getWidth(eid) || 100;
-      this.instanceSizeData[i * 2 + 1] = getHeight(eid) || 100;
+      this.instanceSizeData[i * 2] = entity.size.width || 100;
+      this.instanceSizeData[i * 2 + 1] = entity.size.height || 100;
 
       // Fill color
-      const fillColor = argbToRgba(getFill(eid));
+      const fillColor = argbToRgba(entity.style.fill);
       this.instanceFillColorData[i * 4] = fillColor[0];
       this.instanceFillColorData[i * 4 + 1] = fillColor[1];
       this.instanceFillColorData[i * 4 + 2] = fillColor[2];
       this.instanceFillColorData[i * 4 + 3] = fillColor[3];
 
       // Stroke color
-      const strokeColor = argbToRgba(getStroke(eid));
+      const strokeColor = argbToRgba(entity.style.stroke);
       this.instanceStrokeColorData[i * 4] = strokeColor[0];
       this.instanceStrokeColorData[i * 4 + 1] = strokeColor[1];
       this.instanceStrokeColorData[i * 4 + 2] = strokeColor[2];
       this.instanceStrokeColorData[i * 4 + 3] = strokeColor[3];
 
       // Stroke width
-      this.instanceStrokeWidthData[i] = getStrokeWidth(eid);
+      this.instanceStrokeWidthData[i] = entity.style.strokeWidth;
 
       // Has texture flag and UV coordinates
-      const entityHasTexture = hasTexture(eid);
+      const entityHasTexture = entity.texture !== undefined;
       this.instanceHasTextureData[i] = entityHasTexture ? 1.0 : 0.0;
 
       if (entityHasTexture) {
-        const textureData = getTexture(eid)!;
+        const textureData = entity.texture!.data;
 
         // Set UV coordinates from texture data
         this.instanceUVData[i * 4] = textureData.uvX;
@@ -311,22 +311,22 @@ export class SceneRenderer {
   render(world: World) {
     this.updateViewportAndResolution();
 
-    const nonTexturedEntities = [];
-    const texturedEntities = [];
+    const nonTexturedEntities: Entity[] = [];
+    const texturedEntities: Entity[] = [];
 
-    for (const eid of world.getEntities()) {
-      if (!isVisible(eid)) {
+    for (const entity of world.getEntities()) {
+      if (!entity.visibility.visible) {
         continue;
       }
 
-      if (this.canvas.getActiveGroup() === eid) {
+      if (this.canvas.getActiveGroup() === entity.id) {
         continue;
       }
 
-      if (hasTexture(eid)) {
-        texturedEntities.push(eid);
+      if (entity.texture !== undefined) {
+        texturedEntities.push(entity);
       } else {
-        nonTexturedEntities.push(eid);
+        nonTexturedEntities.push(entity);
       }
     }
 
@@ -337,19 +337,19 @@ export class SceneRenderer {
     this.updateEntities(nonTexturedEntities);
 
     const groupTexturedEntities = texturedEntities.reduce(
-      (acc, eid) => {
-        const textureData = getTexture(eid)!;
+      (acc, entity) => {
+        const textureData = entity.texture!.data;
         const bin = textureData.bin;
 
         if (!acc[bin]) {
           acc[bin] = [];
         }
 
-        acc[bin].push(eid);
+        acc[bin].push(entity);
 
         return acc;
       },
-      {} as Record<number, number[]>,
+      {} as Record<number, Entity[]>,
     );
 
     // Flush any pending atlas updates before rendering

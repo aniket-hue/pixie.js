@@ -1,6 +1,5 @@
 import { BLACK_COLOR } from '../app/colors';
-import { markDirty, setDraggable, setFill, setHeight, setSelectable, setStroke, setStrokeWidth, setWidth, setWorldMatrix } from '../ecs/components';
-import { setVisible } from '../ecs/components/visible';
+import type { Entity } from '../ecs/Entity.class';
 import type { World } from '../ecs/World.class';
 import { m3 } from '../math/matrix';
 import { createBaseEntity } from './base';
@@ -21,7 +20,7 @@ export function createRectangle({
   draggable = true,
   selectable = true,
 }: RectangleProps) {
-  return (world: World) => {
+  return (world: World): Entity => {
     const rect = createBaseEntity(world);
 
     const matrix = m3.compose({
@@ -32,22 +31,22 @@ export function createRectangle({
       r: angle,
     });
 
-    setWorldMatrix(rect, matrix);
+    rect.matrix.setWorldMatrix(matrix);
 
-    setWidth(rect, width);
-    setHeight(rect, height);
+    rect.size.setWidth(width);
+    rect.size.setHeight(height);
 
-    setFill(rect, fill);
-    setStroke(rect, stroke);
-    setStrokeWidth(rect, strokeWidth);
+    rect.style.setFill(fill);
+    rect.style.setStroke(stroke);
+    rect.style.setStrokeWidth(strokeWidth);
 
-    setDraggable(rect, draggable);
-    setSelectable(rect, selectable);
+    rect.interaction.setDraggable(draggable);
+    rect.interaction.setSelectable(selectable);
 
-    markDirty(rect);
+    rect.dirty.markDirty();
 
     if (visible !== undefined) {
-      setVisible(rect, visible);
+      rect.visibility.setVisible(visible);
     }
 
     return rect;

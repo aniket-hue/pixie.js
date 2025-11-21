@@ -1,6 +1,6 @@
 import type { Point } from '../../types';
 import type { Canvas } from '../Canvas.class';
-import { getSelectable } from '../ecs/components';
+import type { Entity } from '../ecs/Entity.class';
 import type { Picking } from '../webgl/Picking.class';
 import type { SelectionState } from './SelectionState.class';
 
@@ -28,12 +28,15 @@ export class ClickSelection {
     this.point = point;
   }
 
-  finish() {
+  finish(): Entity[] {
     if (!this.point) {
       return [];
     }
 
-    const entities = this.picker.pick({ point: this.point, filter: getSelectable });
+    const entities = this.picker.pick({
+      point: this.point,
+      filter: (entity: Entity) => entity.interaction.selectable,
+    });
 
     if (entities?.length) {
       this.selectionState.setSelectedEntities(entities);

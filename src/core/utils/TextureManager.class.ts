@@ -1,4 +1,4 @@
-import type { TextureData } from '../ecs/components/texture';
+import type { TextureData } from '../ecs/components/TextureComponent.class';
 import { TextureAtlas } from '../lib/texture/TextureAtlas.class';
 
 export class TextureManager {
