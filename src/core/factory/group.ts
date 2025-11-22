@@ -10,6 +10,7 @@ export function createGroup() {
     rect.interaction.setDraggable(true);
     rect.interaction.setSelectable(true);
     rect.visibility.setVisible(true);
+
     rect.dirty.markDirty();
 
     return rect;

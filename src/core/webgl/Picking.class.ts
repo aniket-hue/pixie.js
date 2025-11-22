@@ -64,10 +64,6 @@ export class Picking {
 
         const isIntersecting = this.containsPoint(entity, options.point.x, options.point.y);
 
-        if (!isIntersecting) {
-          continue;
-        }
-
         if (entity.hierarchy.children.length) {
           const childrens = this.pick({ point: options.point, filter: options.filter }, entity.hierarchy.children);
 
@@ -77,9 +73,10 @@ export class Picking {
           }
         }
 
-        selectedEntities = [entity];
-
-        break;
+        if (isIntersecting) {
+          selectedEntities = [entity];
+          break;
+        }
       }
 
       if (selectedEntities.length) {

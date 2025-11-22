@@ -105,11 +105,13 @@ export class SelectionManager {
     this.stopSelection = false;
 
     if (this.canvas.modeManager.isInteracting() || this.canvas.modeManager.isDrawing()) {
+      this.selectionState.clearSelection();
       this.stopSelection = true;
       return;
     }
 
     if (this.group && this.canvas.picker.pick({ point: worldPos })?.includes(this.group)) {
+      this.selectionState.clearSelection();
       this.stopSelection = true;
       return;
     }
@@ -130,6 +132,8 @@ export class SelectionManager {
 
   private onMouseMove(event: MouseEvent): void {
     if (this.canvas.modeManager.isInteracting() || this.canvas.modeManager.isDrawing()) {
+      this.selectionState.clearSelection();
+
       /**
        * This is a hack to stop selection when the user is interacting with the objects
        * Fix this
@@ -185,10 +189,6 @@ export class SelectionManager {
 
   private onMouseUp(): void {
     const state = this.state;
-
-    if (this.canvas.modeManager.isInteracting() || this.canvas.modeManager.isDrawing()) {
-      return;
-    }
 
     if (!state || !this.selectionStrategy || this.stopSelection) {
       return;
