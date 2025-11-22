@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Canvas as CanvasClass } from '../../../core/Canvas.class';
 import { createImage, createRectangle } from '../../../core/factory';
-import { createGroup } from '../../../core/factory/group';
 import { rgbaToArgb } from '../../../core/lib/color';
 import { Sidebar } from '../../../features/Sidebar';
 import { CanvasContext } from '../model/ctx';
@@ -18,15 +17,8 @@ export function Canvas() {
 
     const canvas = new CanvasClass(canvasRef.current);
     setCanvas(canvas);
-    const world = canvas.world;
 
     (window as any).cx = canvas;
-
-    const groupFactory = createGroup();
-
-    const groupEntity = groupFactory();
-
-    world.addEntity(groupEntity);
 
     const rectFactory = createRectangle({
       x: 1000,
@@ -37,7 +29,6 @@ export function Canvas() {
     });
 
     const rectEntity = rectFactory();
-    // world.addEntity(rectEntity);
 
     const imageFactory = createImage({
       x: -100,
@@ -49,22 +40,17 @@ export function Canvas() {
       angle: 0,
     });
 
-    const imageEntity = imageFactory();
-    // world.addEntity(imageEntity);
+    const { promise } = imageFactory();
 
-    setTimeout(() => {
-      groupEntity.style.setFill(rgbaToArgb(255, 0, 0, 0.2));
+    canvas.world.addEntity(rectEntity);
 
-      groupEntity.hierarchy.addChild(imageEntity);
-      groupEntity.hierarchy.addChild(rectEntity);
-
+    promise.then((entity) => {
+      canvas.world.addEntity(entity);
       canvas.requestRender();
-    }, 1000);
+    });
 
     canvas.requestRender();
   }, []);
-
-  function handleMouseDown(event: React.MouseEvent<HTMLCanvasElement>) {}
 
   return (
     <CanvasContext.Provider value={{ canvas }}>
@@ -72,7 +58,7 @@ export function Canvas() {
         <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-300 size-1"></div>
 
         <Sidebar />
-        <canvas className="flex-1 block w-full h-full" ref={canvasRef} onClick={handleMouseDown} />
+        <canvas className="flex-1 block w-full h-full" ref={canvasRef} />
       </div>
     </CanvasContext.Provider>
   );

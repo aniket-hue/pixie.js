@@ -31,6 +31,7 @@ export class SelectionManager {
 
   private group: Entity | null = null;
 
+  private childrenWithGroupsToRevertBack: Record<number, Entity> = {};
   private selectionStrategy: MarqueeSelection | ClickSelection | AddSelection;
   private selections: Selections = {
     marquee: MarqueeSelection,
@@ -182,54 +183,76 @@ export class SelectionManager {
       return;
     }
 
+    const children = [...(this.activeGroup?.hierarchy.children ?? [])];
+
     this.group.hierarchy.clearChildren();
     this.canvas.world.removeEntity(this.group);
+
+    children?.forEach((child) => {
+      if (this.childrenWithGroupsToRevertBack[child.id]) {
+        const oldParent = this.childrenWithGroupsToRevertBack[child.id];
+        oldParent.hierarchy.addChild(child);
+      }
+    });
+
+    this.childrenWithGroupsToRevertBack = {};
     this.group = null;
   }
 
   private onMouseUp(): void {
-    const state = this.state;
-
-    if (!state || !this.selectionStrategy || this.stopSelection) {
-      return;
-    }
+    if (!this.state || !this.selectionStrategy || this.stopSelection) return;
 
     const entities = this.selectionStrategy.finish();
 
     if (entities?.length) {
       if (!this.group) {
+        const revert = this.childrenWithGroupsToRevertBack;
+        entities.forEach((e) => {
+          if (e.hierarchy.parent) {
+            revert[e.id] = e.hierarchy.parent;
+          }
+        });
+
         this.group = this.canvas.world.addEntity(createSelectionGroup({ children: entities })());
 
-        this.canvas.fire(Events.SELECTION_GROUP_ADDED, {
-          id: this.group.id,
-        });
+        this.canvas.fire(Events.SELECTION_GROUP_ADDED, { id: this.group.id });
       } else {
-        /**
-         * See if this can be optimized
-         */
+        const addedEntities = entities.filter((entity) => !this.group?.hierarchy.children.includes(entity));
+        const removedEntities = this.group?.hierarchy.children.filter((entity) => !entities.includes(entity));
+
+        removedEntities.forEach((child) => {
+          const oldParent = this.childrenWithGroupsToRevertBack[child.id];
+
+          if (oldParent) {
+            oldParent.hierarchy.addChild(child);
+            delete this.childrenWithGroupsToRevertBack[child.id];
+          }
+        });
+
+        addedEntities.forEach((child) => {
+          if (child.hierarchy.parent) {
+            this.childrenWithGroupsToRevertBack[child.id] = child.hierarchy.parent;
+          }
+        });
+
         this.group.hierarchy.clearChildren();
 
         const { width, height, localMatrix } = createBoundingBoxOfchildren(entities);
         this.group.matrix.setLocalMatrix(localMatrix);
         this.group.matrix.setWorldMatrix();
-        this.group.size.setHeight(height);
         this.group.size.setWidth(width);
+        this.group.size.setHeight(height);
 
         entities.forEach((e) => {
-          this.group?.hierarchy.addChild(e);
+          this.group!.hierarchy.addChild(e);
         });
 
-        this.canvas.fire(Events.SELECTION_GROUP_UPDATED, {
-          id: this.group.id,
-        });
+        this.canvas.fire(Events.SELECTION_GROUP_UPDATED, { id: this.group.id });
       }
     } else {
       const id = this.group?.id;
-
       this.removeGroup();
-      this.canvas.fire(Events.SELECTION_GROUP_REMOVED, {
-        id,
-      });
+      this.canvas.fire(Events.SELECTION_GROUP_REMOVED, { id });
     }
 
     this.canvas.requestRender();

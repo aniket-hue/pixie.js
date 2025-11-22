@@ -131,8 +131,8 @@ export class Canvas {
     return this.canvasElement;
   }
 
-  getActiveGroup(): number | null {
-    return this.selectionManager.activeGroup?.id ?? null;
+  getActiveGroup(): Entity | null {
+    return this.selectionManager.activeGroup;
   }
 
   getSelectedObjects(): Entity[] {
@@ -215,14 +215,12 @@ export class Canvas {
           };
 
           for (const entity of box.entities) {
-            console.log(entity.bounds);
             finalBounds.minX = Math.min(finalBounds.minX, entity.bounds.minX);
             finalBounds.minY = Math.min(finalBounds.minY, entity.bounds.minY);
             finalBounds.maxX = Math.max(finalBounds.maxX, entity.bounds.maxX);
             finalBounds.maxY = Math.max(finalBounds.maxY, entity.bounds.maxY);
           }
 
-          console.log(finalBounds);
           bounds = finalBounds;
         } else {
           bounds = box;
