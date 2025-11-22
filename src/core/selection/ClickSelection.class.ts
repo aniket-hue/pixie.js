@@ -20,6 +20,7 @@ export class ClickSelection {
     });
 
     if (!entities?.length) {
+      this.point = null;
       this.selectionState.clearSelection();
 
       return;
@@ -30,6 +31,8 @@ export class ClickSelection {
 
   finish(): Entity[] {
     if (!this.point) {
+      this.point = null;
+
       return [];
     }
 
