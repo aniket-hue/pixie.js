@@ -125,7 +125,7 @@ export class TransformControls {
 
     const entity = this.canvas.picker.pick({ point: worldPos })?.[0];
 
-    if (entity && this.activeGroup?.hierarchy.doesChildBelongToGroup(entity) && entity.interaction.draggable) {
+    if (entity && (!this.activeGroup || this.activeGroup?.hierarchy.doesChildBelongToGroup(entity)) && entity.interaction.draggable) {
       /**
        * If there is no active group, we're dragging the entity directly.
        */
