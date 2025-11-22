@@ -6,8 +6,6 @@ export class HierarchyComponent {
   public children: Entity[] = [];
   private entity: Entity;
 
-  private childrenWithGroupsToRevertBack: Record<number, Entity> = {};
-
   constructor(entity: Entity) {
     this.entity = entity;
   }
@@ -20,7 +18,6 @@ export class HierarchyComponent {
     }
 
     if (child.hierarchy.parent) {
-      this.childrenWithGroupsToRevertBack[child.id] = child.hierarchy.parent;
       child.hierarchy.parent.hierarchy.removeChild(child);
     }
 
@@ -37,14 +34,8 @@ export class HierarchyComponent {
   private resetChild(child: Entity): void {
     child.hierarchy.parent = null;
 
-    if (this.childrenWithGroupsToRevertBack[child.id]) {
-      const oldParent = this.childrenWithGroupsToRevertBack[child.id];
-      oldParent.hierarchy.addChild(child);
-      delete this.childrenWithGroupsToRevertBack[child.id];
-    } else {
-      const worldMatrix = child.matrix.getWorldMatrix();
-      child.matrix.setLocalMatrix([...worldMatrix]);
-    }
+    const worldMatrix = child.matrix.getWorldMatrix();
+    child.matrix.setLocalMatrix([...worldMatrix]);
 
     child.dirty.markDirty();
   }

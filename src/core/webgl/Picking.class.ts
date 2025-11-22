@@ -1,4 +1,3 @@
-import { iterateReverse } from '../../shared/array';
 import type { BoundingBox, Point } from '../../types';
 import type { Canvas } from '../Canvas.class';
 import type { Entity } from '../ecs/base/Entity.class';

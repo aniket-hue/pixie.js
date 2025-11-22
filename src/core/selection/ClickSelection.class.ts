@@ -17,6 +17,7 @@ export class ClickSelection {
   start(point: Point) {
     const entities = this.picker.pick({
       point,
+      filter: (entity: Entity) => entity.interaction.selectable,
     });
 
     if (!entities?.length) {

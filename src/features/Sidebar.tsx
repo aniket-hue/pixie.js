@@ -1,7 +1,9 @@
-import { Download, LucideZoomIn, Square, ZoomOut } from 'lucide-react';
+import { Download, Group, LucideZoomIn, Square, ZoomOut } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { RectangleDrawing } from '../core/drawing/impl/RectangleDrawing.class';
 import { Events } from '../core/events';
+import { createSelectionGroup } from '../core/factory/selectionGroup';
+import { rgbaToArgb } from '../core/lib/color';
 import { cn } from '../shared/lib/cn';
 import { useCanvasContext } from '../widgets/canvas/model/ctx';
 
@@ -105,11 +107,48 @@ export function Sidebar() {
     a.click();
   }
 
+  function handleGroup() {
+    if (!canvas) {
+      return;
+    }
+
+    const activeGroup = canvas.getActiveGroup();
+
+    if (!activeGroup) {
+      return;
+    }
+
+    const children = [...(activeGroup.hierarchy.children ?? [])];
+
+    if (children.length === 0) {
+      return;
+    }
+
+    const groupFactory = createSelectionGroup({ children });
+    const group = groupFactory();
+
+    group.style.setFill(rgbaToArgb(122, 23, 0, 0.2));
+    group.interaction.setSelectable(true);
+
+    canvas.world.removeEntity(activeGroup);
+    canvas.world.addEntity(group);
+
+    children.forEach((child) => {
+      group.hierarchy.addChild(child);
+    });
+
+    canvas.requestRender();
+  }
+
   return (
     <div className="bg-blue-900/70 ring-1 ring-blue-700/50 backdrop-blur-md absolute left-4 top-1/2 -translate-y-1/2 z-[1000] rounded-lg px-1 py-1 shadow-md">
       <ToolbarGroup>
         <ToolbarItem onClick={handleDrawingMode} active={drawingMode}>
           <Square size={20} />
+        </ToolbarItem>
+
+        <ToolbarItem onClick={handleGroup}>
+          <Group size={20} />
         </ToolbarItem>
       </ToolbarGroup>
 

@@ -1,3 +1,4 @@
+import { withResolvers } from '../../shared/promise';
 import { BLACK_COLOR } from '../app/colors';
 import { TextureComponent } from '../ecs/base/components/TextureComponent.class';
 import type { Entity } from '../ecs/base/Entity.class';
@@ -22,7 +23,8 @@ export function createImage({
   draggable = true,
   selectable = true,
 }: ImageProps) {
-  return (): Entity => {
+  return (): { entity: Entity; promise: Promise<Entity> } => {
+    const { promise, resolve } = withResolvers<Entity>();
     const image = createBaseEntity();
 
     const matrix = m3.compose({
@@ -49,6 +51,8 @@ export function createImage({
 
         image.texture = new TextureComponent(textureData);
         image.dirty.markDirty();
+
+        resolve(image);
       });
     } catch {
       image.size.setWidth(width ?? 100);
@@ -82,6 +86,6 @@ export function createImage({
       image.visibility.setVisible(visible);
     }
 
-    return image;
+    return { entity: image, promise };
   };
 }
