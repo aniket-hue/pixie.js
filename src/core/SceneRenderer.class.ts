@@ -22,6 +22,8 @@ export class SceneRenderer {
   private instanceStrokeWidthBuffer: WebGLBuffer | null = null;
   private instanceHasTextureBuffer: WebGLBuffer | null = null;
   private instanceUVBuffer: WebGLBuffer | null = null;
+  private instanceFilters1Buffer: WebGLBuffer | null = null;
+  private instanceFilters2Buffer: WebGLBuffer | null = null;
 
   private maxInstances = 20_000;
   private instanceMatrixData: Float32Array;
@@ -31,6 +33,8 @@ export class SceneRenderer {
   private instanceStrokeWidthData: Float32Array;
   private instanceHasTextureData: Float32Array;
   private instanceUVData: Float32Array;
+  private instanceFilters1Data: Float32Array;
+  private instanceFilters2Data: Float32Array;
 
   private positionLocation: number | null = null;
 
@@ -42,6 +46,8 @@ export class SceneRenderer {
   private instanceStrokeWidthLocation: number | null = null;
   private instanceHasTextureLocation: number | null = null;
   private instanceUVLocation: number | null = null;
+  private instanceFilters1Location: number | null = null;
+  private instanceFilters2Location: number | null = null;
 
   private camera: Camera;
   public textureManager: TextureManager;
@@ -63,6 +69,8 @@ export class SceneRenderer {
     this.instanceStrokeWidthData = new Float32Array(this.maxInstances); // stroke width
     this.instanceHasTextureData = new Float32Array(this.maxInstances); // has texture flag
     this.instanceUVData = new Float32Array(this.maxInstances * 4); // uvX, uvY, uvWidth, uvHeight
+    this.instanceFilters1Data = new Float32Array(this.maxInstances * 4); // brightness, contrast, saturation, hue
+    this.instanceFilters2Data = new Float32Array(this.maxInstances * 2); // sepia, invert
 
     this.initBuffers();
     this.initAttributeLocations();
@@ -108,6 +116,14 @@ export class SceneRenderer {
     this.instanceUVBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceUVBuffer);
     gl.bufferData(gl.ctx.ARRAY_BUFFER, this.instanceUVData, gl.ctx.DYNAMIC_DRAW);
+
+    this.instanceFilters1Buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceFilters1Buffer);
+    gl.bufferData(gl.ctx.ARRAY_BUFFER, this.instanceFilters1Data, gl.ctx.DYNAMIC_DRAW);
+
+    this.instanceFilters2Buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceFilters2Buffer);
+    gl.bufferData(gl.ctx.ARRAY_BUFFER, this.instanceFilters2Data, gl.ctx.DYNAMIC_DRAW);
   }
 
   private initAttributeLocations() {
@@ -122,6 +138,8 @@ export class SceneRenderer {
     this.instanceStrokeWidthLocation = gl.getAttribLocation('basic2DProgram', 'a_instance_stroke_width');
     this.instanceHasTextureLocation = gl.getAttribLocation('basic2DProgram', 'a_instance_has_texture');
     this.instanceUVLocation = gl.getAttribLocation('basic2DProgram', 'a_instance_uv');
+    this.instanceFilters1Location = gl.getAttribLocation('basic2DProgram', 'a_instance_filters1');
+    this.instanceFilters2Location = gl.getAttribLocation('basic2DProgram', 'a_instance_filters2');
   }
 
   private updateViewportAndResolution() {
@@ -203,6 +221,20 @@ export class SceneRenderer {
       gl.vertexAttribPointer(this.instanceUVLocation, 4, gl.ctx.FLOAT, false, 0, 0);
       gl.vertexAttribDivisor(this.instanceUVLocation, 1);
     }
+
+    if (typeof this.instanceFilters1Location === 'number' && this.instanceFilters1Buffer) {
+      gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceFilters1Buffer);
+      gl.enableVertexAttribArray(this.instanceFilters1Location);
+      gl.vertexAttribPointer(this.instanceFilters1Location, 4, gl.ctx.FLOAT, false, 0, 0);
+      gl.vertexAttribDivisor(this.instanceFilters1Location, 1);
+    }
+
+    if (typeof this.instanceFilters2Location === 'number' && this.instanceFilters2Buffer) {
+      gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceFilters2Buffer);
+      gl.enableVertexAttribArray(this.instanceFilters2Location);
+      gl.vertexAttribPointer(this.instanceFilters2Location, 2, gl.ctx.FLOAT, false, 0, 0);
+      gl.vertexAttribDivisor(this.instanceFilters2Location, 1);
+    }
   }
 
   private updateEntities(entities: Entity[]) {
@@ -256,12 +288,30 @@ export class SceneRenderer {
         this.instanceUVData[i * 4 + 1] = textureData.uvY;
         this.instanceUVData[i * 4 + 2] = textureData.uvWidth;
         this.instanceUVData[i * 4 + 3] = textureData.uvHeight;
+
+        // Filters
+        this.instanceFilters1Data[i * 4] = entity.texture!.brightness;
+        this.instanceFilters1Data[i * 4 + 1] = entity.texture!.contrast;
+        this.instanceFilters1Data[i * 4 + 2] = entity.texture!.saturation;
+        this.instanceFilters1Data[i * 4 + 3] = entity.texture!.hue;
+
+        this.instanceFilters2Data[i * 2] = entity.texture!.sepia;
+        this.instanceFilters2Data[i * 2 + 1] = entity.texture!.invert;
       } else {
         // Default UV coordinates for non-textured entities
         this.instanceUVData[i * 4] = 0.0;
         this.instanceUVData[i * 4 + 1] = 0.0;
         this.instanceUVData[i * 4 + 2] = 1.0;
         this.instanceUVData[i * 4 + 3] = 1.0;
+
+        // Default filters
+        this.instanceFilters1Data[i * 4] = 1.0; // brightness
+        this.instanceFilters1Data[i * 4 + 1] = 1.0; // contrast
+        this.instanceFilters1Data[i * 4 + 2] = 1.0; // saturation
+        this.instanceFilters1Data[i * 4 + 3] = 0.0; // hue
+
+        this.instanceFilters2Data[i * 2] = 0.0; // sepia
+        this.instanceFilters2Data[i * 2 + 1] = 0.0; // invert
       }
     }
 
@@ -299,6 +349,16 @@ export class SceneRenderer {
     if (this.instanceUVBuffer) {
       gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceUVBuffer);
       gl.ctx.bufferSubData(gl.ctx.ARRAY_BUFFER, 0, this.instanceUVData.subarray(0, instanceCount * 4));
+    }
+
+    if (this.instanceFilters1Buffer) {
+      gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceFilters1Buffer);
+      gl.ctx.bufferSubData(gl.ctx.ARRAY_BUFFER, 0, this.instanceFilters1Data.subarray(0, instanceCount * 4));
+    }
+
+    if (this.instanceFilters2Buffer) {
+      gl.bindBuffer(gl.ctx.ARRAY_BUFFER, this.instanceFilters2Buffer);
+      gl.ctx.bufferSubData(gl.ctx.ARRAY_BUFFER, 0, this.instanceFilters2Data.subarray(0, instanceCount * 2));
     }
 
     this.setupInstancedAttributes();

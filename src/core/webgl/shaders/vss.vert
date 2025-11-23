@@ -9,6 +9,8 @@ in vec4 a_instance_stroke_color;
 in float a_instance_stroke_width;
 in float a_instance_has_texture;
 in vec4 a_instance_uv; // uvX, uvY, uvWidth, uvHeight
+in vec4 a_instance_filters1; // brightness, contrast, saturation, hue
+in vec2 a_instance_filters2; // sepia, invert
 
 uniform vec2 u_resolution;
 uniform mat3 u_viewport_transform_matrix;
@@ -22,6 +24,8 @@ out vec4 v_stroke_color;
 out float v_stroke_width;
 out vec2 v_scale;
 out float v_has_texture;
+out vec4 v_filters1;
+out vec2 v_filters2;
 
 void main() {
     vec2 sizeWithStroke = a_instance_size + vec2(a_instance_stroke_width * 2.0);
@@ -60,4 +64,6 @@ void main() {
     v_stroke_color = a_instance_stroke_color;
     v_stroke_width = a_instance_stroke_width;
     v_has_texture = a_instance_has_texture;
+    v_filters1 = a_instance_filters1;
+    v_filters2 = a_instance_filters2;
 }
