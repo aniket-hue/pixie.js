@@ -6,6 +6,7 @@ import { MatrixComponent } from './components/MatrixComponent.class';
 import { SizeComponent } from './components/SizeComponent.class';
 import { StyleComponent } from './components/StyleComponent.class';
 import type { TextureComponent } from './components/TextureComponent.class';
+import type { ComponentType } from './components/types';
 import { VisibilityComponent } from './components/VisibilityComponent.class';
 
 let nextId = 1;
@@ -34,5 +35,9 @@ export class Entity {
     this.interaction = new InteractionComponent();
     this.visibility = new VisibilityComponent(this);
     this.dirty = new DirtyComponent();
+  }
+
+  has(component: ComponentType) {
+    return this[component] !== undefined;
   }
 }
