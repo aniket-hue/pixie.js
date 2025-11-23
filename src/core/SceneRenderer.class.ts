@@ -3,8 +3,8 @@ import type { Canvas } from './Canvas.class';
 import type { Entity } from './ecs/base/Entity.class';
 import type { World } from './ecs/World.class';
 import { argbToRgba } from './lib/color';
-import { TextureManager } from './utils/TextureManager.class';
 import type { GlCore } from './webgl/GlCore.class';
+import { TextureManager } from './webgl/TextureManager.class';
 
 export class SceneRenderer {
   private gl: GlCore;

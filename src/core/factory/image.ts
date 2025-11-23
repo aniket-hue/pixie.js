@@ -1,10 +1,9 @@
-import { withResolvers } from '../../shared/promise';
 import { BLACK_COLOR } from '../app/colors';
 import { TextureComponent } from '../ecs/base/components/TextureComponent.class';
-import type { Entity } from '../ecs/base/Entity.class';
+import { Entity } from '../ecs/base/Entity.class';
+import { withResolvers } from '../lib/promise';
 import { m3 } from '../math/matrix';
-import { TextureManager } from '../utils/TextureManager.class';
-import { createBaseEntity } from './base';
+import { TextureManager } from '../webgl/TextureManager.class';
 import type { ImageProps } from './types';
 
 export function createImage({
@@ -25,7 +24,7 @@ export function createImage({
 }: ImageProps) {
   return (): { entity: Entity; promise: Promise<Entity> } => {
     const { promise, resolve } = withResolvers<Entity>();
-    const image = createBaseEntity();
+    const image = new Entity();
 
     const matrix = m3.compose({
       tx: x,

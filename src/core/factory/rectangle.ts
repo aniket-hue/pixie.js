@@ -1,7 +1,6 @@
 import { BLACK_COLOR } from '../app/colors';
-import type { Entity } from '../ecs/base/Entity.class';
+import { Entity } from '../ecs/base/Entity.class';
 import { m3 } from '../math/matrix';
-import { createBaseEntity } from './base';
 import type { RectangleProps } from './types';
 
 export function createRectangle({
@@ -20,7 +19,7 @@ export function createRectangle({
   selectable = true,
 }: RectangleProps) {
   return (): Entity => {
-    const rect = createBaseEntity();
+    const rect = new Entity();
 
     const matrix = m3.compose({
       tx: x,

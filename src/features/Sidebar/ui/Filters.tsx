@@ -1,5 +1,5 @@
 import { Popover, Slider } from '@mantine/core';
-import { Filter } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { useMemo } from 'react';
 import type { Canvas } from '../../../core/Canvas.class';
 import type { Entity } from '../../../core/ecs/base/Entity.class';
@@ -48,7 +48,7 @@ export function Filters({ group, canvas }: { group: Entity | null; canvas: Canva
     <Popover trapFocus width={200} position="right" withArrow shadow="md" disabled={image === undefined}>
       <Popover.Target>
         <ToolbarItemButton tooltip="Filters" disabled={image === undefined}>
-          <Filter size={20} />
+          <Sparkles size={20} />
         </ToolbarItemButton>
       </Popover.Target>
 
@@ -59,7 +59,7 @@ export function Filters({ group, canvas }: { group: Entity | null; canvas: Canva
             <Slider
               size="sm"
               onChange={(e) => handleFilterChange(e, filter.onChange)}
-              step={0.01}
+              step={0.1}
               defaultValue={filter.defaultValue}
               max={filter.max}
               min={filter.min}

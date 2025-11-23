@@ -76,8 +76,6 @@ export class TransformControls {
   }
 
   private handleSelectionUpdated(event: { target: Entity }): void {
-    console.trace(event);
-
     if (this.activeGroup?.id === event.target?.id) {
       this.updateGroupCorners(this.activeGroup);
       this.canvas.requestRender();

@@ -1,5 +1,3 @@
-// World Space
-
 export function getBoundingBoxFrom2Points(
   p1: {
     x: number;

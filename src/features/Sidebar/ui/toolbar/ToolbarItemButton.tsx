@@ -23,7 +23,7 @@ export function ToolbarItemButton({
         className={cn(
           'toolbar-item flex items-center justify-center !bg-transparent hover:!bg-blue-900/50 rounded-md !p-1 cursor-pointer text-neutral-100 z-10 !h-fit',
           active && '!bg-blue-900/50',
-          disabled && 'cursor-not-allowed opacity-50',
+          disabled && 'cursor-not-allowed pointer-events-none !text-neutral-100/20',
         )}
         disabled={disabled}
         onClick={onClick}
