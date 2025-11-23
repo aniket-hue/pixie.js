@@ -48,7 +48,6 @@ export class TransformControls {
       [Events.SELECTION_GROUP_REMOVED, this.handleSelectionRemoved],
 
       [Events.ZOOM_CHANGED, this.handleZoomChanged],
-      [Events.OBJECT_MODIFIED, this.handleSelectionUpdated],
       [Events.MOUSE_DOWN, this.handleMouseDown],
       [Events.MOUSE_MOVE, this.handleMouseMove],
       [Events.MOUSE_UP, this.handleMouseUp],
@@ -77,7 +76,9 @@ export class TransformControls {
   }
 
   private handleSelectionUpdated(event: { target: Entity }): void {
-    if (this.activeGroup?.id === event.target.id) {
+    console.trace(event);
+
+    if (this.activeGroup?.id === event.target?.id) {
       this.updateGroupCorners(this.activeGroup);
       this.canvas.requestRender();
     }
@@ -380,7 +381,6 @@ export class TransformControls {
       [Events.MOUSE_DOWN, this.handleMouseDown],
       [Events.MOUSE_UP, this.handleMouseUp],
       [Events.SELECTION_GROUP_UPDATED, this.handleSelectionUpdated],
-      [Events.OBJECT_MODIFIED, this.handleSelectionUpdated],
       [Events.SELECTION_GROUP_ADDED, this.handleSelectionAdded],
       [Events.SELECTION_GROUP_REMOVED, this.handleSelectionRemoved],
     ] as const;

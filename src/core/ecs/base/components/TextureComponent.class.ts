@@ -38,26 +38,44 @@ export class TextureComponent {
     return true;
   }
 
+  /**
+   * @description Value Range [0, 2]
+   */
   setBrightness(value: number) {
     this.brightness = value;
   }
 
+  /**
+   * @description Value Range [0, 2]
+   */
   setContrast(value: number) {
     this.contrast = value;
   }
 
+  /**
+   * @description Value Range [0, 2]
+   */
   setSaturation(value: number) {
     this.saturation = value;
   }
 
+  /**
+   * @description Value Range [0, 1]
+   */
   setHue(value: number) {
     this.hue = value;
   }
 
+  /**
+   * @description Value Range [0, 1]
+   */
   setSepia(value: number) {
     this.sepia = value;
   }
 
+  /**
+   * @description Value Range [0, 1]
+   */
   setInvert(value: number) {
     this.invert = value;
   }

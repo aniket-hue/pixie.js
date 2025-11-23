@@ -16,8 +16,6 @@ export function Sidebar() {
   const [zoomValue, setZoomValue] = useState(1);
   const { canvas } = useCanvasContext();
 
-  console.log(currentGroup);
-
   useEffect(() => {
     if (!canvas) {
       return;

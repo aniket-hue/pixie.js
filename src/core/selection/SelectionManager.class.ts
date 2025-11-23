@@ -250,7 +250,6 @@ export class SelectionManager {
         this.canvas.fire(Events.SELECTION_GROUP_UPDATED, { target: this.group });
       }
     } else {
-      const id = this.group?.id;
       this.removeGroup();
       this.canvas.fire(Events.SELECTION_GROUP_REMOVED, { target: this.group });
     }
