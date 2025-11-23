@@ -1,39 +1,22 @@
 import { Download, Group, LucideZoomIn, Square, ZoomOut } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { RectangleDrawing } from '../core/drawing/impl/RectangleDrawing.class';
-import { Events } from '../core/events';
-import { createSelectionGroup } from '../core/factory/selectionGroup';
-import { rgbaToArgb } from '../core/lib/color';
-import { cn } from '../shared/lib/cn';
-import { useCanvasContext } from '../widgets/canvas/model/ctx';
 
-function ToolbarItem({ children, onClick, active }: { children: React.ReactNode; onClick?: () => void; active?: boolean }) {
-  return (
-    <button
-      type="button"
-      className={cn(
-        'flex items-center justify-center hover:bg-blue-900/50 rounded-md p-1 cursor-pointer text-neutral-100',
-        active && 'bg-blue-900/50',
-      )}
-      onClick={onClick}
-    >
-      {children}
-    </button>
-  );
-}
-
-function ToolbarGroup({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-col gap-1">{children}</div>;
-}
-
-function ToolbarSeparator() {
-  return <div className="w-full h-px bg-neutral-100/20 my-1" />;
-}
+import { RectangleDrawing } from '../../../core/drawing/impl/RectangleDrawing.class';
+import type { Entity } from '../../../core/ecs/base/Entity.class';
+import { Events } from '../../../core/events';
+import { createSelectionGroup } from '../../../core/factory/selectionGroup';
+import { rgbaToArgb } from '../../../core/lib/color';
+import { useCanvasContext } from '../../../widgets/canvas/model/ctx';
+import { Filters } from './Filters';
+import { ToolbarGroup, ToolbarItemButton, ToolbarSeparator } from './toolbar';
 
 export function Sidebar() {
+  const [currentGroup, setCurrentGroup] = useState<Entity | null>(null);
   const [drawingMode, setDrawingMode] = useState(false);
   const [zoomValue, setZoomValue] = useState(1);
   const { canvas } = useCanvasContext();
+
+  console.log(currentGroup);
 
   useEffect(() => {
     if (!canvas) {
@@ -44,12 +27,24 @@ export function Sidebar() {
       setZoomValue(zoom);
     }
 
+    function selectionGroupEventHandler({ target }: { target: Entity }) {
+      setCurrentGroup(target);
+    }
+
+    function selectionGroupRemovedEventHandler() {
+      setCurrentGroup(null);
+    }
+
     if (canvas) {
       canvas.on(Events.ZOOM_CHANGED, zoomEventHandler);
+      canvas.on(Events.SELECTION_GROUP_ADDED, selectionGroupEventHandler);
+      canvas.on(Events.SELECTION_GROUP_REMOVED, selectionGroupRemovedEventHandler);
     }
 
     return () => {
       canvas.off(Events.ZOOM_CHANGED, zoomEventHandler);
+      canvas.off(Events.SELECTION_GROUP_ADDED, selectionGroupEventHandler);
+      canvas.off(Events.SELECTION_GROUP_REMOVED, selectionGroupRemovedEventHandler);
     };
   }, [canvas]);
 
@@ -142,36 +137,40 @@ export function Sidebar() {
 
   return (
     <div className="bg-blue-900/70 ring-1 ring-blue-700/50 backdrop-blur-md absolute left-4 top-1/2 -translate-y-1/2 z-[1000] rounded-lg px-1 py-1 shadow-md">
-      <ToolbarGroup>
-        <ToolbarItem onClick={handleDrawingMode} active={drawingMode}>
-          <Square size={20} />
-        </ToolbarItem>
+      <Filters group={currentGroup} canvas={canvas} />
 
-        <ToolbarItem onClick={handleGroup}>
+      <ToolbarGroup>
+        <ToolbarItemButton tooltip="Draw Square" onClick={handleDrawingMode} active={drawingMode}>
+          <Square size={20} />
+        </ToolbarItemButton>
+
+        <ToolbarItemButton tooltip="Group" onClick={handleGroup}>
           <Group size={20} />
-        </ToolbarItem>
+        </ToolbarItemButton>
       </ToolbarGroup>
 
       <ToolbarSeparator />
 
       <ToolbarGroup>
-        <ToolbarItem onClick={handleZoomIn}>
+        <ToolbarItemButton tooltip="Zoom In" onClick={handleZoomIn}>
           <LucideZoomIn size={20} />
-        </ToolbarItem>
+        </ToolbarItemButton>
 
-        <ToolbarItem onClick={handleResetZoom}>
+        <ToolbarItemButton tooltip="Zoom Reset" onClick={handleResetZoom}>
           <span className="text-neutral-100 text-xs font-medium">{zoomValue.toFixed(1)}</span>
-        </ToolbarItem>
+        </ToolbarItemButton>
 
-        <ToolbarItem onClick={handleZoomOut}>
+        <ToolbarItemButton tooltip="Zoom Out" onClick={handleZoomOut}>
           <ZoomOut size={20} />
-        </ToolbarItem>
+        </ToolbarItemButton>
+      </ToolbarGroup>
 
-        <ToolbarSeparator />
+      <ToolbarSeparator />
 
-        <ToolbarItem onClick={handleCapture}>
+      <ToolbarGroup>
+        <ToolbarItemButton tooltip="Capture" onClick={handleCapture}>
           <Download size={20} />
-        </ToolbarItem>
+        </ToolbarItemButton>
       </ToolbarGroup>
     </div>
   );

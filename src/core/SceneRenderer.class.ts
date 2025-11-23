@@ -306,83 +306,6 @@ export class SceneRenderer {
     gl.drawArraysInstanced(gl.ctx.TRIANGLES, 0, 6, instanceCount);
   }
 
-  // /**
-  //  * Recursively collect all entities in the scene graph (DFS traversal)
-  //  */
-  // private collectEntitiesDFS(entity: Entity, result: Entity[]): void {
-  //   // Add current entity if visible
-  //   if (entity.visibility.visible) {
-  //     result.push(entity);
-  //   }
-
-  //   // Recursively add children (DFS)
-  //   for (const child of entity.hierarchy.children) {
-  //     this.collectEntitiesDFS(child, result);
-  //   }
-  // }
-
-  // render(world: World) {
-  //   this.updateViewportAndResolution();
-
-  //   const allEntities: Entity[] = [];
-
-  //   console.log(world.getEntities());
-
-  //   // DFS traversal: collect all entities from root entities
-  //   for (const rootEntity of world.getEntities()) {
-  //     this.collectEntitiesDFS(rootEntity, allEntities);
-  //   }
-
-  //   const nonTexturedEntities: Entity[] = [];
-  //   const texturedEntities: Entity[] = [];
-
-  //   // Separate entities by texture
-  //   for (const entity of allEntities) {
-  //     if (entity.texture !== undefined) {
-  //       texturedEntities.push(entity);
-  //     } else {
-  //       nonTexturedEntities.push(entity);
-  //     }
-  //   }
-
-  //   if (nonTexturedEntities.length === 0 && texturedEntities.length === 0) {
-  //     return;
-  //   }
-
-  //   this.updateEntities(nonTexturedEntities);
-
-  //   const groupTexturedEntities = texturedEntities.reduce(
-  //     (acc, entity) => {
-  //       const textureData = entity.texture!.data;
-  //       const bin = textureData.bin;
-
-  //       if (!acc[bin]) {
-  //         acc[bin] = [];
-  //       }
-
-  //       acc[bin].push(entity);
-
-  //       return acc;
-  //     },
-  //     {} as Record<number, Entity[]>,
-  //   );
-
-  //   // Flush any pending atlas updates before rendering
-  //   this.textureManager.flushAtlasUpdates();
-
-  //   for (const bin in groupTexturedEntities) {
-  //     const atlasTexture = this.textureManager.getAtlasTexture(+bin);
-
-  //     if (atlasTexture) {
-  //       this.gl.ctx.activeTexture(this.gl.ctx.TEXTURE0);
-  //       this.gl.ctx.bindTexture(this.gl.ctx.TEXTURE_2D, atlasTexture);
-  //       this.gl.setUniform1i('basic2DProgram', 'u_texture', 0);
-  //     }
-
-  //     this.updateEntities(groupTexturedEntities[bin]);
-  //   }
-  // }
-
   private collectEntitiesDFS(entity: Entity, result: Entity[]): void {
     if (entity.visibility.visible) {
       result.push(entity);
@@ -404,10 +327,8 @@ export class SceneRenderer {
 
     if (allEntities.length === 0) return;
 
-    // Flush atlas changes before drawing
     this.textureManager.flushAtlasUpdates();
 
-    // One render pass
     this.updateEntities(allEntities);
   }
 }

@@ -215,7 +215,7 @@ export class SelectionManager {
 
         this.group = this.canvas.world.addEntity(createSelectionGroup({ children: entities })());
 
-        this.canvas.fire(Events.SELECTION_GROUP_ADDED, { id: this.group.id });
+        this.canvas.fire(Events.SELECTION_GROUP_ADDED, { target: this.group });
       } else {
         const addedEntities = entities.filter((entity) => !this.group?.hierarchy.children.includes(entity));
         const removedEntities = this.group?.hierarchy.children.filter((entity) => !entities.includes(entity));
@@ -247,12 +247,12 @@ export class SelectionManager {
           this.group!.hierarchy.addChild(e);
         });
 
-        this.canvas.fire(Events.SELECTION_GROUP_UPDATED, { id: this.group.id });
+        this.canvas.fire(Events.SELECTION_GROUP_UPDATED, { target: this.group });
       }
     } else {
       const id = this.group?.id;
       this.removeGroup();
-      this.canvas.fire(Events.SELECTION_GROUP_REMOVED, { id });
+      this.canvas.fire(Events.SELECTION_GROUP_REMOVED, { target: this.group });
     }
 
     this.canvas.requestRender();
