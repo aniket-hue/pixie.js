@@ -1,8 +1,8 @@
 import { BLACK_COLOR } from '../app/colors';
 import { TextureComponent } from '../ecs/base/components/TextureComponent.class';
 import { Entity } from '../ecs/base/Entity.class';
+import { m3 } from '../lib/math';
 import { withResolvers } from '../lib/promise';
-import { m3 } from '../math/matrix';
 import { TextureManager } from '../webgl/TextureManager.class';
 import type { ImageProps } from './types';
 

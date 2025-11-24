@@ -2,7 +2,7 @@ import type { BoundingBox } from '../../types';
 import type { Camera } from '../Camera.class';
 import type { Canvas } from '../Canvas.class';
 import type { World } from '../ecs/World.class';
-import { m3 } from '../math';
+import { m3 } from '../lib/math';
 import type { SceneRenderer } from '../SceneRenderer.class';
 import type { GlCore } from './GlCore.class';
 

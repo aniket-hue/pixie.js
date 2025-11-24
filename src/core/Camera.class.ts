@@ -1,7 +1,7 @@
 import type { Point } from '../types';
 import type { Canvas } from './Canvas.class';
 import { Events } from './events';
-import { m3 } from './math';
+import { m3 } from './lib/math';
 
 export class Camera {
   minZoom = 0.1;

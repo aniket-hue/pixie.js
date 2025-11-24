@@ -1,5 +1,5 @@
 import type { Entity } from '../ecs/base/Entity.class';
-import { m3 } from '../math';
+import { m3 } from '../lib/math';
 import { computeBoundsOfMatrix } from './computeBoundsOfMatrix';
 
 function getBounds({ worldMatrix, size }: { worldMatrix: number[]; size: { width: number; height: number } }) {

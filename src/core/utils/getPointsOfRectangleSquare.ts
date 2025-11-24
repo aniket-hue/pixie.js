@@ -1,7 +1,7 @@
 import type { Point } from '../../types';
 import type { Canvas } from '../Canvas.class';
 import type { Entity } from '../ecs/base/Entity.class';
-import { m3 } from '../math';
+import { m3 } from '../lib/math';
 
 type ReturnType<T extends boolean> = T extends true
   ? {

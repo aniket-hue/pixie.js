@@ -2,7 +2,7 @@ import type { Point } from '../../types';
 import type { Canvas } from '../Canvas.class';
 import type { Entity } from '../ecs/base/Entity.class';
 import { EventBus, Events } from '../events';
-import { m3 } from '../math';
+import { m3 } from '../lib/math';
 import { InteractionMode, type InteractionModeManager } from '../mode/InteractionModeManager.class';
 import { type Corner, diagonalPivotMap, getPointsOfRectangleSquare } from '../utils/getPointsOfRectangleSquare';
 import type { DragState, RotateState, ScaleState } from './types';

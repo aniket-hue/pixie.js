@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Canvas as CanvasClass } from '../../../core/Canvas.class';
-import { createImage, createRectangle } from '../../../core/factory';
-import { rgbaToArgb } from '../../../core/lib/color';
-import { Sidebar } from '../../../features/Sidebar';
+import { createImage } from '../../../core/factory';
+import { Sidebar } from '../../Sidebar';
 import { CanvasContext } from '../model/ctx';
 
 export function Canvas() {
@@ -20,21 +19,9 @@ export function Canvas() {
 
     (window as any).cx = canvas;
 
-    // const rectFactory = createRectangle({
-    //   x: 1000,
-    //   y: 1000,
-    //   width: 500,
-    //   height: 500,
-    //   fill: rgbaToArgb(124, 244, 0, 1),
-    // });
-
-    // const rectEntity = rectFactory();
-    // canvas.world.addEntity(rectEntity);
-
     const imageFactory = createImage({
       x: 0,
       y: 0,
-      // url: 'https://images.unsplash.com/photo-1706111597624-69bfaa902da0?q=80&w=987&auto=format&fit=crop&ixlib=rb-4.1.0',
       url: 'https://i.ibb.co/1YDqzmCK/Thumb-1920x1400.jpg',
       scaleX: 1,
       scaleY: 1,

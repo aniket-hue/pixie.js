@@ -1,4 +1,4 @@
-import { m3 } from '../../../math';
+import { m3 } from '../../../lib/math';
 import type { Entity } from '../Entity.class';
 
 export class MatrixComponent {

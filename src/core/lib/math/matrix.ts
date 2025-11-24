@@ -1,4 +1,4 @@
-import type { Point } from '../../types';
+import type { Point } from '../../../types';
 
 export const identityMatrix = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 

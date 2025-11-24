@@ -1,6 +1,6 @@
 import { BLACK_COLOR } from '../app/colors';
 import { Entity } from '../ecs/base/Entity.class';
-import { m3 } from '../math/matrix';
+import { m3 } from '../lib/math';
 import type { RectangleProps } from './types';
 
 export function createRectangle({
