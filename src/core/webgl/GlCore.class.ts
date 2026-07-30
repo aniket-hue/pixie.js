@@ -106,9 +106,16 @@ export class GlCore {
     this.ctx.clearColor(r, g, b, a);
   }
 
+  /** Canvas background, as 8-bit RGBA. */
+  private backgroundColor: [number, number, number, number] = [24, 24, 27, 255];
+
+  setBackgroundColor(r: number, g: number, b: number, a = 255) {
+    this.backgroundColor = [r, g, b, a];
+  }
+
   clear() {
-    const color = [242, 240, 239, 255].map((c) => c / 255);
-    this.ctx.clearColor(color[0], color[1], color[2], color[3]);
+    const [r, g, b, a] = this.backgroundColor.map((c) => c / 255);
+    this.ctx.clearColor(r, g, b, a);
     this.ctx.clear(this.ctx.COLOR_BUFFER_BIT);
   }
 

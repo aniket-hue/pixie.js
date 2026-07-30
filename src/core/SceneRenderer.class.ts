@@ -50,11 +50,13 @@ export class SceneRenderer {
   private instanceFilters2Location: number | null = null;
 
   private camera: Camera;
+  private canvas: Canvas;
   public textureManager: TextureManager;
 
   constructor(context: Canvas) {
     this.gl = context.getGlCore();
     this.camera = context.camera;
+    this.canvas = context;
     this.textureManager = TextureManager.getInstance();
     this.textureManager.initialize(this.gl.ctx);
 
@@ -149,7 +151,7 @@ export class SceneRenderer {
     const cameraViewportTransformLocation = gl.getUniformLocation('basic2DProgram', 'u_viewport_transform_matrix');
 
     if (resolutionLocation) {
-      gl.setUniform2f('basic2DProgram', 'u_resolution', [gl.width, gl.height]);
+      gl.setUniform2f('basic2DProgram', 'u_resolution', [this.canvas.width, this.canvas.height]);
     }
 
     if (cameraViewportTransformLocation) {
@@ -381,7 +383,7 @@ export class SceneRenderer {
 
     const allEntities: Entity[] = [];
 
-    for (const root of world.getEntities()) {
+    for (const root of world.getRoots()) {
       this.collectEntitiesDFS(root, allEntities);
     }
 

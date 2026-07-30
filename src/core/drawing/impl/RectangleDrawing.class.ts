@@ -88,7 +88,7 @@ export class RectangleDrawing implements DrawingStrategy {
       draggable: true,
     });
 
-    const entity = rectFactory(this.canvas.world);
+    const entity = rectFactory();
     this.canvas.world.addEntity(entity);
 
     this.drawingState = {

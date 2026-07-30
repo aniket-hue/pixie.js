@@ -20,7 +20,7 @@ export interface ScaleState {
 
 export interface RotateState {
   centerLocal: Point;
-  inverseLocalMatrix: number[];
+  inverseWorldMatrix: number[];
   startAngle: number;
   decomposedLocal: {
     scaleX: number;

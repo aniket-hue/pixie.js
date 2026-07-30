@@ -1,4 +1,5 @@
 import { BLACK_COLOR } from '../app/colors';
+import { Dirty } from '../ecs/base/components/DirtyComponent.class';
 import { TextureComponent } from '../ecs/base/components/TextureComponent.class';
 import { Entity } from '../ecs/base/Entity.class';
 import { m3 } from '../lib/math';
@@ -48,8 +49,8 @@ export function createImage({
         image.size.setWidth(actualWidth);
         image.size.setHeight(actualHeight);
 
-        image.texture = new TextureComponent(textureData);
-        image.dirty.markDirty();
+        image.texture = new TextureComponent(image, textureData);
+        image.dirty.markDirty(Dirty.TEXTURE);
 
         resolve(image);
       });
@@ -57,7 +58,7 @@ export function createImage({
       image.size.setWidth(width ?? 100);
       image.size.setHeight(height ?? 100);
 
-      image.texture = new TextureComponent({
+      image.texture = new TextureComponent(image, {
         texture: null,
         image: null,
         url,

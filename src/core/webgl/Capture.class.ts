@@ -35,14 +35,18 @@ export class Capture {
     const height = this.camera.context.height;
     const width = Math.ceil(height * aspectRatio);
 
+    const dpr = this.canvas.dpr;
+    const pixelWidth = Math.ceil(width * dpr);
+    const pixelHeight = Math.ceil(height * dpr);
+
     try {
       gl.clear();
 
       this.renderer.render(this.world);
 
-      const pixels = new Uint8Array(width * height * 4);
-      gl.ctx.readPixels(0, 0, width, height, gl.ctx.RGBA, gl.ctx.UNSIGNED_BYTE, pixels);
-      const dataURL = this.pixelsToDataURL(pixels, width, height);
+      const pixels = new Uint8Array(pixelWidth * pixelHeight * 4);
+      gl.ctx.readPixels(0, 0, pixelWidth, pixelHeight, gl.ctx.RGBA, gl.ctx.UNSIGNED_BYTE, pixels);
+      const dataURL = this.pixelsToDataURL(pixels, pixelWidth, pixelHeight);
 
       return dataURL;
     } finally {

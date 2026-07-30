@@ -6,6 +6,7 @@ import { MatrixComponent } from './components/MatrixComponent.class';
 import { SizeComponent } from './components/SizeComponent.class';
 import { StyleComponent } from './components/StyleComponent.class';
 import type { TextureComponent } from './components/TextureComponent.class';
+import type { World } from '../World.class';
 import type { ComponentType } from './components/types';
 import { VisibilityComponent } from './components/VisibilityComponent.class';
 
@@ -13,6 +14,9 @@ let nextId = 1;
 
 export class Entity {
   public readonly id: number;
+
+  /** Set while this entity is registered with a world; null otherwise. */
+  public world: World | null = null;
 
   public matrix: MatrixComponent;
   public size: SizeComponent;
@@ -27,6 +31,8 @@ export class Entity {
   constructor() {
     this.id = nextId++;
 
+    this.dirty = new DirtyComponent(this);
+
     this.matrix = new MatrixComponent(this);
     this.size = new SizeComponent(this);
     this.bounds = new BoundsComponent(this);
@@ -34,7 +40,6 @@ export class Entity {
     this.hierarchy = new HierarchyComponent(this);
     this.interaction = new InteractionComponent();
     this.visibility = new VisibilityComponent(this);
-    this.dirty = new DirtyComponent();
   }
 
   has(component: ComponentType) {

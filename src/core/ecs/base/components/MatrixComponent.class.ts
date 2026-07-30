@@ -1,5 +1,6 @@
 import { m3 } from '../../../lib/math';
 import type { Entity } from '../Entity.class';
+import { Dirty } from './DirtyComponent.class';
 
 export class MatrixComponent {
   private localMatrix: number[] = [1, 0, 0, 0, 1, 0, 0, 0, 1];
@@ -13,7 +14,7 @@ export class MatrixComponent {
   setLocalMatrix(matrix: number[]): void {
     this.localMatrix = [...matrix];
 
-    this.entity.dirty.markDirty();
+    this.entity.dirty.markDirty(Dirty.TRANSFORM);
   }
 
   setWorldMatrix(): void {

@@ -1,4 +1,5 @@
 import type { Entity } from '../Entity.class';
+import { Dirty } from './DirtyComponent.class';
 
 export class StyleComponent {
   private entity: Entity;
@@ -13,16 +14,16 @@ export class StyleComponent {
 
   setFill(fill: number): void {
     this.fill = fill;
-    this.entity.dirty.markDirty();
+    this.entity.dirty.markDirty(Dirty.STYLE);
   }
 
   setStroke(stroke: number): void {
     this.stroke = stroke;
-    this.entity.dirty.markDirty();
+    this.entity.dirty.markDirty(Dirty.STYLE);
   }
 
   setStrokeWidth(strokeWidth: number): void {
     this.strokeWidth = strokeWidth;
-    this.entity.dirty.markDirty();
+    this.entity.dirty.markDirty(Dirty.STYLE);
   }
 }

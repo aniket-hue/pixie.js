@@ -50,7 +50,7 @@ export class Picking {
     return allIntersecting;
   }
 
-  pick(options: PickOptionsPoint | PickOptionsBoundingBox, entities = Array.from(this.canvas.world.getEntities())): Entity[] | null {
+  pick(options: PickOptionsPoint | PickOptionsBoundingBox, entities = Array.from(this.canvas.world.getRoots())): Entity[] | null {
     if ('point' in options) {
       let selectedEntities: Entity[] = [];
 

@@ -23,9 +23,11 @@ export function createSelectionGroup({ children }: { children: Entity[] }) {
 
     newGroup.dirty.markDirty();
 
-    children.forEach((entity) => {
-      newGroup.hierarchy.addChild(entity);
-    });
+    /**
+     * Children are attached by the caller, after the group has been registered
+     * with the world. Reparenting them here would move them under an entity the
+     * world does not know about yet.
+     */
 
     return newGroup;
   };

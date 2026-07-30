@@ -76,16 +76,26 @@ export class SelectionManager {
     EventBus.on(Events.KEY_UP, this.onKeyUp);
   }
 
+  private useStrategy(kind: keyof Selections): void {
+    const Strategy = this.selections[kind];
+
+    if (this.selectionStrategy instanceof Strategy) {
+      return;
+    }
+
+    this.selectionStrategy = new Strategy(this.canvas, this.selectionState);
+  }
+
   private onKeyDown(event: KeyboardEvent): void {
     if (this.selectionStrategy instanceof MarqueeSelection) {
       return;
     }
 
-    if (event.shiftKey) {
-      this.selectionStrategy = new this.selections.add(this.canvas, this.selectionState);
-    } else {
-      this.selectionStrategy = new this.selections.click(this.canvas, this.selectionState);
+    if (this.state) {
+      return;
     }
+
+    this.useStrategy(event.shiftKey ? 'add' : 'click');
   }
 
   private onKeyUp(event: KeyboardEvent): void {
@@ -93,8 +103,12 @@ export class SelectionManager {
       return;
     }
 
+    if (this.state) {
+      return;
+    }
+
     if (!event.shiftKey && !event[PRIMARY_MODIFIER_KEY] && !event.altKey) {
-      this.selectionStrategy = new this.selections.click(this.canvas, this.selectionState);
+      this.useStrategy('click');
     }
   }
 
@@ -183,10 +197,7 @@ export class SelectionManager {
       return;
     }
 
-    const children = [...(this.activeGroup?.hierarchy.children ?? [])];
-
-    this.group.hierarchy.clearChildren();
-    this.canvas.world.removeEntity(this.group);
+    const children = this.canvas.world.dissolve(this.group);
 
     children?.forEach((child) => {
       if (this.childrenWithGroupsToRevertBack[child.id]) {
@@ -214,6 +225,10 @@ export class SelectionManager {
         });
 
         this.group = this.canvas.world.addEntity(createSelectionGroup({ children: entities })());
+
+        entities.forEach((entity) => {
+          this.group?.hierarchy.addChild(entity);
+        });
 
         this.canvas.fire(Events.SELECTION_GROUP_ADDED, { target: this.group });
       } else {
@@ -250,8 +265,10 @@ export class SelectionManager {
         this.canvas.fire(Events.SELECTION_GROUP_UPDATED, { target: this.group });
       }
     } else {
+      const removed = this.group;
+
       this.removeGroup();
-      this.canvas.fire(Events.SELECTION_GROUP_REMOVED, { target: this.group });
+      this.canvas.fire(Events.SELECTION_GROUP_REMOVED, { target: removed });
     }
 
     this.canvas.requestRender();

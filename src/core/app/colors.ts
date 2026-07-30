@@ -1,7 +1,13 @@
 import { rgbaToArgb } from '../lib/color';
 
 export const convertHelper = (color: string) => {
-  const [_, r, g, b, a] = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/);
+  const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/);
+
+  if (!match) {
+    throw new Error(`convertHelper: expected an rgb()/rgba() string, got "${color}"`);
+  }
+
+  const [, r, g, b, a] = match;
 
   return rgbaToArgb(+r, +g, +b, +a);
 };

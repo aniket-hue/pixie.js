@@ -1,10 +1,10 @@
-import type { Point } from '../types';
+import type { BoundingBox, Point } from '../types';
 import type { Canvas } from './Canvas.class';
 import { Events } from './events';
 import { m3 } from './lib/math';
 
 export class Camera {
-  minZoom = 0.1;
+  minZoom = 0.001;
   maxZoom = 5;
 
   context: Canvas;
@@ -97,6 +97,49 @@ export class Camera {
 
     this.context.fire(Events.PAN_CHANGED, this.x, this.y);
     this.context.requestRender();
+  }
+
+  /**
+   * Frames a world-space box in the viewport, clamped to the zoom limits.
+   *
+   * The camera matrix maps world space into the y-up GL viewport, so this
+   * composes as translate(viewport centre) . scale(zoom) . translate(-box centre).
+   */
+  fitToBounds(bounds: BoundingBox, padding = 1.1): void {
+    const viewportWidth = this.context.width;
+    const viewportHeight = this.context.height;
+
+    const width = (bounds.maxX - bounds.minX) * padding;
+    const height = (bounds.maxY - bounds.minY) * padding;
+
+    if (width <= 0 || height <= 0 || viewportWidth === 0 || viewportHeight === 0) {
+      return;
+    }
+
+    const fitted = Math.min(viewportWidth / width, viewportHeight / height);
+    const zoom = Math.max(this.minZoom, Math.min(this.maxZoom, fitted));
+
+    const centerX = (bounds.minX + bounds.maxX) / 2;
+    const centerY = (bounds.minY + bounds.maxY) / 2;
+
+    this.viewportTransformMatrix = m3.multiply(
+      m3.translate(viewportWidth / 2, viewportHeight / 2),
+      m3.scale(zoom, zoom),
+      m3.translate(-centerX, -centerY),
+    );
+
+    this.context.fire(Events.ZOOM_CHANGED, this.zoom);
+    this.context.fire(Events.PAN_CHANGED, this.x, this.y);
+    this.context.requestRender();
+  }
+
+  /** Frames every entity in the world. No-op on an empty world. */
+  fitToScene(padding = 1.1): void {
+    const bounds = this.context.world.getSceneBounds();
+
+    if (bounds) {
+      this.fitToBounds(bounds, padding);
+    }
   }
 
   screenToWorld(sx: number, sy: number): Point {

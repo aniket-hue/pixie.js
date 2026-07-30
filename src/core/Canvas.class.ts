@@ -30,6 +30,13 @@ export class Canvas {
 
   private capture: Capture | null = null;
 
+  private pendingFrame: number | null = null;
+  private frameWaiters: Array<() => void> = [];
+
+  private resizeObserver: ResizeObserver | null = null;
+  private dprQuery: MediaQueryList | null = null;
+  private handleDprChange: (() => void) | null = null;
+
   topCanvas: HTMLCanvasElement | null = null;
   canvasElement: HTMLCanvasElement;
 
@@ -67,14 +74,18 @@ export class Canvas {
     this.drawing = new DrawingManager(this);
 
     this.capture = new Capture(this);
+
+    this.observeResize();
   }
 
   initTopCanvas(): void {
-    const topCanvas = document.createElement('canvas');
-    topCanvas.width = this.canvasElement.width;
-    topCanvas.height = this.canvasElement.height;
-
     const rect = this.canvasElement.getBoundingClientRect();
+
+    const topCanvas = document.createElement('canvas');
+
+    topCanvas.width = Math.round(rect.width * this.dpr);
+    topCanvas.height = Math.round(rect.height * this.dpr);
+
     topCanvas.style.position = 'absolute';
 
     topCanvas.style.width = `${rect.width}px`;
@@ -90,23 +101,43 @@ export class Canvas {
 
   requestRender(): Promise<void> {
     return new Promise((resolve) => {
-      requestAnimationFrame(() => {
-        this.glCore.clear();
+      this.frameWaiters.push(resolve);
 
-        const allEntities = this.world.getEntities();
+      if (this.pendingFrame !== null) {
+        return;
+      }
 
-        this.sceneRenderer.render(this.world);
-        this.overlayRenderer.render(this.world);
+      this.pendingFrame = requestAnimationFrame(() => {
+        this.pendingFrame = null;
 
-        this.drawing.render();
+        this.renderFrame();
 
-        for (const entity of allEntities) {
-          entity.dirty.clearDirty();
+        const waiters = this.frameWaiters;
+        this.frameWaiters = [];
+
+        for (const resolveWaiter of waiters) {
+          resolveWaiter();
         }
-
-        resolve();
       });
     });
+  }
+
+  private renderFrame(): void {
+    this.glCore.clear();
+
+
+    this.world.reindexDirty();
+
+    const allEntities = this.world.getEntities();
+
+    this.sceneRenderer.render(this.world);
+    this.overlayRenderer.render(this.world);
+
+    this.drawing.render();
+
+    for (const entity of allEntities) {
+      entity.dirty.clearDirty();
+    }
   }
 
   get width(): number {
@@ -115,6 +146,10 @@ export class Canvas {
 
   get height(): number {
     return this.canvasElement.clientHeight;
+  }
+
+  get dpr(): number {
+    return window.devicePixelRatio || 1;
   }
 
   get zoom(): number {
@@ -155,24 +190,57 @@ export class Canvas {
     gl.clear(gl.COLOR_BUFFER_BIT);
   }
 
-  resize(): void {
+  resize(): boolean {
     const canvas = this.canvasElement;
-    const displayWidth = canvas.clientWidth;
-    const displayHeight = canvas.clientHeight;
+    const dpr = this.dpr;
 
-    if (canvas.width === displayWidth && canvas.height === displayHeight) {
-      return;
+    const cssWidth = canvas.clientWidth;
+    const cssHeight = canvas.clientHeight;
+
+    const targetWidth = Math.round(cssWidth * dpr);
+    const targetHeight = Math.round(cssHeight * dpr);
+
+    if (canvas.width === targetWidth && canvas.height === targetHeight) {
+      return false;
     }
 
-    canvas.width = displayWidth;
-    canvas.height = displayHeight;
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
 
     if (this.topCanvas) {
-      this.topCanvas.width = displayWidth;
-      this.topCanvas.height = displayHeight;
+      this.topCanvas.width = targetWidth;
+      this.topCanvas.height = targetHeight;
+
+      this.topCanvas.style.width = `${cssWidth}px`;
+      this.topCanvas.style.height = `${cssHeight}px`;
     }
 
-    this.getCtx()?.viewport(0, 0, canvas.width, canvas.height);
+    this.getCtx()?.viewport(0, 0, targetWidth, targetHeight);
+
+    return true;
+  }
+
+  private observeResize(): void {
+    this.resizeObserver = new ResizeObserver(() => {
+      if (this.resize()) {
+        this.requestRender();
+      }
+    });
+
+    this.resizeObserver.observe(this.canvasElement);
+
+    this.dprQuery = window.matchMedia(`(resolution: ${this.dpr}dppx)`);
+    this.handleDprChange = () => {
+      if (this.resize()) {
+        this.requestRender();
+      }
+
+      this.dprQuery?.removeEventListener('change', this.handleDprChange!);
+      this.dprQuery = window.matchMedia(`(resolution: ${this.dpr}dppx)`);
+      this.dprQuery.addEventListener('change', this.handleDprChange!);
+    };
+
+    this.dprQuery.addEventListener('change', this.handleDprChange);
   }
 
   on(event: EventKeys, callback: (...args: any[]) => void): void {
@@ -232,6 +300,26 @@ export class Canvas {
   }
 
   destroy(): void {
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
+
+    if (this.dprQuery && this.handleDprChange) {
+      this.dprQuery.removeEventListener('change', this.handleDprChange);
+    }
+    this.dprQuery = null;
+    this.handleDprChange = null;
+
+    if (this.pendingFrame !== null) {
+      cancelAnimationFrame(this.pendingFrame);
+      this.pendingFrame = null;
+    }
+
+    const waiters = this.frameWaiters;
+    this.frameWaiters = [];
+    for (const resolveWaiter of waiters) {
+      resolveWaiter();
+    }
+
     EventBus.destroy();
     this.inputHandler.destroy();
     if (this.transformControls) {

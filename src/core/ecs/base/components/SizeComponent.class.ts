@@ -1,6 +1,7 @@
 import { assert } from '../../../lib/assert';
 import { createBoundingBoxOfchildren } from '../../../utils/createBoundingBoxOfchildren';
 import type { Entity } from '../Entity.class';
+import { Dirty } from './DirtyComponent.class';
 
 export class SizeComponent {
   public width: number = 0;
@@ -13,12 +14,12 @@ export class SizeComponent {
 
   setWidth(width: number): void {
     this.width = width;
-    this.entity.dirty.markDirty();
+    this.entity.dirty.markDirty(Dirty.SIZE);
   }
 
   setHeight(height: number): void {
     this.height = height;
-    this.entity.dirty.markDirty();
+    this.entity.dirty.markDirty(Dirty.SIZE);
   }
 
   fitToChildren(): void {
@@ -27,6 +28,6 @@ export class SizeComponent {
     const { width, height } = createBoundingBoxOfchildren(this.entity.hierarchy.children);
     this.width = width;
     this.height = height;
-    this.entity.dirty.markDirty();
+    this.entity.dirty.markDirty(Dirty.SIZE);
   }
 }

@@ -27,7 +27,10 @@ export class OverlayRenderer {
   }
 
   private clear() {
-    this.topCtx.clearRect(0, 0, this.topCanvas.width, this.topCanvas.height);
+    const dpr = this.canvas.dpr;
+
+    this.topCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.topCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
   private getSelectionBoxBounds(startPos: Point, currentPos: Point | undefined) {

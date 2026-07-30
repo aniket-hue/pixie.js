@@ -123,7 +123,11 @@ export function Sidebar() {
     group.style.setFill(rgbaToArgb(122, 23, 0, 0.2));
     group.interaction.setSelectable(true);
 
-    canvas.world.removeEntity(activeGroup);
+    /**
+     * Dissolve rather than remove: the children have to survive the selection
+     * group being torn down, since they are what the new group is built from.
+     */
+    canvas.world.dissolve(activeGroup);
     canvas.world.addEntity(group);
 
     children.forEach((child) => {
