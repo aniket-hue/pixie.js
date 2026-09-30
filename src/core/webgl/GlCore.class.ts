@@ -19,16 +19,25 @@ export class GlCore {
     }
 
     this.ctx = gl;
+    this._basic2DProgram = this.init();
+  }
 
+  private init(): WebGLProgram {
     this.ctx.enable(this.ctx.BLEND);
     this.ctx.blendFunc(this.ctx.SRC_ALPHA, this.ctx.ONE_MINUS_SRC_ALPHA);
 
     const vertexShader = this.createShader(this.ctx.VERTEX_SHADER, vss);
     const fragmentShader = this.createShader(this.ctx.FRAGMENT_SHADER, fss);
 
-    this._basic2DProgram = this.createProgram(vertexShader, fragmentShader);
+    const program = this.createProgram(vertexShader, fragmentShader);
+    this.useProgram(program);
 
-    this.useProgram(this._basic2DProgram);
+    return program;
+  }
+
+  /** A restored context keeps the same object but loses all state, so rebuild it. */
+  restore(): void {
+    this._basic2DProgram = this.init();
   }
 
   private getProgram(program: Programs) {
@@ -106,9 +115,16 @@ export class GlCore {
     this.ctx.clearColor(r, g, b, a);
   }
 
+  /** Canvas background, as 8-bit RGBA. */
+  private backgroundColor: [number, number, number, number] = [24, 24, 27, 255];
+
+  setBackgroundColor(r: number, g: number, b: number, a = 255) {
+    this.backgroundColor = [r, g, b, a];
+  }
+
   clear() {
-    const color = [242, 240, 239, 255].map((c) => c / 255);
-    this.ctx.clearColor(color[0], color[1], color[2], color[3]);
+    const [r, g, b, a] = this.backgroundColor.map((c) => c / 255);
+    this.ctx.clearColor(r, g, b, a);
     this.ctx.clear(this.ctx.COLOR_BUFFER_BIT);
   }
 

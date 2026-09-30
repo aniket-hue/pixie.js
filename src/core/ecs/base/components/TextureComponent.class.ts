@@ -1,15 +1,11 @@
+import type { Entity } from '../Entity.class';
+import { Dirty } from './DirtyComponent.class';
+
 export interface TextureData {
-  texture: WebGLTexture | null;
-  image: HTMLImageElement | null;
   url: string;
   width: number;
   height: number;
   loaded: boolean;
-  uvX: number;
-  uvY: number;
-  uvWidth: number;
-  uvHeight: number;
-  bin: number;
 }
 
 export class TextureComponent {
@@ -22,7 +18,10 @@ export class TextureComponent {
   public sepia = 0.0;
   public invert = 0.0;
 
-  constructor(data: TextureData) {
+  private entity: Entity;
+
+  constructor(entity: Entity, data: TextureData) {
+    this.entity = entity;
     this.data = data;
   }
 
@@ -32,10 +31,7 @@ export class TextureComponent {
 
   setTexture(data: TextureData): void {
     this.data = data;
-  }
-
-  hasTexture(): boolean {
-    return true;
+    this.entity.dirty.markDirty(Dirty.TEXTURE);
   }
 
   /**
@@ -43,6 +39,7 @@ export class TextureComponent {
    */
   setBrightness(value: number) {
     this.brightness = value;
+    this.entity.dirty.markDirty(Dirty.FILTERS);
   }
 
   /**
@@ -50,6 +47,7 @@ export class TextureComponent {
    */
   setContrast(value: number) {
     this.contrast = value;
+    this.entity.dirty.markDirty(Dirty.FILTERS);
   }
 
   /**
@@ -57,6 +55,7 @@ export class TextureComponent {
    */
   setSaturation(value: number) {
     this.saturation = value;
+    this.entity.dirty.markDirty(Dirty.FILTERS);
   }
 
   /**
@@ -64,6 +63,7 @@ export class TextureComponent {
    */
   setHue(value: number) {
     this.hue = value;
+    this.entity.dirty.markDirty(Dirty.FILTERS);
   }
 
   /**
@@ -71,6 +71,7 @@ export class TextureComponent {
    */
   setSepia(value: number) {
     this.sepia = value;
+    this.entity.dirty.markDirty(Dirty.FILTERS);
   }
 
   /**
@@ -78,5 +79,6 @@ export class TextureComponent {
    */
   setInvert(value: number) {
     this.invert = value;
+    this.entity.dirty.markDirty(Dirty.FILTERS);
   }
 }

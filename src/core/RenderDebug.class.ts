@@ -5,11 +5,13 @@ export type RenderDebugFrame = {
   width: number;
   height: number;
   requests: Array<{ source: string; count: number }>;
-  draws: Array<{ instances: number; atlasBin: number | null; reason: string }>;
+  draws: Array<{ instances: number; pages: number; reason: string }>;
+  culled: number;
 };
 
 export class RenderDebug {
   frames: RenderDebugFrame[] = [];
+  culling = true;
   private requests = new Map<string, number>();
   private current: RenderDebugFrame | null = null;
   private startedAt = 0;
@@ -27,12 +29,16 @@ export class RenderDebug {
       this.requests.clear();
     }
 
-    this.current = { id: this.nextId++, target, cpuMs: 0, width, height, requests, draws: [] };
+    this.current = { id: this.nextId++, target, cpuMs: 0, width, height, requests, draws: [], culled: 0 };
     this.startedAt = performance.now();
   }
 
-  draw(instances: number, atlasBin: number | null, reason: string): void {
-    this.current?.draws.push({ instances, atlasBin, reason });
+  draw(instances: number, pages: number, reason: string): void {
+    this.current?.draws.push({ instances, pages, reason });
+  }
+
+  cull(count: number): void {
+    if (this.current) this.current.culled = count;
   }
 
   end(): void {

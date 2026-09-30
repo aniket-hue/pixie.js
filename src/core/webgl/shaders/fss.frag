@@ -1,5 +1,6 @@
 #version 300 es
-precision mediump float;
+// mediump cannot address single texels on a 2048px page.
+precision highp float;
 
 in vec2 v_texCoord;
 in vec2 v_size;
@@ -11,8 +12,9 @@ in vec2 v_scale;
 in float v_has_texture;
 in vec4 v_filters1; // brightness, contrast, saturation, hue
 in vec2 v_filters2; // sepia, invert
+flat in float v_page;
 
-uniform sampler2D u_texture;
+uniform sampler2D u_pages[16];
 
 out vec4 outColor;
 
@@ -23,6 +25,27 @@ vec3 applyHue(vec3 color, float angle) {
     vec3 k = vec3(0.57735);
     float dot_k_color = dot(k, color);
     return color * c + cross(k, color) * s + k * dot_k_color * (1.0 - c);
+}
+
+// GLSL ES 3.0 only allows constant indices into sampler arrays.
+vec4 samplePage(vec2 uv) {
+    int page = int(v_page + 0.5);
+    if (page == 0) return texture(u_pages[0], uv);
+    if (page == 1) return texture(u_pages[1], uv);
+    if (page == 2) return texture(u_pages[2], uv);
+    if (page == 3) return texture(u_pages[3], uv);
+    if (page == 4) return texture(u_pages[4], uv);
+    if (page == 5) return texture(u_pages[5], uv);
+    if (page == 6) return texture(u_pages[6], uv);
+    if (page == 7) return texture(u_pages[7], uv);
+    if (page == 8) return texture(u_pages[8], uv);
+    if (page == 9) return texture(u_pages[9], uv);
+    if (page == 10) return texture(u_pages[10], uv);
+    if (page == 11) return texture(u_pages[11], uv);
+    if (page == 12) return texture(u_pages[12], uv);
+    if (page == 13) return texture(u_pages[13], uv);
+    if (page == 14) return texture(u_pages[14], uv);
+    return texture(u_pages[15], uv);
 }
 
 void main() {
@@ -59,7 +82,7 @@ void main() {
         // Check if this instance has a texture
         if (v_has_texture > 0.5) {
             // Sample the texture
-            vec4 textureColor = texture(u_texture, v_texCoord);
+            vec4 textureColor = samplePage(v_texCoord);
             vec3 color = textureColor.rgb;
 
             // Apply filters

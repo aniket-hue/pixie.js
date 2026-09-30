@@ -1,9 +1,9 @@
 import { BLACK_COLOR } from '../app/colors';
+import { Dirty } from '../ecs/base/components/DirtyComponent.class';
 import { TextureComponent } from '../ecs/base/components/TextureComponent.class';
 import { Entity } from '../ecs/base/Entity.class';
 import { m3 } from '../lib/math';
-import { withResolvers } from '../lib/promise';
-import { TextureManager } from '../webgl/TextureManager.class';
+import type { TextureManager } from '../webgl/TextureManager.class';
 import type { ImageProps } from './types';
 
 export function createImage({
@@ -21,9 +21,8 @@ export function createImage({
   angle = 0,
   draggable = true,
   selectable = true,
-}: ImageProps) {
+}: ImageProps, textureManager: TextureManager) {
   return (): { entity: Entity; promise: Promise<Entity> } => {
-    const { promise, resolve } = withResolvers<Entity>();
     const image = new Entity();
 
     const matrix = m3.compose({
@@ -38,39 +37,16 @@ export function createImage({
     image.matrix.setLocalMatrix(matrix);
     image.matrix.setWorldMatrix();
 
-    // Load texture
-    const textureManager = TextureManager.getInstance();
-    try {
-      textureManager.loadTexture(url).then((textureData) => {
-        const actualWidth = width ?? textureData.width;
-        const actualHeight = height ?? textureData.height;
+    image.size.setWidth(width ?? 100);
+    image.size.setHeight(height ?? 100);
 
-        image.size.setWidth(actualWidth);
-        image.size.setHeight(actualHeight);
-
-        image.texture = new TextureComponent(textureData);
-        image.dirty.markDirty();
-
-        resolve(image);
-      });
-    } catch {
-      image.size.setWidth(width ?? 100);
-      image.size.setHeight(height ?? 100);
-
-      image.texture = new TextureComponent({
-        texture: null,
-        image: null,
-        url,
-        width: width ?? 100,
-        height: height ?? 100,
-        loaded: false,
-        uvX: 0,
-        uvY: 0,
-        uvWidth: 1,
-        uvHeight: 1,
-        bin: 0,
-      });
-    }
+    const promise = textureManager.loadTexture(url).then((textureData) => {
+      image.size.setWidth(width ?? textureData.width);
+      image.size.setHeight(height ?? textureData.height);
+      image.texture = new TextureComponent(image, textureData);
+      image.dirty.markDirty(Dirty.TEXTURE);
+      return image;
+    });
 
     image.style.setFill(fill);
     image.style.setStroke(stroke);

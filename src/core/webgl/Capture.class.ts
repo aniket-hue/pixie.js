@@ -1,58 +1,115 @@
 import type { BoundingBox } from '../../types';
-import type { Camera } from '../Camera.class';
 import type { Canvas } from '../Canvas.class';
 import type { World } from '../ecs/World.class';
 import { m3 } from '../lib/math';
 import type { SceneRenderer } from '../SceneRenderer.class';
 import type { GlCore } from './GlCore.class';
 
+const MAX_TILE_PASSES = 5;
+
 export class Capture {
   private canvas: Canvas;
   private gl: GlCore;
-  private camera: Camera;
   private world: World;
   private renderer: SceneRenderer;
 
   constructor(canvas: Canvas) {
     this.canvas = canvas;
     this.gl = this.canvas.getGlCore();
-    this.camera = canvas.camera;
     this.world = canvas.world;
     this.renderer = canvas['sceneRenderer'];
   }
 
-  captureRegion(p: BoundingBox): string {
-    const gl = this.gl;
+  /** Renders a world region offscreen. Waits for the tiles that resolution needs, so exports never use blurry fallbacks. */
+  async captureRegion(p: BoundingBox): Promise<string> {
+    const gl = this.gl.ctx;
 
     const { minX, minY, maxX, maxY } = p;
+    const worldWidth = maxX - minX;
+    const worldHeight = maxY - minY;
+    const height = this.canvas.height;
 
-    const savedViewport = gl.ctx.getParameter(gl.ctx.VIEWPORT);
-    const savedCameraTransform = [...this.camera.viewportTransformMatrix];
+    if (!Number.isFinite(worldWidth) || !Number.isFinite(worldHeight) || worldWidth <= 0 || worldHeight <= 0 || height <= 0) {
+      throw new Error('Cannot capture empty or invalid bounds');
+    }
 
-    this.adjustViewport({ minX, minY, maxX, maxY });
-    const aspectRatio = (maxX - minX) / (maxY - minY);
+    const width = Math.ceil((height * worldWidth) / worldHeight);
+    const pixelWidth = Math.ceil(width * this.canvas.dpr);
+    const pixelHeight = Math.ceil(height * this.canvas.dpr);
+    const maxSize = gl.getParameter(gl.MAX_RENDERBUFFER_SIZE) as number;
 
-    const height = this.camera.context.height;
-    const width = Math.ceil(height * aspectRatio);
+    if (pixelWidth > maxSize || pixelHeight > maxSize) {
+      throw new Error(`Capture exceeds the WebGL renderbuffer limit of ${maxSize} pixels`);
+    }
+
+    const viewMatrix = m3.multiply(m3.scale(height / worldHeight, height / worldHeight), m3.translate(-minX, -minY));
+    const textures = this.renderer.textureManager;
+    textures.keepStaleRequests = true;
 
     try {
-      this.canvas.debug?.begin('export', width, height);
+      for (let pass = 0; pass < MAX_TILE_PASSES; pass++) {
+        const { missing } = this.renderPass(viewMatrix, width, height, pixelWidth, pixelHeight, false);
+        if (!missing) break;
+        await textures.whenIdle();
+      }
+
+      return this.renderPass(viewMatrix, width, height, pixelWidth, pixelHeight, true).dataURL!;
+    } finally {
+      textures.keepStaleRequests = false;
+      this.canvas.requestRender('Capture.done');
+    }
+  }
+
+  private renderPass(viewMatrix: number[], width: number, height: number, pixelWidth: number, pixelHeight: number, read: boolean): { missing: number; dataURL?: string } {
+    const gl = this.gl.ctx;
+    const savedViewport = gl.getParameter(gl.VIEWPORT) as Int32Array;
+    const savedFramebuffer = gl.getParameter(gl.FRAMEBUFFER_BINDING) as WebGLFramebuffer | null;
+    const savedRenderbuffer = gl.getParameter(gl.RENDERBUFFER_BINDING) as WebGLRenderbuffer | null;
+    const framebuffer = gl.createFramebuffer();
+    const color = gl.createRenderbuffer();
+
+    if (!framebuffer || !color) {
+      if (framebuffer) gl.deleteFramebuffer(framebuffer);
+      if (color) gl.deleteRenderbuffer(color);
+      throw new Error('Failed to create capture framebuffer');
+    }
+
+    try {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+      gl.bindRenderbuffer(gl.RENDERBUFFER, color);
+      gl.renderbufferStorage(gl.RENDERBUFFER, gl.RGBA8, pixelWidth, pixelHeight);
+      gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, color);
+
+      if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+        throw new Error('Capture framebuffer is incomplete');
+      }
+
+      gl.viewport(0, 0, pixelWidth, pixelHeight);
+
+      let missing: number;
+      this.canvas.debug?.begin('export', pixelWidth, pixelHeight);
       try {
-        gl.clear();
-        this.renderer.render(this.world);
+        this.gl.clear();
+        this.world.reindexDirty();
+        missing = this.renderer.render(this.world, width, height, viewMatrix);
       } finally {
         this.canvas.debug?.end();
       }
 
-      const pixels = new Uint8Array(width * height * 4);
-      gl.ctx.readPixels(0, 0, width, height, gl.ctx.RGBA, gl.ctx.UNSIGNED_BYTE, pixels);
-      const dataURL = this.pixelsToDataURL(pixels, width, height);
+      if (!read) {
+        return { missing };
+      }
 
-      return dataURL;
+      const pixels = new Uint8Array(pixelWidth * pixelHeight * 4);
+      gl.readPixels(0, 0, pixelWidth, pixelHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+      return { missing, dataURL: this.pixelsToDataURL(pixels, pixelWidth, pixelHeight) };
     } finally {
-      gl.ctx.viewport(savedViewport[0], savedViewport[1], savedViewport[2], savedViewport[3]);
-      this.camera.viewportTransformMatrix = savedCameraTransform;
-      this.canvas.requestRender('Capture.restoreViewport');
+      gl.bindFramebuffer(gl.FRAMEBUFFER, savedFramebuffer);
+      gl.bindRenderbuffer(gl.RENDERBUFFER, savedRenderbuffer);
+      gl.viewport(savedViewport[0], savedViewport[1], savedViewport[2], savedViewport[3]);
+      gl.deleteFramebuffer(framebuffer);
+      gl.deleteRenderbuffer(color);
     }
   }
 
@@ -84,29 +141,4 @@ export class Capture {
     return canvas.toDataURL('image/png');
   }
 
-  adjustViewport(p: { minX: number; minY: number; maxX: number; maxY: number; padding?: number }) {
-    const { minX, minY, maxX, maxY, padding = 0 } = p;
-    const canvasWidth = this.canvas.width;
-    const canvasHeight = this.canvas.height;
-
-    const width = maxX - minX;
-    const height = maxY - minY;
-
-    const paddedWidth = width + padding * 2;
-    const paddedHeight = height + padding * 2;
-
-    const scaleX = canvasWidth / paddedWidth;
-    const scaleY = canvasHeight / paddedHeight;
-    const scale = Math.min(scaleX, scaleY);
-
-    const tlx = minX;
-    const tly = minY;
-
-    let m = m3.identity();
-
-    m = m3.multiply(m, m3.scale(scale, scale));
-    m = m3.multiply(m, m3.translate(-tlx, -tly));
-
-    this.camera.viewportTransformMatrix = m;
-  }
 }
