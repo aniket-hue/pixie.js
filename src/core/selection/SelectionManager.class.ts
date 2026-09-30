@@ -2,7 +2,7 @@ import type { Point } from '../../types';
 import type { Camera } from '../Camera.class';
 import type { Canvas } from '../Canvas.class';
 import type { Entity } from '../ecs/base/Entity.class';
-import { EventBus, Events } from '../events';
+import { Events } from '../events';
 import { PRIMARY_MODIFIER_KEY } from '../events/input/constants';
 import { createSelectionGroup } from '../factory/selectionGroup';
 import { assert } from '../lib/assert';
@@ -69,11 +69,11 @@ export class SelectionManager {
     this.onKeyDown = this.onKeyDown.bind(this);
     this.onKeyUp = this.onKeyUp.bind(this);
 
-    EventBus.on(Events.MOUSE_MOVE, this.onMouseMove);
-    EventBus.on(Events.MOUSE_DOWN, this.onMouseDown);
-    EventBus.on(Events.MOUSE_UP, this.onMouseUp);
-    EventBus.on(Events.KEY_DOWN, this.onKeyDown);
-    EventBus.on(Events.KEY_UP, this.onKeyUp);
+    this.canvas.on(Events.MOUSE_MOVE, this.onMouseMove);
+    this.canvas.on(Events.MOUSE_DOWN, this.onMouseDown);
+    this.canvas.on(Events.MOUSE_UP, this.onMouseUp);
+    this.canvas.on(Events.KEY_DOWN, this.onKeyDown);
+    this.canvas.on(Events.KEY_UP, this.onKeyUp);
   }
 
   private onKeyDown(event: KeyboardEvent): void {
@@ -265,10 +265,10 @@ export class SelectionManager {
   }
 
   public destroy(): void {
-    EventBus.off(Events.MOUSE_MOVE, this.onMouseMove);
-    EventBus.off(Events.MOUSE_DOWN, this.onMouseDown);
-    EventBus.off(Events.MOUSE_UP, this.onMouseUp);
-    EventBus.off(Events.KEY_DOWN, this.onKeyDown);
-    EventBus.off(Events.KEY_UP, this.onKeyUp);
+    this.canvas.off(Events.MOUSE_MOVE, this.onMouseMove);
+    this.canvas.off(Events.MOUSE_DOWN, this.onMouseDown);
+    this.canvas.off(Events.MOUSE_UP, this.onMouseUp);
+    this.canvas.off(Events.KEY_DOWN, this.onKeyDown);
+    this.canvas.off(Events.KEY_UP, this.onKeyUp);
   }
 }

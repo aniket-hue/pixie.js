@@ -1,7 +1,7 @@
 import type { Point } from '../../types';
 import type { Canvas } from '../Canvas.class';
 import type { Entity } from '../ecs/base/Entity.class';
-import { EventBus, Events } from '../events';
+import { Events, type EventKeys } from '../events';
 import { m3 } from '../lib/math';
 import { InteractionMode, type InteractionModeManager } from '../mode/InteractionModeManager.class';
 import { type Corner, diagonalPivotMap, getPointsOfRectangleSquare } from '../utils/getPointsOfRectangleSquare';
@@ -34,6 +34,7 @@ export class TransformControls {
   private dragState: DragState | null = null;
   private scaleState: ScaleState | null = null;
   private rotateState: RotateState | null = null;
+  private listeners: Array<[EventKeys, (...args: any[]) => void]> = [];
 
   constructor(canvas: Canvas, modeManager: InteractionModeManager) {
     this.canvas = canvas;
@@ -54,7 +55,9 @@ export class TransformControls {
     ] as const;
 
     listeners.forEach(([event, handler]) => {
-      EventBus.on(event, handler.bind(this));
+      const bound = handler.bind(this);
+      this.canvas.on(event, bound);
+      this.listeners.push([event, bound]);
     });
   }
 
@@ -374,17 +377,7 @@ export class TransformControls {
   }
 
   public destroy(): void {
-    const listeners = [
-      [Events.MOUSE_MOVE, this.handleMouseMove],
-      [Events.MOUSE_DOWN, this.handleMouseDown],
-      [Events.MOUSE_UP, this.handleMouseUp],
-      [Events.SELECTION_GROUP_UPDATED, this.handleSelectionUpdated],
-      [Events.SELECTION_GROUP_ADDED, this.handleSelectionAdded],
-      [Events.SELECTION_GROUP_REMOVED, this.handleSelectionRemoved],
-    ] as const;
-
-    listeners.forEach(([event, handler]) => {
-      EventBus.off(event, handler);
-    });
+    this.listeners.forEach(([event, handler]) => this.canvas.off(event, handler));
+    this.listeners = [];
   }
 }

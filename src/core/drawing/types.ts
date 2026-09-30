@@ -7,6 +7,7 @@ export interface DrawingState {
 }
 
 export interface DrawingStrategy {
+  destroy?(): void;
   drawingManager: DrawingManager;
   render(ctx: CanvasRenderingContext2D): void;
 }

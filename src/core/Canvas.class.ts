@@ -2,7 +2,7 @@ import { Camera } from './Camera.class';
 import { TransformControls } from './controls/TransformControls.class';
 import type { Entity } from './ecs/base/Entity.class';
 import { World } from './ecs/World.class';
-import { EventBus, type EventKeys } from './events';
+import { EventEmitter, type EventKeys } from './events';
 import { InputHandler } from './events/input/InputHandler.class';
 import { InteractionModeManager } from './mode/InteractionModeManager.class';
 import { OverlayRenderer } from './OverlayRenderer.class';
@@ -20,6 +20,7 @@ import { Picking } from './webgl/Picking.class';
 
 export class Canvas {
   public debug: RenderDebug | null = null;
+  private events = new EventEmitter();
   private glCore: GlCore;
   private inputHandler: InputHandler;
 
@@ -185,15 +186,15 @@ export class Canvas {
   }
 
   on(event: EventKeys, callback: (...args: any[]) => void): void {
-    EventBus.on(event, callback);
+    this.events.on(event, callback);
   }
 
   off(event: EventKeys, callback: (...args: any[]) => void): void {
-    EventBus.off(event, callback);
+    this.events.off(event, callback);
   }
 
   fire(event: EventKeys, ...args: any[]): void {
-    EventBus.emit(event, ...args);
+    this.events.emit(event, ...args);
   }
 
   getGlCore() {
@@ -242,10 +243,14 @@ export class Canvas {
 
   destroy(): void {
     this.debug = null;
-    EventBus.destroy();
+    this.selectionManager.destroy();
+    this.drawing.destroy();
     this.inputHandler.destroy();
     if (this.transformControls) {
       this.transformControls.destroy();
     }
+    this.events.destroy();
+    this.topCanvas?.remove();
+    this.topCanvas = null;
   }
 }

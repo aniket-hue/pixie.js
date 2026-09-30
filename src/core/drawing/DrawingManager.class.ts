@@ -22,6 +22,8 @@ export class DrawingManager {
 
   disableDrawing(): void {
     this.canvas.modeManager.setMode(InteractionMode.IDLE);
+    this.strategy?.destroy?.();
+    this.strategy = null;
   }
 
   isDrawing(): boolean {
@@ -29,6 +31,7 @@ export class DrawingManager {
   }
 
   setStrategy(strategy: DrawingStrategy): void {
+    this.strategy?.destroy?.();
     this.enableDrawing();
 
     strategy.drawingManager = this;
@@ -47,5 +50,10 @@ export class DrawingManager {
     assert(this.strategy !== null, 'Strategy not set');
 
     this.strategy.render(ctx);
+  }
+
+  destroy(): void {
+    this.strategy?.destroy?.();
+    this.strategy = null;
   }
 }

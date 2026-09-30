@@ -1,28 +1,28 @@
-export enum Events {
-  RESIZE = 'resize',
-  ZOOM_CHANGED = 'zoom_changed',
-  PAN_CHANGED = 'pan_changed',
+export const Events = {
+  RESIZE: 'resize',
+  ZOOM_CHANGED: 'zoom_changed',
+  PAN_CHANGED: 'pan_changed',
 
-  MOUSE_MOVE = 'mouse_move',
-  MOUSE_DOWN = 'mouse_down',
-  MOUSE_UP = 'mouse_up',
+  MOUSE_MOVE: 'mouse_move',
+  MOUSE_DOWN: 'mouse_down',
+  MOUSE_UP: 'mouse_up',
 
-  KEY_DOWN = 'key_down',
-  KEY_UP = 'key_up',
+  KEY_DOWN: 'key_down',
+  KEY_UP: 'key_up',
 
-  ADD_TO_SELECTION = 'add_to_selection',
-  REMOVE_FROM_SELECTION = 'remove_from_selection',
-  CLEAR_SELECTION = 'clear_selection',
+  ADD_TO_SELECTION: 'add_to_selection',
+  REMOVE_FROM_SELECTION: 'remove_from_selection',
+  CLEAR_SELECTION: 'clear_selection',
 
-  OBJECT_MODIFIED = 'object_modified',
+  OBJECT_MODIFIED: 'object_modified',
 
-  SELECTION_GROUP_ADDED = 'selection_group_added',
-  SELECTION_GROUP_REMOVED = 'selection_group_removed',
-  SELECTION_GROUP_UPDATED = 'selection_group_updated',
+  SELECTION_GROUP_ADDED: 'selection_group_added',
+  SELECTION_GROUP_REMOVED: 'selection_group_removed',
+  SELECTION_GROUP_UPDATED: 'selection_group_updated',
 
-  LOCAL_MATRIX_CHANGED = 'local_matrix_changed',
-}
+  LOCAL_MATRIX_CHANGED: 'local_matrix_changed',
+} as const;
 
-export type EventKeys = Events;
+export type EventKeys = (typeof Events)[keyof typeof Events];
 
-export { EventBus } from './Events.class';
+export { EventEmitter } from './Events.class';

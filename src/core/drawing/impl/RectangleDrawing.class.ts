@@ -1,6 +1,6 @@
 import { convertHelper } from '../../app/colors';
 import type { Canvas } from '../../Canvas.class';
-import { EventBus, Events } from '../../events';
+import { Events } from '../../events';
 import { createRectangle } from '../../factory';
 import { assert } from '../../lib/assert';
 import type { DrawingManager } from '../DrawingManager.class';
@@ -28,9 +28,9 @@ export class RectangleDrawing implements DrawingStrategy {
     this.onMouseUp = this.onMouseUp.bind(this);
     this.onMouseMove = this.onMouseMove.bind(this);
 
-    EventBus.on(Events.MOUSE_DOWN, this.onMouseDown.bind(this));
-    EventBus.on(Events.MOUSE_UP, this.onMouseUp.bind(this));
-    EventBus.on(Events.MOUSE_MOVE, this.onMouseMove.bind(this));
+    this.canvas.on(Events.MOUSE_DOWN, this.onMouseDown);
+    this.canvas.on(Events.MOUSE_UP, this.onMouseUp);
+    this.canvas.on(Events.MOUSE_MOVE, this.onMouseMove);
   }
 
   private onMouseDown(event: MouseEvent): void {
@@ -88,7 +88,7 @@ export class RectangleDrawing implements DrawingStrategy {
       draggable: true,
     });
 
-    const entity = rectFactory(this.canvas.world);
+    const entity = rectFactory();
     this.canvas.world.addEntity(entity);
 
     this.drawingState = {
@@ -120,5 +120,11 @@ export class RectangleDrawing implements DrawingStrategy {
     ctx.fillStyle = this.drawingOptions.fillColor;
     ctx.fillRect(x, y, width, height);
     ctx.restore();
+  }
+
+  destroy(): void {
+    this.canvas.off(Events.MOUSE_DOWN, this.onMouseDown);
+    this.canvas.off(Events.MOUSE_UP, this.onMouseUp);
+    this.canvas.off(Events.MOUSE_MOVE, this.onMouseMove);
   }
 }
