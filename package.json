@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "biome check .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "bench": "node bench/run.mjs"
   },
   "dependencies": {
     "@mantine/core": "^8.3.9",
