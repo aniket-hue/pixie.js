@@ -82,7 +82,7 @@ export class Camera {
     }
 
     this.context.fire(Events.ZOOM_CHANGED, this.zoom);
-    this.context.requestRender();
+    this.context.requestRender('Camera.zoomAt');
   }
 
   pan(dx: number, dy: number) {
@@ -96,7 +96,7 @@ export class Camera {
     this.viewportTransformMatrix = m3.multiply(this.viewportTransformMatrix, t);
 
     this.context.fire(Events.PAN_CHANGED, this.x, this.y);
-    this.context.requestRender();
+    this.context.requestRender('Camera.pan');
   }
 
   screenToWorld(sx: number, sy: number): Point {

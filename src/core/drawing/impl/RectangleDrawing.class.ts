@@ -55,7 +55,7 @@ export class RectangleDrawing implements DrawingStrategy {
     };
 
     this.drawingState.endPoint = currentPoint;
-    this.canvas.requestRender();
+    this.canvas.requestRender('RectangleDrawing.preview');
   }
 
   private onMouseUp(): void {
@@ -96,7 +96,7 @@ export class RectangleDrawing implements DrawingStrategy {
       endPoint: null,
     };
 
-    this.canvas.requestRender();
+    this.canvas.requestRender('RectangleDrawing.complete');
 
     this.drawingManager.disableDrawing();
     this.drawingOptions.onComplete?.();

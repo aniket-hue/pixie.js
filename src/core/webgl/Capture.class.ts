@@ -36,9 +36,13 @@ export class Capture {
     const width = Math.ceil(height * aspectRatio);
 
     try {
-      gl.clear();
-
-      this.renderer.render(this.world);
+      this.canvas.debug?.begin('export', width, height);
+      try {
+        gl.clear();
+        this.renderer.render(this.world);
+      } finally {
+        this.canvas.debug?.end();
+      }
 
       const pixels = new Uint8Array(width * height * 4);
       gl.ctx.readPixels(0, 0, width, height, gl.ctx.RGBA, gl.ctx.UNSIGNED_BYTE, pixels);
@@ -48,7 +52,7 @@ export class Capture {
     } finally {
       gl.ctx.viewport(savedViewport[0], savedViewport[1], savedViewport[2], savedViewport[3]);
       this.camera.viewportTransformMatrix = savedCameraTransform;
-      this.canvas.requestRender();
+      this.canvas.requestRender('Capture.restoreViewport');
     }
   }
 

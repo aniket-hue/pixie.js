@@ -26,7 +26,7 @@ export function Filters({ group, canvas }: { group: Entity | null; canvas: Canva
     }
 
     filter(e);
-    canvas?.requestRender();
+    canvas?.requestRender('Filters.change');
   };
 
   const filters = useMemo(() => {

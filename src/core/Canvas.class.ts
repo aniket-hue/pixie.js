@@ -7,6 +7,7 @@ import { InputHandler } from './events/input/InputHandler.class';
 import { InteractionModeManager } from './mode/InteractionModeManager.class';
 import { OverlayRenderer } from './OverlayRenderer.class';
 import { SceneRenderer } from './SceneRenderer.class';
+import type { RenderDebug } from './RenderDebug.class';
 import { SelectionManager } from './selection/SelectionManager.class';
 import { GlCore } from './webgl/GlCore.class';
 
@@ -18,6 +19,7 @@ import { Capture } from './webgl/Capture.class';
 import { Picking } from './webgl/Picking.class';
 
 export class Canvas {
+  public debug: RenderDebug | null = null;
   private glCore: GlCore;
   private inputHandler: InputHandler;
 
@@ -88,20 +90,27 @@ export class Canvas {
     this.topCanvas = topCanvas;
   }
 
-  requestRender(): Promise<void> {
+  requestRender(source = 'External requestRender'): Promise<void> {
     return new Promise((resolve) => {
       requestAnimationFrame(() => {
-        this.glCore.clear();
+        this.debug?.request(source);
+        this.debug?.begin('viewport', this.canvasElement.width, this.canvasElement.height);
+        try {
+          this.glCore.clear();
 
-        const allEntities = this.world.getEntities();
+          const allEntities = this.world.getEntities();
 
-        this.sceneRenderer.render(this.world);
-        this.overlayRenderer.render(this.world);
+          this.sceneRenderer.render(this.world);
+          this.overlayRenderer.render(this.world);
 
-        this.drawing.render();
+          this.drawing.render();
 
-        for (const entity of allEntities) {
-          entity.dirty.clearDirty();
+          for (const entity of allEntities) {
+            entity.dirty.clearDirty();
+          }
+
+        } finally {
+          this.debug?.end();
         }
 
         resolve();
@@ -124,7 +133,7 @@ export class Canvas {
   set zoom(value: number) {
     this.camera.zoom = value;
 
-    this.requestRender();
+    this.requestRender('Canvas.zoom');
   }
 
   get element(): HTMLCanvasElement {
@@ -232,6 +241,7 @@ export class Canvas {
   }
 
   destroy(): void {
+    this.debug = null;
     EventBus.destroy();
     this.inputHandler.destroy();
     if (this.transformControls) {

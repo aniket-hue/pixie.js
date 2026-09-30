@@ -28,7 +28,7 @@ export class MarqueeSelection {
     });
 
     if (entities?.length) {
-      this.canvas.requestRender();
+      this.canvas.requestRender('MarqueeSelection.start: object hit');
 
       return;
     }
@@ -43,7 +43,7 @@ export class MarqueeSelection {
       r: 0,
     });
 
-    this.canvas.requestRender();
+    this.canvas.requestRender('MarqueeSelection.start');
   }
 
   update(point: Point) {
@@ -74,7 +74,7 @@ export class MarqueeSelection {
     });
 
     if (!entities?.length) {
-      this.canvas.requestRender();
+      this.canvas.requestRender('MarqueeSelection.update: empty');
 
       return;
     }
@@ -100,6 +100,6 @@ export class MarqueeSelection {
   }
 
   cleanup() {
-    this.canvas.requestRender();
+    this.canvas.requestRender('MarqueeSelection.cleanup');
   }
 }

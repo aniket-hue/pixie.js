@@ -50,11 +50,13 @@ export class SceneRenderer {
   private instanceFilters2Location: number | null = null;
 
   private camera: Camera;
+  private canvas: Canvas;
   public textureManager: TextureManager;
 
   constructor(context: Canvas) {
     this.gl = context.getGlCore();
     this.camera = context.camera;
+    this.canvas = context;
     this.textureManager = TextureManager.getInstance();
     this.textureManager.initialize(this.gl.ctx);
 
@@ -237,7 +239,7 @@ export class SceneRenderer {
     }
   }
 
-  private updateEntities(entities: Entity[]) {
+  private updateEntities(entities: Entity[], atlasBin: number | null = null, reason = 'End of scene') {
     const gl = this.gl;
     const instanceCount = Math.min(entities.length, this.maxInstances);
 
@@ -364,6 +366,7 @@ export class SceneRenderer {
     this.setupInstancedAttributes();
 
     gl.drawArraysInstanced(gl.ctx.TRIANGLES, 0, 6, instanceCount);
+    this.canvas.debug?.draw(instanceCount, atlasBin, reason);
   }
 
   private collectEntitiesDFS(entity: Entity, result: Entity[]): void {

@@ -62,7 +62,7 @@ export class TransformControls {
     if (!this.activeGroup) return;
 
     this.updateGroupCorners(this.activeGroup);
-    this.canvas.requestRender();
+    this.canvas.requestRender('TransformControls.zoomChanged');
   }
 
   private handleSelectionAdded(event: { target: Entity }): void {
@@ -71,20 +71,20 @@ export class TransformControls {
     if (entity) {
       this.activeGroup = entity;
       this.updateGroupCorners(entity);
-      this.canvas.requestRender();
+      this.canvas.requestRender('TransformControls.selectionAdded');
     }
   }
 
   private handleSelectionUpdated(event: { target: Entity }): void {
     if (this.activeGroup?.id === event.target?.id) {
       this.updateGroupCorners(this.activeGroup);
-      this.canvas.requestRender();
+      this.canvas.requestRender('TransformControls.selectionUpdated');
     }
   }
 
   private handleSelectionRemoved(): void {
     this.resetState();
-    this.canvas.requestRender();
+    this.canvas.requestRender('TransformControls.selectionRemoved');
   }
 
   private resetState(): void {
@@ -182,7 +182,7 @@ export class TransformControls {
     this.rotateState = null;
 
     if (this.activeGroup) {
-      this.canvas.requestRender();
+      this.canvas.requestRender('TransformControls.mouseUp');
     }
   }
 
@@ -235,7 +235,7 @@ export class TransformControls {
 
     this.activeGroup.dirty.markDirty();
     this.updateGroupCorners(this.activeGroup);
-    this.canvas.requestRender();
+    this.canvas.requestRender('TransformControls.updateRotating');
   }
 
   private startScaling(corner: Corner, mouseWorldPos: Point): void {
@@ -308,7 +308,7 @@ export class TransformControls {
     this.activeGroup.dirty.markDirty();
     this.updateGroupCorners(this.activeGroup);
 
-    this.canvas.requestRender();
+    this.canvas.requestRender('TransformControls.updateScaling');
   }
 
   private startDragging(entity: Entity, worldPos: Point, screenPos: Point): void {
@@ -338,7 +338,7 @@ export class TransformControls {
     entity.matrix.setWorldMatrix();
 
     this.canvas.fire(Events.OBJECT_MODIFIED, { id: entity.id });
-    this.canvas.requestRender();
+    this.canvas.requestRender('TransformControls.updateDragging');
   }
 
   private getCornerAtPoint(screenPos: Point): Corner | null {

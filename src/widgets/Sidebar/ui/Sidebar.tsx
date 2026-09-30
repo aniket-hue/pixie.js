@@ -130,7 +130,7 @@ export function Sidebar() {
       group.hierarchy.addChild(child);
     });
 
-    canvas.requestRender();
+    canvas.requestRender('Sidebar.group');
   }
 
   return (

@@ -3,6 +3,7 @@ import { Canvas as CanvasClass } from '../../../core/Canvas.class';
 import { createImage } from '../../../core/factory';
 import { Sidebar } from '../../Sidebar';
 import { CanvasContext } from '../model/ctx';
+import { RenderDebugPanel } from './RenderDebugPanel';
 
 export function Canvas() {
   const [canvas, setCanvas] = useState<CanvasClass | null>(null);
@@ -32,10 +33,10 @@ export function Canvas() {
 
     promise.then((entity) => {
       canvas.world.addEntity(entity);
-      canvas.requestRender();
+      canvas.requestRender('Demo.imageLoaded');
     });
 
-    canvas.requestRender();
+    canvas.requestRender('Demo.initialRender');
   }, []);
 
   return (
@@ -44,6 +45,7 @@ export function Canvas() {
         <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-300 size-1"></div>
 
         <Sidebar />
+        <RenderDebugPanel />
         <canvas className="flex-1 block w-full h-full" ref={canvasRef} />
       </div>
     </CanvasContext.Provider>

@@ -174,7 +174,7 @@ export class SelectionManager {
         this.removeGroup();
       }
 
-      this.canvas.requestRender();
+      this.canvas.requestRender('SelectionManager.marquee');
     }
   }
 
@@ -254,7 +254,7 @@ export class SelectionManager {
       this.canvas.fire(Events.SELECTION_GROUP_REMOVED, { target: this.group });
     }
 
-    this.canvas.requestRender();
+    this.canvas.requestRender('SelectionManager.mouseUp');
 
     this.state = null;
     this.selectionBox = null;
