@@ -93,7 +93,7 @@ export function Sidebar() {
 
     const selectedObjects = canvas.getSelectedObjects();
 
-    const dataUrl = await canvas.toDataURL({}, { entities: selectedObjects });
+    const dataUrl = selectedObjects.length ? await canvas.toDataURL({}, { entities: selectedObjects }) : canvas.element.toDataURL('image/png');
     const a = document.createElement('a');
     a.href = dataUrl;
     a.download = 'screenshot.png';
@@ -123,7 +123,7 @@ export function Sidebar() {
     group.style.setFill(rgbaToArgb(122, 23, 0, 0.2));
     group.interaction.setSelectable(true);
 
-    canvas.world.removeEntity(activeGroup);
+    canvas.world.dissolve(activeGroup);
     canvas.world.addEntity(group);
 
     children.forEach((child) => {
