@@ -30,10 +30,15 @@ export const diagonalPivotMap: Record<Corner, Corner> = {
   center: 'center',
 };
 
+const ROTATE_HANDLE_SCREEN_OFFSET = 30;
+
 export function getPointsOfRectangleSquare<T extends boolean>(canvas: Canvas, entity: Entity, withScreen: T = false as T): ReturnType<T> {
   const worldMatrix = entity.matrix.getWorldMatrix();
   const width = entity.size.width;
   const height = entity.size.height;
+
+  const worldScaleY = Math.hypot(worldMatrix[3], worldMatrix[4]) || 1;
+  const rotateOffset = ROTATE_HANDLE_SCREEN_OFFSET / (canvas.zoom * worldScaleY);
 
   const localCorners = {
     tl: { x: -width / 2, y: height / 2 },
@@ -48,7 +53,7 @@ export function getPointsOfRectangleSquare<T extends boolean>(canvas: Canvas, en
     mr: { x: width / 2, y: 0 }, // right
 
     // Rotate
-    rotate: { x: 0, y: height / 2 + 30 / canvas.zoom },
+    rotate: { x: 0, y: height / 2 + rotateOffset },
 
     center: { x: 0, y: 0 },
   };

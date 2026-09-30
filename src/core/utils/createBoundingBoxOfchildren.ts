@@ -29,6 +29,20 @@ export function createBoundingBoxOfchildren(children: Entity[]) {
     };
   }
 
+  if (children.length === 1) {
+    const child = children[0];
+
+    return {
+      localMatrix: [...child.matrix.getWorldMatrix()],
+      width: child.size.width,
+      height: child.size.height,
+      bounds: getBounds({
+        worldMatrix: child.matrix.getWorldMatrix(),
+        size: { width: child.size.width, height: child.size.height },
+      }),
+    };
+  }
+
   const groupBounds = {
     minX: Infinity,
     minY: Infinity,

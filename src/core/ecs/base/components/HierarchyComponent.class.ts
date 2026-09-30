@@ -1,5 +1,6 @@
 import { m3 } from '../../../lib/math';
 import type { Entity } from '../Entity.class';
+import { Dirty } from './DirtyComponent.class';
 
 export class HierarchyComponent {
   public parent: Entity | null = null;
@@ -27,8 +28,10 @@ export class HierarchyComponent {
 
     this.convertChildWorldToLocal(child);
 
-    child.dirty.markDirty();
-    this.entity.dirty.markDirty();
+    (this.entity.world ?? child.world)?.onAttach(child);
+
+    child.dirty.markDirty(Dirty.HIERARCHY);
+    this.entity.dirty.markDirty(Dirty.HIERARCHY);
   }
 
   private resetChild(child: Entity): void {
@@ -37,7 +40,7 @@ export class HierarchyComponent {
     const worldMatrix = child.matrix.getWorldMatrix();
     child.matrix.setLocalMatrix([...worldMatrix]);
 
-    child.dirty.markDirty();
+    child.dirty.markDirty(Dirty.HIERARCHY);
   }
 
   removeChild(child: Entity): void {
@@ -47,7 +50,7 @@ export class HierarchyComponent {
     this.resetChild(child);
     this.children.splice(index, 1);
 
-    this.entity.dirty.markDirty();
+    this.entity.dirty.markDirty(Dirty.HIERARCHY);
   }
 
   clearChildren(): void {
@@ -56,7 +59,7 @@ export class HierarchyComponent {
     }
 
     this.children = [];
-    this.entity.dirty.markDirty();
+    this.entity.dirty.markDirty(Dirty.HIERARCHY);
   }
 
   doesChildBelongToGroup(child: Entity): boolean {

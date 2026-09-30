@@ -23,10 +23,6 @@ export function createSelectionGroup({ children }: { children: Entity[] }) {
 
     newGroup.dirty.markDirty();
 
-    children.forEach((entity) => {
-      newGroup.hierarchy.addChild(entity);
-    });
-
     return newGroup;
   };
 }

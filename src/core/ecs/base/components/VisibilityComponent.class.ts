@@ -1,4 +1,5 @@
 import type { Entity } from '../Entity.class';
+import { Dirty } from './DirtyComponent.class';
 
 export class VisibilityComponent {
   private entity: Entity;
@@ -10,7 +11,7 @@ export class VisibilityComponent {
 
   setVisible(visible: boolean): void {
     this.visible = visible;
-    this.entity.dirty.markDirty();
+    this.entity.dirty.markDirty(Dirty.VISIBILITY);
   }
 
   // updateVisibility(): void {

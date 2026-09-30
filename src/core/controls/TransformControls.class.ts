@@ -115,7 +115,7 @@ export class TransformControls {
     }
 
     if (corner === 'rotate') {
-      this.startRotating();
+      this.startRotating(worldPos);
       event.preventDefault();
       return;
     }
@@ -126,7 +126,7 @@ export class TransformControls {
       return;
     }
 
-    const entity = this.canvas.picker.pick({ point: worldPos })?.[0];
+    const entity = this.canvas.picker.pick({ point: worldPos, filter: (candidate) => candidate !== this.activeGroup })?.[0];
 
     if (entity && (!this.activeGroup || this.activeGroup?.hierarchy.doesChildBelongToGroup(entity)) && entity.interaction.draggable) {
       /**
@@ -189,26 +189,26 @@ export class TransformControls {
     }
   }
 
-  private startRotating(): void {
+  private startRotating(mouseWorldPos: Point): void {
     if (!this.activeGroup) return;
 
     this.modeManager.setMode(InteractionMode.ROTATING);
+
     const { worldCorners } = getPointsOfRectangleSquare(this.canvas, this.activeGroup, false);
     const center = worldCorners.center;
 
-    const worldMatrix = this.activeGroup.matrix.getWorldMatrix();
-    const inverseWorldMatrix = m3.inverse(worldMatrix);
-
-    const localMatrix = this.activeGroup.matrix.getLocalMatrix();
-    const decomposedLocal = m3.decompose(localMatrix);
-    const inverseLocalMatrix = m3.inverse(localMatrix);
+    const inverseWorldMatrix = m3.inverse(this.activeGroup.matrix.getWorldMatrix());
+    const decomposedLocal = m3.decompose(this.activeGroup.matrix.getLocalMatrix());
 
     const centerLocal = m3.transformPoint(inverseWorldMatrix, center.x, center.y);
+    const startMouseLocal = m3.transformPoint(inverseWorldMatrix, mouseWorldPos.x, mouseWorldPos.y);
+
+    const startAngle = Math.atan2(startMouseLocal.y - centerLocal.y, startMouseLocal.x - centerLocal.x);
 
     this.rotateState = {
       centerLocal,
-      inverseLocalMatrix,
-      startAngle: decomposedLocal.rotation + Math.PI / 2,
+      inverseWorldMatrix,
+      startAngle,
       decomposedLocal,
     };
   }
@@ -216,9 +216,9 @@ export class TransformControls {
   private updateRotating(_event: MouseEvent, mouseWorldPos: Point): void {
     if (!this.rotateState || !this.activeGroup) return;
 
-    const { centerLocal, inverseLocalMatrix, decomposedLocal, startAngle } = this.rotateState;
+    const { centerLocal, inverseWorldMatrix, decomposedLocal, startAngle } = this.rotateState;
 
-    const currentMouseLocal = m3.transformPoint(inverseLocalMatrix, mouseWorldPos.x, mouseWorldPos.y);
+    const currentMouseLocal = m3.transformPoint(inverseWorldMatrix, mouseWorldPos.x, mouseWorldPos.y);
 
     const currentAngle = Math.atan2(currentMouseLocal.y - centerLocal.y, currentMouseLocal.x - centerLocal.x);
 
@@ -236,7 +236,6 @@ export class TransformControls {
     this.activeGroup.matrix.setLocalMatrix(finalMatrix);
     this.activeGroup.matrix.setWorldMatrix();
 
-    this.activeGroup.dirty.markDirty();
     this.updateGroupCorners(this.activeGroup);
     this.canvas.requestRender('TransformControls.updateRotating');
   }
@@ -294,8 +293,16 @@ export class TransformControls {
     }
 
     if (event.shiftKey) {
-      scaleX = scaleY;
-      scaleY = scaleX;
+      let uniform = scaleY;
+
+      if (doesEffectX && doesEffectY) {
+        uniform = Math.abs(scaleX) > Math.abs(scaleY) ? scaleX : scaleY;
+      } else if (doesEffectX) {
+        uniform = scaleX;
+      }
+
+      scaleX = uniform;
+      scaleY = uniform;
     }
 
     const newMatrix = m3.multiply(
@@ -308,7 +315,6 @@ export class TransformControls {
     this.activeGroup.matrix.setLocalMatrix(newMatrix);
     this.activeGroup.matrix.setWorldMatrix();
 
-    this.activeGroup.dirty.markDirty();
     this.updateGroupCorners(this.activeGroup);
 
     this.canvas.requestRender('TransformControls.updateScaling');
