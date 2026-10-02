@@ -11,6 +11,9 @@ import { getBoundingBoxFrom2Points } from "../utils/getBoundingBoxFrom2Points";
 import { setWorldTransform } from "../utils/shapes";
 
 const DRAG_THRESHOLD = 2;
+// Own timer, not `dblclick`: that event never fires for touch and pen double taps.
+const DOUBLE_PRESS_MS = 400;
+const DOUBLE_PRESS_SLOP = 6;
 
 type Press = {
   screen: Point;
@@ -27,15 +30,20 @@ const stateOf = (entity: Entity) => [
   entity.size.height,
 ];
 
-export function selectionTarget(entity: Entity): Entity | null {
-  let target = entity.interaction.selectable ? entity : null;
+// Outermost selectable ancestor-or-self below `scope`; null when the entity isn't inside it.
+export function selectionTarget(
+  entity: Entity,
+  scope: Entity | null = null,
+): Entity | null {
+  let target: Entity | null = null;
 
   for (
-    let parent = entity.hierarchy.parent;
-    parent;
-    parent = parent.hierarchy.parent
+    let current: Entity | null = entity;
+    current !== scope;
+    current = current.hierarchy.parent
   ) {
-    if (parent.interaction.selectable) target = parent;
+    if (!current) return null;
+    if (current.interaction.selectable) target = current;
   }
 
   return target;
@@ -55,6 +63,7 @@ export class SelectionManager {
     members: Map<Entity, number[]>;
   } | null = null;
   private press: Press | null = null;
+  private lastPress: { time: number; screen: Point } | null = null;
 
   selectionBox: { start: Point; current?: Point } | null = null;
   preview: Entity[] = [];
@@ -199,13 +208,48 @@ export class SelectionManager {
     );
   }
 
-  private pickTarget(world: Point): Entity | null {
+  // The group the selection sits in, so clicks pick its siblings instead of the whole group.
+  private get scope(): Entity | null {
+    for (
+      let parent = this.members[0]?.hierarchy.parent;
+      parent;
+      parent = parent.hierarchy.parent
+    ) {
+      if (parent.interaction.selectable) return parent;
+    }
+
+    return null;
+  }
+
+  private pickTarget(
+    world: Point,
+    scope: Entity | null,
+    onlyInside = false,
+  ): Entity | null {
     for (const entity of this.canvas.query({ point: world }, isVisible)) {
-      const target = selectionTarget(entity);
+      let target = selectionTarget(entity, scope);
+      if (!target && !onlyInside) target = selectionTarget(entity);
       if (target) return target;
     }
 
     return null;
+  }
+
+  private isDoublePress(event: PointerEvent, screen: Point): boolean {
+    const last = this.lastPress;
+    this.lastPress = { time: event.timeStamp, screen };
+
+    if (!last) return false;
+
+    const quick = event.timeStamp - last.time < DOUBLE_PRESS_MS;
+    const still =
+      Math.hypot(screen.x - last.screen.x, screen.y - last.screen.y) <
+      DOUBLE_PRESS_SLOP;
+
+    // A third press starts a new pair, so it does not step in again.
+    if (quick && still) this.lastPress = null;
+
+    return quick && still;
   }
 
   private onMouseDown(event: PointerEvent): void {
@@ -215,15 +259,26 @@ export class SelectionManager {
 
     const screen = { x: event.offsetX, y: event.offsetY };
     const world = this.camera.screenToWorld(screen.x, screen.y);
-    const hit = this.pickTarget(world);
     const toggle = event.shiftKey || event[PRIMARY_MODIFIER_KEY];
+    const selected = this.selected;
+    let hit = this.pickTarget(world, this.scope);
+
+    // Double press on a selected group steps one level into it.
+    const enters =
+      this.isDoublePress(event, screen) &&
+      !toggle &&
+      !!hit &&
+      selected.includes(hit) &&
+      hit.hierarchy.children.length > 0;
+    if (enters) {
+      hit = this.pickTarget(world, hit, true) ?? hit;
+    }
 
     this.press = { screen, world, hit, toggle, base: [], moved: false };
 
     if (!hit) return;
 
     // Selecting on press, not release, lets the same drag move what was just picked.
-    const selected = this.selected;
     const isSelected = selected.includes(hit);
 
     if (toggle && isSelected) {
@@ -264,7 +319,7 @@ export class SelectionManager {
       press.world,
       this.camera.screenToWorld(screen.x, screen.y),
     );
-    const inside = this.canvas.query({ box }, isVisible).map(selectionTarget);
+    const inside = this.canvas.query({ box }, isVisible).map((entity) => selectionTarget(entity));
     this.preview = withoutDescendants([
       ...press.base,
       ...inside.filter((entity) => entity !== null),
@@ -295,7 +350,12 @@ export class SelectionManager {
 
   private onKeyDown(event: KeyboardEvent): void {
     if (event.key === "Escape") {
-      this.clearSelection();
+      const scope = this.scope;
+      if (scope) {
+        this.select([scope]);
+      } else {
+        this.clearSelection();
+      }
       return;
     }
 
