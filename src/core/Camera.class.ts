@@ -48,8 +48,10 @@ export class Camera {
 
   zoomAt(delta: number, sx?: number, sy?: number) {
     const sensitivity = 0.005;
-    let factor = Math.exp(-delta * sensitivity);
+    this.zoomBy(Math.exp(-delta * sensitivity), sx, sy);
+  }
 
+  zoomBy(factor: number, sx?: number, sy?: number) {
     let newZoom = this.zoom * factor;
 
     if (newZoom > this.maxZoom) {
@@ -82,7 +84,7 @@ export class Camera {
     }
 
     this.context.fire(Events.ZOOM_CHANGED, this.zoom);
-    this.context.requestRender('Camera.zoomAt');
+    this.context.requestRender('Camera.zoomBy');
   }
 
   pan(dx: number, dy: number) {
