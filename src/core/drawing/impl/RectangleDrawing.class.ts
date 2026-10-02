@@ -28,9 +28,9 @@ export class RectangleDrawing implements DrawingStrategy {
     this.onMouseUp = this.onMouseUp.bind(this);
     this.onMouseMove = this.onMouseMove.bind(this);
 
-    this.canvas.on(Events.MOUSE_DOWN, this.onMouseDown);
-    this.canvas.on(Events.MOUSE_UP, this.onMouseUp);
-    this.canvas.on(Events.MOUSE_MOVE, this.onMouseMove);
+    this.canvas.on(Events.POINTER_DOWN, this.onMouseDown);
+    this.canvas.on(Events.POINTER_UP, this.onMouseUp);
+    this.canvas.on(Events.POINTER_MOVE, this.onMouseMove);
   }
 
   private onMouseDown(event: MouseEvent): void {
@@ -78,18 +78,17 @@ export class RectangleDrawing implements DrawingStrategy {
 
     const hexFillColor = convertHelper(this.drawingOptions.fillColor);
 
-    const rectFactory = createRectangle({
-      x: worldCenter.x,
-      y: worldCenter.y,
-      width,
-      height,
-      fill: hexFillColor,
-      selectable: true,
-      draggable: true,
-    });
-
-    const entity = rectFactory();
-    this.canvas.world.addEntity(entity);
+    this.canvas.add(
+      createRectangle({
+        x: worldCenter.x,
+        y: worldCenter.y,
+        width,
+        height,
+        fill: hexFillColor,
+        selectable: true,
+        draggable: true,
+      }),
+    );
 
     this.drawingState = {
       startPoint: null,
@@ -123,8 +122,8 @@ export class RectangleDrawing implements DrawingStrategy {
   }
 
   destroy(): void {
-    this.canvas.off(Events.MOUSE_DOWN, this.onMouseDown);
-    this.canvas.off(Events.MOUSE_UP, this.onMouseUp);
-    this.canvas.off(Events.MOUSE_MOVE, this.onMouseMove);
+    this.canvas.off(Events.POINTER_DOWN, this.onMouseDown);
+    this.canvas.off(Events.POINTER_UP, this.onMouseUp);
+    this.canvas.off(Events.POINTER_MOVE, this.onMouseMove);
   }
 }

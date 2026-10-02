@@ -5,20 +5,14 @@ import type { Canvas } from '../../../core/Canvas.class';
 import type { Entity } from '../../../core/ecs/base/Entity.class';
 import { ToolbarItemButton } from './toolbar';
 
-export function Filters({ group, canvas }: { group: Entity | null; canvas: Canvas | null }) {
+export function Filters({ selected, canvas }: { selected: Entity[]; canvas: Canvas | null }) {
   const image = useMemo(() => {
-    if (!group || group.hierarchy.children.length > 1) {
+    if (selected.length !== 1 || !selected[0].has('texture')) {
       return undefined;
     }
 
-    const child = group.hierarchy.children[0];
-
-    if (!child.has('texture')) {
-      return undefined;
-    }
-
-    return child;
-  }, [group]);
+    return selected[0];
+  }, [selected]);
 
   const handleFilterChange = (e: number, filter: (value: number) => void) => {
     if (!image || !image.texture) {

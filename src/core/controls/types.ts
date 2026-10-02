@@ -3,10 +3,10 @@ import type { Entity } from '../ecs/base/Entity.class';
 import type { Corner } from '../utils/getPointsOfRectangleSquare';
 
 export interface DragState {
-  entityId: number;
   entity: Entity;
-  offset: Point;
   startPos: Point;
+  startWorld: Point;
+  startMatrix: number[] | null;
 }
 
 export interface ScaleState {

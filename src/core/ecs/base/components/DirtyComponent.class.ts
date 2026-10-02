@@ -23,8 +23,6 @@ export const DirtyMasks = {
 export type DirtyListener = (entity: Entity, channels: DirtyMask) => void;
 
 export class DirtyComponent {
-  public channels: DirtyMask = Dirty.NONE;
-
   private listener: DirtyListener | null = null;
 
   private entity: Entity;
@@ -34,24 +32,10 @@ export class DirtyComponent {
   }
 
   markDirty(channels: DirtyMask = DirtyMasks.ALL): void {
-    this.channels |= channels;
-
     this.listener?.(this.entity, channels);
-  }
-
-  isDirty(channels: DirtyMask = DirtyMasks.ALL): boolean {
-    return (this.channels & channels) !== 0;
-  }
-
-  clearDirty(channels: DirtyMask = DirtyMasks.ALL): void {
-    this.channels &= ~channels;
   }
 
   setListener(listener: DirtyListener | null): void {
     this.listener = listener;
-  }
-
-  get dirty(): boolean {
-    return this.channels !== Dirty.NONE;
   }
 }

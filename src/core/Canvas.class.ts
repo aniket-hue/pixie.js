@@ -1,11 +1,10 @@
 import { Camera } from './Camera.class';
 import { TransformControls } from './controls/TransformControls.class';
 import type { Entity } from './ecs/base/Entity.class';
-import { World } from './ecs/World.class';
-import { EventEmitter, type EventKeys } from './events';
+import { group, type Restack, restack, ungroup } from './ecs/order';
+import { type Query, World } from './ecs/World.class';
+import { EventEmitter, type EventKeys, type EventMap } from './events';
 import { InputHandler } from './events/input/InputHandler.class';
-import { createImage } from './factory/image';
-import type { ImageProps } from './factory/types';
 import { InteractionModeManager } from './mode/InteractionModeManager.class';
 import { OverlayRenderer } from './OverlayRenderer.class';
 import { SceneRenderer } from './SceneRenderer.class';
@@ -18,20 +17,31 @@ import type { BoundingBox } from '../types';
 import { DrawingManager } from './drawing/DrawingManager.class';
 import { assert } from './lib/assert';
 import { Capture } from './webgl/Capture.class';
-import { Picking } from './webgl/Picking.class';
+
+function fitSize(requested: { width?: number; height?: number }, natural: { width: number; height: number }) {
+  const { width, height } = requested;
+
+  if (width !== undefined && height !== undefined) return { width, height };
+  if (width !== undefined) return { width, height: (width * natural.height) / natural.width };
+  if (height !== undefined) return { width: (height * natural.width) / natural.height, height };
+
+  return natural;
+}
 
 export class Canvas {
   public debug: RenderDebug | null = null;
-  private events = new EventEmitter();
+  private events = new EventEmitter<EventMap>();
   private glCore: GlCore;
   private inputHandler: InputHandler;
 
   private sceneRenderer: SceneRenderer;
-  public overlayRenderer: OverlayRenderer;
+  private overlayRenderer: OverlayRenderer;
 
-  public transformControls: TransformControls | null = null;
+  /** @internal */
+  transformControls: TransformControls | null = null;
 
-  public modeManager: InteractionModeManager;
+  /** @internal */
+  modeManager: InteractionModeManager;
 
   private capture: Capture | null = null;
 
@@ -44,20 +54,28 @@ export class Canvas {
   private pixelRatio = window.devicePixelRatio || 1;
 
   private contextLost = false;
+  private loads = new Map<Entity, Promise<boolean>>();
 
+  /** @internal */
   topCanvas: HTMLCanvasElement | null = null;
-  canvasElement: HTMLCanvasElement;
+  private canvasElement: HTMLCanvasElement;
 
+  /** @internal */
   selectionManager: SelectionManager;
   drawing: DrawingManager;
 
+  /** @internal */
   world: World;
   camera: Camera;
-  picker: Picking;
 
-  // Expose textureManager for debugging
+  /** @internal */
   get textureManager() {
     return this.sceneRenderer.textureManager;
+  }
+
+  textureStats() {
+    const textures = this.textureManager;
+    return { ...textures.stats(), pageUsage: textures.pageStats(), recentLoads: [...textures.recentLoads()] };
   }
 
   constructor(canvas: HTMLCanvasElement) {
@@ -66,7 +84,6 @@ export class Canvas {
     this.glCore = new GlCore(this.canvasElement);
     this.world = new World();
     this.camera = new Camera(this);
-    this.picker = new Picking(this);
     this.inputHandler = new InputHandler(this);
     this.modeManager = new InteractionModeManager();
     this.transformControls = new TransformControls(this, this.modeManager);
@@ -107,7 +124,7 @@ export class Canvas {
     this.requestRender('Canvas.contextRestored');
   }
 
-  initTopCanvas(): void {
+  private initTopCanvas(): void {
     const rect = this.canvasElement.getBoundingClientRect();
 
     const topCanvas = document.createElement('canvas');
@@ -163,24 +180,15 @@ export class Canvas {
       return;
     }
 
-    if (this.world.takeTexturedRemoval()) {
-      this.textureManager.collect(this.world.getLiveTextureUrls());
-    }
-
     this.glCore.clear();
 
-    this.world.reindexDirty();
-
-    const allEntities = this.world.getEntities();
+    this.world.flushBounds();
+    this.selectionManager.syncFrame();
 
     this.sceneRenderer.render(this.world);
     this.overlayRenderer.render(this.world);
 
     this.drawing.render();
-
-    for (const entity of allEntities) {
-      entity.dirty.clearDirty();
-    }
   }
 
   get width(): number {
@@ -209,52 +217,143 @@ export class Canvas {
     return this.canvasElement;
   }
 
-  getActiveGroup(): Entity | null {
-    return this.selectionManager.activeGroup;
+  add(...entities: Entity[]): void {
+    for (const entity of entities) {
+      this.world.addEntity(entity);
+      this.loadImages(entity);
+    }
+
+    this.requestRender('Canvas.add');
+  }
+
+  remove(...entities: Entity[]): void {
+    const selected = this.selectionManager.selected;
+
+    for (const entity of entities) {
+      this.world.removeEntity(entity);
+    }
+
+    // Frees GPU tiles and decoded pixels of images nothing shows any more.
+    this.textureManager.collect(this.world.liveTextureUrls());
+    this.selectionManager.select(selected.filter((entity) => entity.world));
+    this.requestRender('Canvas.remove');
+  }
+
+  getObjects(): Entity[] {
+    return [...this.world.getRoots()];
+  }
+
+  query(query: Query, filter?: (entity: Entity) => boolean): Entity[] {
+    return this.world.query(query, filter);
+  }
+
+  bringToFront(entities: Entity[]): void {
+    this.restack(entities, 'front');
+  }
+
+  sendToBack(entities: Entity[]): void {
+    this.restack(entities, 'back');
+  }
+
+  bringForward(entities: Entity[]): void {
+    this.restack(entities, 'forward');
+  }
+
+  sendBackward(entities: Entity[]): void {
+    this.restack(entities, 'backward');
+  }
+
+  private restack(entities: Entity[], how: Restack): void {
+    if (restack(this.world, entities, how)) {
+      this.requestRender(`Canvas.restack ${how}`);
+    }
+  }
+
+  group(entities: Entity[]): Entity | null {
+    const selected = this.selectionManager.selected;
+    const created = group(this.world, entities);
+
+    if (created) {
+      this.selectionManager.select(selected.filter((entity) => !entities.includes(entity)));
+      this.requestRender('Canvas.group');
+    }
+
+    return created;
+  }
+
+  ungroup(target: Entity): Entity[] {
+    const children = ungroup(this.world, target);
+
+    this.selectionManager.select(this.selectionManager.selected.filter((entity) => entity.world));
+    this.requestRender('Canvas.ungroup');
+
+    return children;
+  }
+
+  async whenLoaded(entities: Entity[] = [...this.loads.keys()]): Promise<{ failed: Entity[] }> {
+    await Promise.all(entities.map((entity) => this.loads.get(entity)));
+    return { failed: entities.filter((entity) => entity.texture?.error) };
+  }
+
+  private loadImages(entity: Entity): void {
+    const texture = entity.texture;
+
+    if (texture && !texture.data.loaded && !this.loads.has(entity)) {
+      const load = this.textureManager.loadTexture(texture.data.url).then(
+        (data) => {
+          const size = fitSize(texture.requestedSize, data);
+
+          entity.size.setWidth(size.width);
+          entity.size.setHeight(size.height);
+          texture.error = null;
+          texture.setTexture(data);
+
+          return true;
+        },
+        (error: unknown) => {
+          texture.error = error instanceof Error ? error.message : String(error);
+          return false;
+        },
+      );
+
+      this.loads.set(entity, load);
+
+      load.then(() => {
+        this.loads.delete(entity);
+
+        // Skip entities removed meanwhile, and canvases already destroyed.
+        if (entity.world === this.world && this.topCanvas) {
+          this.requestRender('Canvas: image loaded');
+        }
+      });
+    }
+
+    for (const child of entity.hierarchy.children) {
+      this.loadImages(child);
+    }
   }
 
   getSelectedObjects(): Entity[] {
-    if (!this.selectionManager.activeGroup) {
-      return [];
-    }
-
-    return this.selectionManager.activeGroup.hierarchy.children;
+    return this.selectionManager.selected;
   }
 
-  addImage(props: ImageProps): { entity: Entity; ready: Promise<Entity> } {
-    const { entity, promise } = createImage(props, this.textureManager)();
-
-    this.world.addEntity(entity);
-    this.requestRender('Canvas.addImage');
-
-    const ready = promise.then((loaded) => {
-      if (entity.world === this.world && this.topCanvas) {
-        this.requestRender('Canvas.addImage: loaded');
-      }
-      return loaded;
-    }, (error) => {
-      if (entity.world === this.world && this.topCanvas) {
-        this.requestRender('Canvas.addImage: failed');
-      }
-      throw error;
-    });
-
-    return { entity, ready };
+  select(entities: Entity[]): void {
+    this.selectionManager.select(entities);
   }
 
-  getCtx(): WebGLRenderingContext | null {
+  clearSelection(): void {
+    this.selectionManager.clearSelection();
+  }
+
+  selectAll(): void {
+    this.selectionManager.selectAll();
+  }
+
+  private getCtx(): WebGLRenderingContext | null {
     return this.glCore.ctx;
   }
 
-  clear(r = 0, g = 0, b = 0, a = 1.0): void {
-    const gl = this.getCtx();
-    if (!gl) return;
-
-    gl.clearColor(r, g, b, a);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-  }
-
-  resize(): boolean {
+  private resize(): boolean {
     const canvas = this.canvasElement;
     const dpr = this.dpr;
 
@@ -313,18 +412,20 @@ export class Canvas {
     this.dprQuery.addEventListener('change', this.handleDprChange);
   }
 
-  on(event: EventKeys, callback: (...args: any[]) => void): void {
+  on<K extends EventKeys>(event: K, callback: (...args: EventMap[K]) => void): void {
     this.events.on(event, callback);
   }
 
-  off(event: EventKeys, callback: (...args: any[]) => void): void {
+  off<K extends EventKeys>(event: K, callback: (...args: EventMap[K]) => void): void {
     this.events.off(event, callback);
   }
 
-  fire(event: EventKeys, ...args: any[]): void {
+  /** @internal */
+  fire<K extends EventKeys>(event: K, ...args: EventMap[K]): void {
     this.events.emit(event, ...args);
   }
 
+  /** @internal */
   getGlCore() {
     return this.glCore;
   }

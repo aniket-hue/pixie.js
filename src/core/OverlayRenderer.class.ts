@@ -152,17 +152,40 @@ export class OverlayRenderer {
     this.drawControls(bounds);
   }
 
+  private drawOutlines(entities: Entity[]) {
+    const ctx = this.topCtx;
+
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 1;
+
+    for (const entity of entities) {
+      const { screenCorners: c } = getPointsOfRectangleSquare(this.canvas, entity, true);
+
+      ctx.beginPath();
+      ctx.moveTo(c.tl.x, c.tl.y);
+      ctx.lineTo(c.tr.x, c.tr.y);
+      ctx.lineTo(c.br.x, c.br.y);
+      ctx.lineTo(c.bl.x, c.bl.y);
+      ctx.closePath();
+      ctx.stroke();
+    }
+  }
+
   render(_world: World) {
     this.clear();
 
     const activeSelectionBox = this.selectionManager.selectionBox;
-    const activeGroup = this.selectionManager.activeGroup;
+    const activeGroup = this.selectionManager.frame;
 
     if (activeSelectionBox !== null) {
+      this.drawOutlines(this.selectionManager.preview);
       this.drawSelectionBox(activeSelectionBox);
     }
 
     if (activeGroup !== null) {
+      const members = this.selectionManager.selected;
+      if (members.length > 1) this.drawOutlines(members);
+
       this.drawSelectionGroup(activeGroup);
     }
   }

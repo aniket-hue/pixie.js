@@ -10,6 +10,8 @@ export interface TextureData {
 
 export class TextureComponent {
   public data: TextureData;
+  public readonly requestedSize: { width?: number; height?: number };
+  public error: string | null = null;
 
   public brightness = 1.0;
   public contrast = 1.0;
@@ -20,9 +22,10 @@ export class TextureComponent {
 
   private entity: Entity;
 
-  constructor(entity: Entity, data: TextureData) {
+  constructor(entity: Entity, data: TextureData, requestedSize: { width?: number; height?: number } = {}) {
     this.entity = entity;
     this.data = data;
+    this.requestedSize = requestedSize;
   }
 
   getTexture(): TextureData {

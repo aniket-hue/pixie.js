@@ -1,28 +1,35 @@
+import type { Entity } from '../ecs/base/Entity.class';
+
 export const Events = {
-  RESIZE: 'resize',
   ZOOM_CHANGED: 'zoom_changed',
   PAN_CHANGED: 'pan_changed',
 
-  MOUSE_MOVE: 'mouse_move',
-  MOUSE_DOWN: 'mouse_down',
-  MOUSE_UP: 'mouse_up',
+  POINTER_DOWN: 'pointer_down',
+  POINTER_MOVE: 'pointer_move',
+  POINTER_UP: 'pointer_up',
 
   KEY_DOWN: 'key_down',
   KEY_UP: 'key_up',
 
-  ADD_TO_SELECTION: 'add_to_selection',
-  REMOVE_FROM_SELECTION: 'remove_from_selection',
-  CLEAR_SELECTION: 'clear_selection',
-
+  SELECTION_CHANGED: 'selection_changed',
   OBJECT_MODIFIED: 'object_modified',
-
-  SELECTION_GROUP_ADDED: 'selection_group_added',
-  SELECTION_GROUP_REMOVED: 'selection_group_removed',
-  SELECTION_GROUP_UPDATED: 'selection_group_updated',
-
-  LOCAL_MATRIX_CHANGED: 'local_matrix_changed',
 } as const;
 
-export type EventKeys = (typeof Events)[keyof typeof Events];
+export type EventMap = {
+  zoom_changed: [zoom: number];
+  pan_changed: [x: number, y: number];
+
+  pointer_down: [event: PointerEvent];
+  pointer_move: [event: PointerEvent];
+  pointer_up: [event: PointerEvent];
+
+  key_down: [event: KeyboardEvent];
+  key_up: [event: KeyboardEvent];
+
+  selection_changed: [selected: Entity[]];
+  object_modified: [entities: Entity[]];
+};
+
+export type EventKeys = keyof EventMap;
 
 export { EventEmitter } from './Events.class';

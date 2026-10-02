@@ -291,8 +291,16 @@ export class SceneRenderer {
     const culling = this.canvas.debug?.culling ?? true;
     let culled = 0;
 
-    // ponytail: linear scan keeps insertion order; switch to the rbush index plus a z-index past ~100k entities.
-    for (const entity of world.getEntities()) {
+    const margin = 2 / zoom;
+    let candidates: readonly Entity[];
+    if (culling) {
+      candidates = world.search({ minX: view.minX - margin, minY: view.minY - margin, maxX: view.maxX + margin, maxY: view.maxY + margin });
+    } else {
+      candidates = world.getPaintOrder();
+    }
+    culled = world.size - candidates.length;
+
+    for (const entity of candidates) {
       if (!entity.visibility.visible) {
         continue;
       }

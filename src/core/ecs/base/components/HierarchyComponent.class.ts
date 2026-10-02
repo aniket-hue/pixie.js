@@ -5,13 +5,14 @@ import { Dirty } from './DirtyComponent.class';
 export class HierarchyComponent {
   public parent: Entity | null = null;
   public children: Entity[] = [];
+  public paintIndex = -1;
   private entity: Entity;
 
   constructor(entity: Entity) {
     this.entity = entity;
   }
 
-  addChild(child: Entity): void {
+  addChild(child: Entity, index = this.children.length): void {
     if (child === this.entity) return;
 
     if (this.children.includes(child)) {
@@ -22,13 +23,14 @@ export class HierarchyComponent {
       child.hierarchy.parent.hierarchy.removeChild(child);
     }
 
-    this.children.push(child);
+    this.children.splice(index, 0, child);
 
     child.hierarchy.parent = this.entity;
 
     this.convertChildWorldToLocal(child);
 
     (this.entity.world ?? child.world)?.onAttach(child);
+    child.world?.invalidateOrder();
 
     child.dirty.markDirty(Dirty.HIERARCHY);
     this.entity.dirty.markDirty(Dirty.HIERARCHY);
@@ -49,21 +51,10 @@ export class HierarchyComponent {
 
     this.resetChild(child);
     this.children.splice(index, 1);
+    this.entity.world?.invalidateOrder();
+    child.world?.onDetach(child);
 
     this.entity.dirty.markDirty(Dirty.HIERARCHY);
-  }
-
-  clearChildren(): void {
-    for (const child of this.children) {
-      this.resetChild(child);
-    }
-
-    this.children = [];
-    this.entity.dirty.markDirty(Dirty.HIERARCHY);
-  }
-
-  doesChildBelongToGroup(child: Entity): boolean {
-    return this.children.includes(child);
   }
 
   private convertChildWorldToLocal(child: Entity): void {

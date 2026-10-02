@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Canvas } from '../../../core/Canvas.class';
 import type { Entity } from '../../../core/ecs/base/Entity.class';
+import { createImage } from '../../../core/factory';
 import { m3 } from '../../../core/lib/math';
-import type { TextureLoad } from '../../../core/webgl/TextureManager.class';
 import type { BoundingBox } from '../../../types';
 import { ActionButton, Metric, NumberField, Segmented, TextField, formatBytes } from './debugUi';
 
@@ -14,8 +14,8 @@ const ORIGIN = { x: -1800, y: -5000 };
 // Picsum serves at most 5000 px per side.
 const MAX_SIDE = 5000;
 
-type Stats = ReturnType<Canvas['textureManager']['stats']>;
-type Detail = { pages: ReturnType<Canvas['textureManager']['pageStats']>; loads: readonly TextureLoad[] };
+type Stats = ReturnType<Canvas['textureStats']>;
+type Detail = { pages: Stats['pageUsage']; loads: Stats['recentLoads'] };
 
 function percentile(values: number[], p: number) {
   if (!values.length) return 0;
@@ -72,7 +72,10 @@ export function TexturesTab({ canvas, stats }: { canvas: Canvas | null; stats: S
   useEffect(() => {
     if (!canvas) return;
 
-    const read = () => setDetail({ pages: canvas.textureManager.pageStats(), loads: [...canvas.textureManager.recentLoads()] });
+    const read = () => {
+      const { pageUsage, recentLoads } = canvas.textureStats();
+      setDetail({ pages: pageUsage, loads: recentLoads });
+    };
     read();
     const timer = window.setInterval(read, 500);
 
@@ -97,7 +100,6 @@ export function TexturesTab({ canvas, stats }: { canvas: Canvas | null; stats: S
     canvas.camera.fitToBounds(bounds);
   }
 
-  /** Moves top-level photos only; a photo inside a selection or group keeps its parent's transform. */
   function arrange() {
     if (!canvas) return;
 
@@ -131,17 +133,18 @@ export function TexturesTab({ canvas, stats }: { canvas: Canvas | null; stats: S
     const drawnHeight = Math.round((drawnWidth * sourceHeight) / sourceWidth);
     const custom = url.trim();
 
-    for (let i = 0; i < readNumber(count, 1, 1000, 25); i++) {
-      const { entity } = canvas.addImage({
+    const added = Array.from({ length: readNumber(count, 1, 1000, 25) }, () =>
+      createImage({
         x: 0,
         y: 0,
         width: drawnWidth,
         height: drawnHeight,
         url: custom || `https://picsum.photos/seed/gk-hq-${nextSeed.current++}/${sourceWidth}/${sourceHeight}`,
-      });
+      }),
+    );
 
-      photos.current.push(entity);
-    }
+    canvas.add(...added);
+    photos.current.push(...added);
 
     arrange();
   }
@@ -149,24 +152,16 @@ export function TexturesTab({ canvas, stats }: { canvas: Canvas | null; stats: S
   function removePhotos() {
     if (!canvas) return;
 
-    for (const entity of photos.current) {
-      if (entity.world) canvas.world.removeEntity(entity);
-    }
-
+    canvas.remove(...livePhotos());
     photos.current = [];
     setSkipped(0);
-    canvas.requestRender('TexturesTab.removePhotos');
   }
 
   function removeHalfOfImages() {
     if (!canvas) return;
 
-    const images = [...canvas.world.getEntities()].filter((entity) => entity.texture);
-    images.forEach((entity, index) => {
-      if (index % 2 === 0) canvas.world.removeEntity(entity);
-    });
-
-    canvas.requestRender('TexturesTab.removeHalf');
+    const images = canvas.getObjects().filter((entity) => entity.texture);
+    canvas.remove(...images.filter((_, index) => index % 2 === 0));
   }
 
   const loaded = detail.loads.filter((load) => !load.error);
@@ -215,7 +210,7 @@ export function TexturesTab({ canvas, stats }: { canvas: Canvas | null; stats: S
           </ActionButton>
           <ActionButton onClick={framePhotos}>Frame photos</ActionButton>
         </div>
-        {skipped > 0 && <p className="mt-2 text-amber-300">Skipped {skipped} photos inside a selection or group. Deselect them and arrange again.</p>}
+        {skipped > 0 && <p className="mt-2 text-amber-300">Skipped {skipped} photos inside a group. Ungroup them and arrange again.</p>}
       </div>
 
       {stats && (

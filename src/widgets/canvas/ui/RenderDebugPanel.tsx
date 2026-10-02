@@ -5,10 +5,13 @@ import { useCanvasContext } from '../model/ctx';
 import { ActionButton, Metric } from './debugUi';
 import { TexturesTab } from './TexturesTab';
 
-type Health = ReturnType<Canvas['textureManager']['stats']> & { contextLost: boolean };
+type Health = ReturnType<Canvas['textureStats']> & { contextLost: boolean };
+
+// Asking for the context the canvas already made returns that same context.
+const glOf = (canvas: Canvas) => canvas.element.getContext('webgl2');
 
 function readHealth(canvas: Canvas): Health {
-  return { ...canvas.textureManager.stats(), contextLost: canvas.getCtx()?.isContextLost() ?? true };
+  return { ...canvas.textureStats(), contextLost: glOf(canvas)?.isContextLost() ?? true };
 }
 
 const TABS = ['Frames', 'Textures'] as const;
@@ -27,7 +30,7 @@ export function RenderDebugPanel() {
   const loseContextRef = useRef<WEBGL_lose_context | null>(null);
 
   useEffect(() => {
-    loseContextRef.current = canvas?.getCtx()?.getExtension('WEBGL_lose_context') ?? null;
+    loseContextRef.current = (canvas && glOf(canvas)?.getExtension('WEBGL_lose_context')) ?? null;
   }, [canvas]);
 
   useEffect(() => {

@@ -90,7 +90,7 @@ export class Capture {
       this.canvas.debug?.begin('export', pixelWidth, pixelHeight);
       try {
         this.gl.clear();
-        this.world.reindexDirty();
+        this.world.flushBounds();
         missing = this.renderer.render(this.world, width, height, viewMatrix);
       } finally {
         this.canvas.debug?.end();

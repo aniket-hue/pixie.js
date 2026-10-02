@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Canvas as CanvasClass } from "../../../core/Canvas.class";
 import type { Entity } from "../../../core/ecs/base/Entity.class";
-import { createRectangle } from "../../../core/factory";
+import { createImage, createRectangle } from "../../../core/factory";
+import type { ImageProps } from "../../../core/factory/types";
 import { rgbaToArgb } from "../../../core/lib/color";
 import { Sidebar } from "../../Sidebar";
 import { CanvasContext } from "../model/ctx";
@@ -63,17 +64,9 @@ function paletteColor(index: number, alpha = 1) {
 }
 
 function buildScene(canvas: CanvasClass) {
-  const add = (entity: Entity) => canvas.world.addEntity(entity);
-  const pending: Promise<Entity>[] = [];
+  const add = (entity: Entity) => canvas.add(entity);
+  const addImage = (props: ImageProps) => add(createImage(props));
   let imageSeed = 0;
-
-  const addImage = (props: Parameters<CanvasClass["addImage"]>[0]) => {
-    const { entity, ready } = canvas.addImage(props);
-
-    pending.push(ready);
-
-    return entity;
-  };
 
   if (SCENE.imageGrid) {
     const cols = 8;
@@ -112,7 +105,7 @@ function buildScene(canvas: CanvasClass) {
             randomBetween(0.45, 1),
           ),
           angle: randomBetween(0, Math.PI * 2),
-        })(),
+        }),
       );
     }
   }
@@ -132,7 +125,7 @@ function buildScene(canvas: CanvasClass) {
           height: size,
           fill: paletteColor(i, 0.55),
           angle: (i * Math.PI) / 24,
-        })(),
+        }),
       );
     }
   }
@@ -165,7 +158,7 @@ function buildScene(canvas: CanvasClass) {
           angle: -angle,
           scaleX: randomBetween(0.6, 1.8),
           scaleY: randomBetween(0.6, 1.8),
-        })(),
+        }),
       );
     }
   }
@@ -184,7 +177,7 @@ function buildScene(canvas: CanvasClass) {
           fill: paletteColor(i, 0.25),
           stroke: paletteColor(i, 1),
           strokeWidth: i * 3,
-        })(),
+        }),
       );
     }
   }
@@ -203,7 +196,6 @@ function buildScene(canvas: CanvasClass) {
     }
   }
 
-  return pending;
 }
 
 export function Canvas() {
@@ -221,7 +213,7 @@ export function Canvas() {
 
     setCanvas(canvas);
 
-    const pending = buildScene(canvas);
+    buildScene(canvas);
 
     let disposed = false;
 
@@ -239,25 +231,16 @@ export function Canvas() {
 
     observer.observe(element);
 
-    Promise.allSettled(pending).then((results) => {
+    canvas.whenLoaded().then(({ failed }) => {
       if (disposed) {
         return;
       }
 
-      results.forEach((result) => {
-        if (result.status === "rejected") {
-          console.error(result.reason);
-        }
-      });
-
-      if (pending.length) {
-        canvas.camera.fitToScene();
-      }
+      failed.forEach((entity) => console.error(entity.texture?.error));
+      canvas.camera.fitToScene();
     });
 
-    console.info(
-      `[debug scene] ${canvas.world.getEntities().size} entities, ${pending.length} textures pending`,
-    );
+    console.info(`[debug scene] ${canvas.getObjects().length} top-level entities`);
 
     return () => {
       disposed = true;

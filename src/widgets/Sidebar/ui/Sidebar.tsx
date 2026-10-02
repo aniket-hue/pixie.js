@@ -1,17 +1,16 @@
-import { Download, Group, LucideZoomIn, Square, ZoomOut } from 'lucide-react';
+import { Download, Group, LucideZoomIn, Square, Ungroup, ZoomOut } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { RectangleDrawing } from '../../../core/drawing/impl/RectangleDrawing.class';
 import type { Entity } from '../../../core/ecs/base/Entity.class';
 import { Events } from '../../../core/events';
-import { createSelectionGroup } from '../../../core/factory/selectionGroup';
 import { rgbaToArgb } from '../../../core/lib/color';
 import { useCanvasContext } from '../../../widgets/canvas/model/ctx';
 import { Filters } from './Filters';
 import { ToolbarGroup, ToolbarItemButton, ToolbarSeparator } from './toolbar';
 
 export function Sidebar() {
-  const [currentGroup, setCurrentGroup] = useState<Entity | null>(null);
+  const [selected, setSelected] = useState<Entity[]>([]);
   const [drawingMode, setDrawingMode] = useState(false);
   const [zoomValue, setZoomValue] = useState(1);
   const { canvas } = useCanvasContext();
@@ -21,28 +20,12 @@ export function Sidebar() {
       return;
     }
 
-    function zoomEventHandler(zoom: number) {
-      setZoomValue(zoom);
-    }
-
-    function selectionGroupEventHandler({ target }: { target: Entity }) {
-      setCurrentGroup(target);
-    }
-
-    function selectionGroupRemovedEventHandler() {
-      setCurrentGroup(null);
-    }
-
-    if (canvas) {
-      canvas.on(Events.ZOOM_CHANGED, zoomEventHandler);
-      canvas.on(Events.SELECTION_GROUP_ADDED, selectionGroupEventHandler);
-      canvas.on(Events.SELECTION_GROUP_REMOVED, selectionGroupRemovedEventHandler);
-    }
+    canvas.on(Events.ZOOM_CHANGED, setZoomValue);
+    canvas.on(Events.SELECTION_CHANGED, setSelected);
 
     return () => {
-      canvas.off(Events.ZOOM_CHANGED, zoomEventHandler);
-      canvas.off(Events.SELECTION_GROUP_ADDED, selectionGroupEventHandler);
-      canvas.off(Events.SELECTION_GROUP_REMOVED, selectionGroupRemovedEventHandler);
+      canvas.off(Events.ZOOM_CHANGED, setZoomValue);
+      canvas.off(Events.SELECTION_CHANGED, setSelected);
     };
   }, [canvas]);
 
@@ -105,37 +88,28 @@ export function Sidebar() {
       return;
     }
 
-    const activeGroup = canvas.getActiveGroup();
+    const created = canvas.group(canvas.getSelectedObjects());
 
-    if (!activeGroup) {
+    if (!created) {
       return;
     }
 
-    const children = [...(activeGroup.hierarchy.children ?? [])];
+    created.style.setFill(rgbaToArgb(122, 23, 0, 0.2));
+    canvas.select([created]);
+  }
 
-    if (children.length === 0) {
+  function handleUngroup() {
+    if (!canvas) {
       return;
     }
 
-    const groupFactory = createSelectionGroup({ children });
-    const group = groupFactory();
-
-    group.style.setFill(rgbaToArgb(122, 23, 0, 0.2));
-    group.interaction.setSelectable(true);
-
-    canvas.world.dissolve(activeGroup);
-    canvas.world.addEntity(group);
-
-    children.forEach((child) => {
-      group.hierarchy.addChild(child);
-    });
-
-    canvas.requestRender('Sidebar.group');
+    const groups = canvas.getSelectedObjects().filter((entity) => entity.hierarchy.children.length);
+    canvas.select(groups.flatMap((entity) => canvas.ungroup(entity)));
   }
 
   return (
     <div className="bg-blue-900/70 ring-1 ring-blue-700/50 backdrop-blur-md absolute left-4 top-1/2 -translate-y-1/2 z-[1000] rounded-lg px-1 py-1 shadow-md">
-      <Filters group={currentGroup} canvas={canvas} />
+      <Filters selected={selected} canvas={canvas} />
 
       <ToolbarGroup>
         <ToolbarItemButton tooltip="Draw Square" onClick={handleDrawingMode} active={drawingMode}>
@@ -144,6 +118,10 @@ export function Sidebar() {
 
         <ToolbarItemButton tooltip="Group" onClick={handleGroup}>
           <Group size={20} />
+        </ToolbarItemButton>
+
+        <ToolbarItemButton tooltip="Ungroup" onClick={handleUngroup}>
+          <Ungroup size={20} />
         </ToolbarItemButton>
       </ToolbarGroup>
 
