@@ -135,7 +135,7 @@ export class InputHandler {
   }
 
   private isOnContent(point: Point) {
-    if (this.canvas.modeManager.isDrawing() || this.canvas.transformControls?.handleAt(point)) {
+    if (this.canvas.modeManager.isDrawing() || this.canvas.transformControls?.handleAt(point, 'touch')) {
       return true;
     }
 

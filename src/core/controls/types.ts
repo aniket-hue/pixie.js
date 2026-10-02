@@ -14,8 +14,7 @@ export interface ScaleState {
   pivotLocal: Point;
   localMatrix: number[];
   inverseWorldMatrix: number[];
-  startDistX: number;
-  startDistY: number;
+  startMouseLocal: Point;
 }
 
 export interface RotateState {

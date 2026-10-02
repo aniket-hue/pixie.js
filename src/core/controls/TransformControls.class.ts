@@ -8,26 +8,44 @@ import {
   type InteractionModeManager,
 } from "../mode/InteractionModeManager.class";
 import { selectionTarget } from "../selection/SelectionManager.class";
-import { type Corner, diagonalPivotMap, getPointsOfRectangleSquare } from "../utils/getPointsOfRectangleSquare";
+import {
+  type Corner,
+  diagonalPivotMap,
+  getPointsOfRectangleSquare,
+  handlePoints,
+} from "../utils/getPointsOfRectangleSquare";
 import { containsPoint, setWorldTransform } from "../utils/shapes";
 import type { DragState, RotateState, ScaleState } from "./types";
 
 const CONSTANTS = {
   DRAG_THRESHOLD: 2,
-  CORNER_HIT_AREA: 10,
+  HANDLE_REACH: 10,
+  // A fingertip covers far more than a cursor tip.
+  HANDLE_REACH_TOUCH: 20,
+  ROTATION_SNAP: Math.PI / 12,
 } as const;
 
-const CURSOR_MAP: Record<Corner, string> = {
-  tl: "nw-resize",
-  tr: "ne-resize",
-  br: "se-resize",
-  bl: "sw-resize",
-  mt: "n-resize",
-  ml: "w-resize",
-  mb: "s-resize",
-  mr: "e-resize",
-  rotate: "grab",
-  center: "grab",
+// Each handle's direction in the box's own axes: x right, y up.
+const HANDLE_DIRECTION: Record<
+  Exclude<Corner, "rotate" | "center">,
+  [number, number]
+> = {
+  tl: [-1, 1],
+  tr: [1, 1],
+  br: [1, -1],
+  bl: [-1, -1],
+  mt: [0, 1],
+  mb: [0, -1],
+  ml: [-1, 0],
+  mr: [1, 0],
+};
+
+// Indexed by on-screen angle in 45 degree steps, starting at pointing right.
+const RESIZE_CURSORS = ["ew-resize", "nwse-resize", "ns-resize", "nesw-resize"];
+
+const unit = (x: number, y: number) => {
+  const length = Math.hypot(x, y) || 1;
+  return { x: x / length, y: y / length };
 };
 
 export class TransformControls {
@@ -54,6 +72,7 @@ export class TransformControls {
     this.listen(Events.POINTER_DOWN, this.handleMouseDown.bind(this));
     this.listen(Events.POINTER_MOVE, this.handleMouseMove.bind(this));
     this.listen(Events.POINTER_UP, this.handleMouseUp.bind(this));
+    this.listen(Events.KEY_DOWN, this.handleKeyDown.bind(this));
   }
 
   private listen<K extends EventKeys>(
@@ -91,7 +110,7 @@ export class TransformControls {
     this.setCursor("default");
   }
 
-  private handleMouseDown(event: MouseEvent): void {
+  private handleMouseDown(event: PointerEvent): void {
     if (this.modeManager.isDrawing()) return;
 
     const screenPos = { x: event.offsetX, y: event.offsetY };
@@ -99,7 +118,7 @@ export class TransformControls {
       event.offsetX,
       event.offsetY,
     );
-    const corner = this.handleAt(screenPos);
+    const corner = this.handleAt(screenPos, event.pointerType);
 
     if (corner === "center") {
       return;
@@ -254,7 +273,7 @@ export class TransformControls {
     };
   }
 
-  private updateRotating(_event: MouseEvent, mouseWorldPos: Point): void {
+  private updateRotating(event: MouseEvent, mouseWorldPos: Point): void {
     if (!this.rotateState || !this.frame) return;
 
     const { centerLocal, inverseWorldMatrix, decomposedLocal, startAngle } =
@@ -272,7 +291,13 @@ export class TransformControls {
     );
 
     const deltaAngle = currentAngle - startAngle;
-    const newRotation = decomposedLocal.rotation + deltaAngle;
+    let newRotation = decomposedLocal.rotation + deltaAngle;
+
+    if (event.shiftKey) {
+      newRotation =
+        Math.round(newRotation / CONSTANTS.ROTATION_SNAP) *
+        CONSTANTS.ROTATION_SNAP;
+    }
 
     const finalMatrix = m3.compose({
       tx: decomposedLocal.tx,
@@ -314,25 +339,32 @@ export class TransformControls {
       mouseWorldPos.y,
     );
 
-    const startDistX = startMouseLocal.x - pivotLocal.x;
-    const startDistY = startMouseLocal.y - pivotLocal.y;
-
     this.scaleState = {
       corner,
       pivotLocal,
       localMatrix,
       inverseWorldMatrix,
-      startDistX,
-      startDistY,
+      startMouseLocal,
     };
   }
 
   private updateScaling(event: MouseEvent, mouseWorldPos: Point): void {
     if (!this.scaleState || !this.frame) return;
 
-    const { pivotLocal, localMatrix, inverseWorldMatrix, startDistX, startDistY, corner } = this.scaleState;
+    const { localMatrix, inverseWorldMatrix, startMouseLocal, corner } =
+      this.scaleState;
+    // Alt scales from the centre, the box's local origin, instead of the opposite handle.
+    const pivotLocal = event.altKey
+      ? { x: 0, y: 0 }
+      : this.scaleState.pivotLocal;
 
-    const currentLocal = m3.transformPoint(inverseWorldMatrix, mouseWorldPos.x, mouseWorldPos.y);
+    const currentLocal = m3.transformPoint(
+      inverseWorldMatrix,
+      mouseWorldPos.x,
+      mouseWorldPos.y,
+    );
+    const startDistX = startMouseLocal.x - pivotLocal.x;
+    const startDistY = startMouseLocal.y - pivotLocal.y;
 
     const currentDistX = currentLocal.x - pivotLocal.x;
     const currentDistY = currentLocal.y - pivotLocal.y;
@@ -411,31 +443,75 @@ export class TransformControls {
     this.canvas.requestRender("TransformControls.updateDragging");
   }
 
-  handleAt(screenPos: Point): Corner | null {
+  handleAt(screenPos: Point, pointerType = "mouse"): Corner | null {
     if (!this.frame) return null;
 
-    const { screenCorners } = getPointsOfRectangleSquare(this.canvas, this.frame, true);
-    const corners = Object.entries(screenCorners).filter(([key]) => key !== "center") as [Corner, Point][];
+    let reach: number = CONSTANTS.HANDLE_REACH;
+    if (pointerType === "touch") reach = CONSTANTS.HANDLE_REACH_TOUCH;
 
-    for (const [key, point] of corners) {
-      const finalPoint = point;
-
-      if (this.isPointNearCorner(screenPos, finalPoint)) {
-        return key;
+    for (const [handle, point] of handlePoints(this.canvas, this.frame)) {
+      if (
+        Math.abs(screenPos.x - point.x) <= reach &&
+        Math.abs(screenPos.y - point.y) <= reach
+      ) {
+        return handle;
       }
     }
 
     return null;
   }
 
-  private isPointNearCorner(pos: Point, corner: Point): boolean {
-    const dx = Math.abs(pos.x - corner.x);
-    const dy = Math.abs(pos.y - corner.y);
-    return dx <= CONSTANTS.CORNER_HIT_AREA && dy <= CONSTANTS.CORNER_HIT_AREA;
+  // Follows the handle's on-screen direction, so rotated and flipped boxes still show the right arrows.
+  private cursorFor(handle: Corner): string {
+    if (handle === "rotate" || handle === "center" || !this.frame)
+      return "grab";
+
+    const { screenCorners: c } = getPointsOfRectangleSquare(
+      this.canvas,
+      this.frame,
+      true,
+    );
+    const right = unit(c.mr.x - c.center.x, c.mr.y - c.center.y);
+    const up = unit(c.mt.x - c.center.x, c.mt.y - c.center.y);
+    const [sx, sy] = HANDLE_DIRECTION[handle];
+
+    const angle = Math.atan2(
+      sx * right.y + sy * up.y,
+      sx * right.x + sy * up.x,
+    );
+    const step = Math.round(angle / (Math.PI / 4));
+
+    return RESIZE_CURSORS[((step % 4) + 4) % 4];
   }
 
   private updateCursorForCorner(corner: Corner | null): void {
-    this.setCursor(corner ? CURSOR_MAP[corner] : "default");
+    this.setCursor(corner ? this.cursorFor(corner) : "default");
+  }
+
+  private handleKeyDown(event: KeyboardEvent): void {
+    const transforming =
+      this.modeManager.isDragging() ||
+      this.modeManager.isScaling() ||
+      this.modeManager.isRotating();
+    if (event.key !== "Escape" || !transforming) return;
+
+    // Esc mid-gesture puts everything back and keeps the selection.
+    event.preventDefault();
+
+    const drag = this.dragState;
+    if (drag?.startMatrix && drag.entity !== this.frame) {
+      setWorldTransform(drag.entity, drag.startMatrix);
+      this.canvas.fire(Events.OBJECT_MODIFIED, [drag.entity]);
+    } else {
+      this.selection.cancelTransform();
+      this.canvas.fire(Events.OBJECT_MODIFIED, this.selection.selected);
+    }
+
+    this.modeManager.reset();
+    this.dragState = null;
+    this.scaleState = null;
+    this.rotateState = null;
+    this.canvas.requestRender("TransformControls.cancel");
   }
 
   private setCursor(cursor: string): void {

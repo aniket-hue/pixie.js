@@ -4,7 +4,10 @@ import type { Entity } from './ecs/base/Entity.class';
 import type { World } from './ecs/World.class';
 import { assert } from './lib/assert';
 import type { SelectionManager } from './selection/SelectionManager.class';
-import { type Corner, getPointsOfRectangleSquare } from './utils/getPointsOfRectangleSquare';
+import { type Corner, getPointsOfRectangleSquare, handlePoints } from './utils/getPointsOfRectangleSquare';
+
+// One colour for every selection mark, bright enough to read on dark and light content.
+const ACCENT = '#3b82f6';
 
 export class OverlayRenderer {
   private topCanvas: HTMLCanvasElement;
@@ -85,7 +88,7 @@ export class OverlayRenderer {
     ];
 
     const fillColor = 'rgba(142, 193, 244, 0.11)';
-    const strokeColor = '#1c398e';
+    const strokeColor = ACCENT;
 
     ctx.fillStyle = fillColor;
     ctx.beginPath();
@@ -107,13 +110,11 @@ export class OverlayRenderer {
     ctx.stroke();
   }
 
-  private drawControls(bounds: Record<Corner, Point>) {
+  private drawControls(handles: [Corner, Point][]) {
     const ctx = this.topCtx;
 
-    const { center: _, ...rest } = bounds;
-
     // Blue
-    const strokeColor = '#1c398e';
+    const strokeColor = ACCENT;
     const fillColor = 'rgba(255, 255, 255, 1)';
 
     function drawControl(point: Point) {
@@ -128,14 +129,14 @@ export class OverlayRenderer {
       ctx.restore();
     }
 
-    Object.values(rest).forEach(drawControl);
+    handles.forEach(([, point]) => drawControl(point));
   }
 
   private drawSelectionGroup(activeGroup: Entity) {
     const ctx = this.topCtx;
     const { screenCorners: bounds } = getPointsOfRectangleSquare(this.canvas, activeGroup, true);
 
-    const strokeColor = '#1c398e';
+    const strokeColor = ACCENT;
     const strokeWidth = 2;
 
     ctx.strokeStyle = strokeColor;
@@ -147,16 +148,25 @@ export class OverlayRenderer {
     ctx.lineTo(bounds.bl.x, bounds.bl.y);
     ctx.closePath();
     ctx.stroke();
-    ctx.setLineDash([]);
 
-    this.drawControls(bounds);
+    // Handles are noise while moving; during a resize they show which one is held.
+    if (!this.canvas.modeManager.isDragging()) {
+      // Ties the rotate handle to the box, so it doesn't read as one more resize handle.
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(bounds.mt.x, bounds.mt.y);
+      ctx.lineTo(bounds.rotate.x, bounds.rotate.y);
+      ctx.stroke();
+
+      this.drawControls(handlePoints(this.canvas, activeGroup));
+    }
   }
 
-  private drawOutlines(entities: Entity[]) {
+  private drawOutlines(entities: Entity[], lineWidth = 1) {
     const ctx = this.topCtx;
 
-    ctx.strokeStyle = '#3b82f6';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = ACCENT;
+    ctx.lineWidth = lineWidth;
 
     for (const entity of entities) {
       const { screenCorners: c } = getPointsOfRectangleSquare(this.canvas, entity, true);
@@ -176,6 +186,11 @@ export class OverlayRenderer {
 
     const activeSelectionBox = this.selectionManager.selectionBox;
     const activeGroup = this.selectionManager.frame;
+    const hovered = this.selectionManager.hovered;
+
+    if (hovered?.world && !this.selectionManager.isSelected(hovered)) {
+      this.drawOutlines([hovered], 2);
+    }
 
     if (activeSelectionBox !== null) {
       this.drawOutlines(this.selectionManager.preview);

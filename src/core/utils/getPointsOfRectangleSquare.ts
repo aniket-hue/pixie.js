@@ -81,3 +81,19 @@ export function getPointsOfRectangleSquare<T extends boolean>(canvas: Canvas, en
 
   return { worldCorners } as ReturnType<T>;
 }
+
+// Side handles crowd the corners on a small box, so they hide below this on-screen length.
+const MIN_SIDE_FOR_MID_HANDLES = 40;
+
+// Hit-test order too: corners win over the rotate and side handles.
+export function handlePoints(canvas: Canvas, frame: Entity): [Corner, Point][] {
+  const { screenCorners: c } = getPointsOfRectangleSquare(canvas, frame, true);
+  const width = Math.hypot(c.tr.x - c.tl.x, c.tr.y - c.tl.y);
+  const height = Math.hypot(c.bl.x - c.tl.x, c.bl.y - c.tl.y);
+
+  const handles: Corner[] = ['tl', 'tr', 'br', 'bl', 'rotate'];
+  if (width >= MIN_SIDE_FOR_MID_HANDLES) handles.push('mt', 'mb');
+  if (height >= MIN_SIDE_FOR_MID_HANDLES) handles.push('ml', 'mr');
+
+  return handles.map((handle) => [handle, c[handle]]);
+}

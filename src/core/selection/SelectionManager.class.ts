@@ -67,6 +67,8 @@ export class SelectionManager {
 
   selectionBox: { start: Point; current?: Point } | null = null;
   preview: Entity[] = [];
+  // What a click here would select, outlined so nested groups are not a guess.
+  hovered: Entity | null = null;
 
   get frame(): Entity | null {
     return this.box;
@@ -88,11 +90,13 @@ export class SelectionManager {
     this.onMouseDown = this.onMouseDown.bind(this);
     this.onMouseUp = this.onMouseUp.bind(this);
     this.onKeyDown = this.onKeyDown.bind(this);
+    this.onPointerLeave = this.onPointerLeave.bind(this);
 
     this.canvas.on(Events.POINTER_MOVE, this.onMouseMove);
     this.canvas.on(Events.POINTER_DOWN, this.onMouseDown);
     this.canvas.on(Events.POINTER_UP, this.onMouseUp);
     this.canvas.on(Events.KEY_DOWN, this.onKeyDown);
+    this.canvas.element.addEventListener("pointerleave", this.onPointerLeave);
   }
 
   select(entities: Entity[]): void {
@@ -199,6 +203,18 @@ export class SelectionManager {
     }
   }
 
+  cancelTransform(): void {
+    const start = this.transformStart;
+    if (!start || !this.box) return;
+
+    setWorldTransform(this.box, start.frame);
+    for (const [entity, world] of start.members) {
+      setWorldTransform(entity, world);
+    }
+
+    this.endTransform();
+  }
+
   endTransform(): void {
     if (!this.transformStart) return;
 
@@ -252,7 +268,19 @@ export class SelectionManager {
     return quick && still;
   }
 
+  private hover(event: PointerEvent): void {
+    if (this.canvas.modeManager.isInteracting()) {
+      this.setHovered(null);
+      return;
+    }
+
+    const world = this.camera.screenToWorld(event.offsetX, event.offsetY);
+    this.setHovered(this.pickTarget(world, this.scope));
+  }
+
   private onMouseDown(event: PointerEvent): void {
+    this.setHovered(null);
+
     if (this.canvas.modeManager.isInteracting()) {
       return;
     }
@@ -290,9 +318,23 @@ export class SelectionManager {
     }
   }
 
+  private setHovered(entity: Entity | null): void {
+    if (entity === this.hovered) return;
+
+    this.hovered = entity;
+    this.canvas.requestRender("SelectionManager.hover");
+  }
+
+  private onPointerLeave(): void {
+    this.setHovered(null);
+  }
+
   private onMouseMove(event: PointerEvent): void {
     const press = this.press;
-    if (!press) return;
+    if (!press) {
+      this.hover(event);
+      return;
+    }
 
     if (this.canvas.modeManager.isInteracting()) {
       press.moved = true;
@@ -349,6 +391,9 @@ export class SelectionManager {
   }
 
   private onKeyDown(event: KeyboardEvent): void {
+    // TransformControls takes Esc first to cancel a drag; that press must not also change the selection.
+    if (event.key === "Escape" && event.defaultPrevented) return;
+
     if (event.key === "Escape") {
       const scope = this.scope;
       if (scope) {
@@ -409,5 +454,6 @@ export class SelectionManager {
     this.canvas.off(Events.POINTER_DOWN, this.onMouseDown);
     this.canvas.off(Events.POINTER_UP, this.onMouseUp);
     this.canvas.off(Events.KEY_DOWN, this.onKeyDown);
+    this.canvas.element.removeEventListener("pointerleave", this.onPointerLeave);
   }
 }
