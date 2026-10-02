@@ -10,6 +10,7 @@ import { OverlayRenderer } from './OverlayRenderer.class';
 import { SceneRenderer } from './SceneRenderer.class';
 import type { RenderDebug } from './RenderDebug.class';
 import { SelectionManager } from './selection/SelectionManager.class';
+import { deserialize, type SceneJSON, serialize } from './serialize';
 import { GlCore } from './webgl/GlCore.class';
 
 import './app/colors';
@@ -256,6 +257,22 @@ export class Canvas {
     this.textureManager.collect(this.world.liveTextureUrls());
     this.selectionManager.select(selected.filter((entity) => entity.world));
     this.requestRender('Canvas.remove');
+  }
+
+  toJSON(): SceneJSON {
+    return { version: 1, objects: serialize(this.getObjects()) };
+  }
+
+  // Replaces the scene. Throws on bad input before touching the current scene.
+  loadJSON(scene: unknown): Entity[] {
+    const objects = deserialize(scene);
+    const old = this.getObjects();
+
+    // New first, then old: images in both stay cached instead of being freed and fetched again.
+    this.add(...objects);
+    this.remove(...old);
+
+    return objects;
   }
 
   getObjects(): Entity[] {
