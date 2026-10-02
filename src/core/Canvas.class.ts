@@ -136,13 +136,31 @@ export class Canvas {
 
     topCanvas.style.width = `${rect.width}px`;
     topCanvas.style.height = `${rect.height}px`;
-    topCanvas.style.top = `${rect.top}px`;
-    topCanvas.style.left = `${rect.left}px`;
 
     topCanvas.style.zIndex = '1';
     topCanvas.style.pointerEvents = 'none';
-    this.canvasElement.parentElement?.insertBefore(topCanvas, this.canvasElement);
+
+    const parent = this.canvasElement.parentElement;
+    // Both canvases then share one containing block, so page or container scroll moves them together.
+    if (parent && getComputedStyle(parent).position === 'static') {
+      parent.style.position = 'relative';
+    }
+    parent?.insertBefore(topCanvas, this.canvasElement);
     this.topCanvas = topCanvas;
+    this.placeTopCanvas();
+  }
+
+  // Offsets, not page coordinates: they stay valid while scrolling. Rechecked each frame to follow layout moves.
+  private placeTopCanvas(): void {
+    const top = this.topCanvas;
+    if (!top) return;
+
+    const canvas = this.canvasElement;
+    const left = `${canvas.offsetLeft + canvas.clientLeft}px`;
+    const offsetTop = `${canvas.offsetTop + canvas.clientTop}px`;
+
+    if (top.style.left !== left) top.style.left = left;
+    if (top.style.top !== offsetTop) top.style.top = offsetTop;
   }
 
   requestRender(source = 'External requestRender'): Promise<void> {
@@ -180,6 +198,7 @@ export class Canvas {
       return;
     }
 
+    this.placeTopCanvas();
     this.glCore.clear();
 
     this.world.flushBounds();
@@ -371,15 +390,12 @@ export class Canvas {
     canvas.height = targetHeight;
 
     if (this.topCanvas) {
-      const rect = canvas.getBoundingClientRect();
-
       this.topCanvas.width = targetWidth;
       this.topCanvas.height = targetHeight;
 
       this.topCanvas.style.width = `${cssWidth}px`;
       this.topCanvas.style.height = `${cssHeight}px`;
-      this.topCanvas.style.top = `${rect.top}px`;
-      this.topCanvas.style.left = `${rect.left}px`;
+      this.placeTopCanvas();
     }
 
     this.getCtx()?.viewport(0, 0, targetWidth, targetHeight);
