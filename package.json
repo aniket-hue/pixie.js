@@ -1,38 +1,16 @@
 {
   "name": "graphics-kit",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
+  "packageManager": "pnpm@10.12.4",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "biome check .",
-    "preview": "vite preview",
-    "bench": "node bench/run.mjs"
-  },
-  "dependencies": {
-    "@mantine/core": "^8.3.9",
-    "@mantine/hooks": "^8.3.9",
-    "clsx": "^2.1.1",
-    "lucide-react": "^0.553.0",
-    "maxrects-packer": "^2.7.3",
-    "rbush": "^4.0.1",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "tailwind-merge": "^3.4.0"
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "bench": "pnpm --filter @graphics-kit/engine bench",
+    "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.17",
-    "@types/rbush": "^4.0.0",
-    "@types/react": "^19.1.10",
-    "@types/react-dom": "^19.1.7",
-    "@vitejs/plugin-react": "^5.0.0",
-    "autoprefixer": "^10.4.22",
     "biome": "^0.3.3",
-    "globals": "^16.3.0",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^4.0.0",
-    "typescript": "~5.8.3",
-    "vite": "^7.1.2"
+    "typescript": "~5.8.3"
   }
 }

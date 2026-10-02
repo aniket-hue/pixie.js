@@ -1,0 +1,22 @@
+{
+  "name": "@graphics-kit/engine",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "bench": "node bench/run.mjs"
+  },
+  "dependencies": {
+    "rbush": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/rbush": "^4.0.0",
+    "maxrects-packer": "^2.7.3",
+    "typescript": "~5.8.3",
+    "vite": "^7.1.2"
+  }
+}
