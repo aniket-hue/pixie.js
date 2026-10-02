@@ -3,7 +3,7 @@ import { TransformControls } from './controls/TransformControls.class';
 import type { Entity } from './ecs/base/Entity.class';
 import { group, type Restack, restack, ungroup } from './ecs/order';
 import { type Query, World } from './ecs/World.class';
-import { EventEmitter, type EventKeys, type EventMap } from './events';
+import { EventEmitter, type EventKeys, type EventMap, Events } from './events';
 import { InputHandler } from './events/input/InputHandler.class';
 import { InteractionModeManager } from './mode/InteractionModeManager.class';
 import { OverlayRenderer } from './OverlayRenderer.class';
@@ -82,7 +82,7 @@ export class Canvas {
     this.canvasElement = canvas;
 
     this.glCore = new GlCore(this.canvasElement);
-    this.world = new World();
+    this.world = new World(() => this.fire(Events.ORDER_CHANGED));
     this.camera = new Camera(this);
     this.inputHandler = new InputHandler(this);
     this.modeManager = new InteractionModeManager();

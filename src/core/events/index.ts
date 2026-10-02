@@ -13,6 +13,7 @@ export const Events = {
 
   SELECTION_CHANGED: 'selection_changed',
   OBJECT_MODIFIED: 'object_modified',
+  ORDER_CHANGED: 'order_changed',
 } as const;
 
 export type EventMap = {
@@ -28,6 +29,8 @@ export type EventMap = {
 
   selection_changed: [selected: Entity[]];
   object_modified: [entities: Entity[]];
+  // Any add, remove, restack, group or ungroup. Read the new tree with getObjects().
+  order_changed: [];
 };
 
 export type EventKeys = keyof EventMap;

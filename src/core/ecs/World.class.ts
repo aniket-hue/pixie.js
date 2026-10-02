@@ -13,12 +13,18 @@ export class World {
   private tree = new RBush<IndexedBox>();
   private moved = new Set<Entity>();
   private orderDirty = true;
+  private notifyPending = false;
   private roots: Entity[] = [];
   private count = 0;
+  private onOrderChange: () => void;
 
   private onDirty = (entity: Entity, channels: number) => {
     if (channels & INDEXED) this.moved.add(entity);
   };
+
+  constructor(onOrderChange: () => void = () => {}) {
+    this.onOrderChange = onOrderChange;
+  }
 
   addEntity(entity: Entity): Entity {
     if (entity.world === this) {
@@ -44,7 +50,7 @@ export class World {
     this.count++;
 
     this.indexBounds(entity);
-    this.orderDirty = true;
+    this.invalidateOrder();
 
     for (const child of entity.hierarchy.children) {
       this.register(child);
@@ -70,7 +76,7 @@ export class World {
     entity.world = null;
     entity.dirty.setListener(null);
     this.count--;
-    this.orderDirty = true;
+    this.invalidateOrder();
 
     if (entity.bounds.indexed) {
       this.tree.remove(entity.bounds.indexed);
@@ -80,14 +86,14 @@ export class World {
 
   onAttach(child: Entity): void {
     this.register(child);
-    this.orderDirty = true;
+    this.invalidateOrder();
   }
 
   onDetach(child: Entity): void {
     if (child.world !== this) return;
 
     this.roots.push(child);
-    this.orderDirty = true;
+    this.invalidateOrder();
   }
 
   get size(): number {
@@ -120,6 +126,14 @@ export class World {
 
   invalidateOrder(): void {
     this.orderDirty = true;
+    if (this.notifyPending) return;
+
+    // One notice per task: adding 20k entities fires once, not 20k times.
+    this.notifyPending = true;
+    queueMicrotask(() => {
+      this.notifyPending = false;
+      this.onOrderChange();
+    });
   }
 
   getRoots(): readonly Entity[] {
