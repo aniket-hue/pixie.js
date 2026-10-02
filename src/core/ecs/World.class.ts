@@ -1,5 +1,6 @@
 import RBush from "rbush";
 import type { BoundingBox, Point } from "../../types";
+import { fitGroup } from "../factory/group";
 import { containsPoint, intersectsBox } from "../utils/shapes";
 import type { Entity } from "./base/Entity.class";
 import type { IndexedBox } from "./base/components/BoundsComponent.class";
@@ -7,7 +8,8 @@ import { Dirty, DirtyMasks } from "./base/components/DirtyComponent.class";
 
 export type Query = { point: Point } | { box: BoundingBox };
 
-const INDEXED = DirtyMasks.BOUNDS | Dirty.STYLE;
+// HIERARCHY too: a group that loses a child needs its box refit.
+const INDEXED = DirtyMasks.BOUNDS | Dirty.STYLE | Dirty.HIERARCHY;
 
 export class World {
   private tree = new RBush<IndexedBox>();
@@ -186,12 +188,30 @@ export class World {
   }
 
   flushBounds(): void {
+    this.refitGroups();
+
     for (const entity of this.moved) {
       if (entity.bounds.indexed) this.tree.remove(entity.bounds.indexed);
       this.indexBounds(entity);
     }
 
     this.moved.clear();
+  }
+
+  // A child moved through the API leaves its group's box stale. Innermost groups go first, so outer ones see the new size.
+  private refitGroups(): void {
+    const depth = new Map<Entity, number>();
+
+    for (const entity of this.moved) {
+      let group = entity.hierarchy.children.length ? entity : entity.hierarchy.parent;
+      for (; group && !depth.has(group); group = group.hierarchy.parent) {
+        let level = 0;
+        for (let up = group.hierarchy.parent; up; up = up.hierarchy.parent) level++;
+        depth.set(group, level);
+      }
+    }
+
+    [...depth.keys()].sort((a, b) => depth.get(b)! - depth.get(a)!).forEach(fitGroup);
   }
 
   private indexBounds(entity: Entity): void {
